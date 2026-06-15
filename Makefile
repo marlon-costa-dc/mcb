@@ -97,3 +97,7 @@ help:
 	@printf "    ship  WHAT=release ACT=%s  BUMP=patch|minor|major [APPLY=Y]\n" "$(ACTS_release)"
 	@printf "    boot  WHAT=hook    ACT=%s\n" "$(ACTS_hook)"
 	@printf "\n"
+
+# Workspace-custom targets (done-check for the shared Stop hook). Kept out of the
+# canonical verb interface above; lives in workspace_custom.mk, never sync-clobbered.
+-include workspace_custom.mk
