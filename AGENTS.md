@@ -522,3 +522,15 @@ passed unless that exact gate was run in the current turn.
   on static status.
 - `docs/architecture/ARCHITECTURE.md`: architecture overview and historical
   context.
+
+## Relevant Generic ECC Skills (this stack)
+
+MCB is a Rust workspace MCP server. The most relevant generic ECC skills are
+`rust-patterns`, `rust-testing`, `hexagonal-architecture` (matches the
+`domain`/`infrastructure`/`providers`/`server` crate split), `error-handling`
+(Rust `Result`/error-type discipline), and `architecture-decision-records`.
+`mcp-server-patterns` is also directly on-profile. Load these on demand via the
+ECC plugin only when the change touches that surface. Cross-cutting daily skills
+(`cost-tracking`, `token-budget-advisor`, `repo-scan`, `error-handling`,
+`architecture-decision-records`, `git-workflow`) are distributed globally via
+`~/.ai-hub` — reference, do not copy here.
