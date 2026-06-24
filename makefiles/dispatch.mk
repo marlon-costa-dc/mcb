@@ -15,20 +15,20 @@ MCB_TEST_PORT  ?= 18080
 # run them) — semantics preserved since `cargo test --all-targets` also skips doctests.
 MCB_NEXTEST := $(shell command -v cargo-nextest >/dev/null 2>&1 && echo 1)
 ifeq ($(MCB_NEXTEST),1)
-  MCB_TEST_UNIT := MCB_MODEL_ID=test-model cargo nextest run --workspace --lib --test-threads=$$T
-  MCB_TEST_ALL  := MCB_MODEL_ID=test-model cargo nextest run --workspace --test-threads=$$T
+  MCB_TEST_UNIT := MCB_MODEL_ID=test-model RUST_TEST_THREADS=$$T $(MCB_RUN) cargo nextest run --workspace --lib --test-threads=$$T
+  MCB_TEST_ALL  := MCB_MODEL_ID=test-model RUST_TEST_THREADS=$$T $(MCB_RUN) cargo nextest run --workspace --test-threads=$$T
 else
-  MCB_TEST_UNIT := MCB_MODEL_ID=test-model RUST_TEST_THREADS=$$T cargo test --workspace --lib
-  MCB_TEST_ALL  := MCB_MODEL_ID=test-model RUST_TEST_THREADS=$$T cargo test --workspace --all-targets
+  MCB_TEST_UNIT := MCB_MODEL_ID=test-model RUST_TEST_THREADS=$$T $(MCB_RUN) cargo test --workspace --lib
+  MCB_TEST_ALL  := MCB_MODEL_ID=test-model RUST_TEST_THREADS=$$T $(MCB_RUN) cargo test --workspace --all-targets
 endif
 
 # Install Rust tooling: prefer cargo-binstall when available, else cargo install.
 # This is an optimization, not a workaround; environments without binstall keep working.
 MCB_BINSTALL := $(shell command -v cargo-binstall >/dev/null 2>&1 && echo 1)
 ifeq ($(MCB_BINSTALL),1)
-  MCB_INSTALL_CRATES = cargo binstall -y $(1)
+  MCB_INSTALL_CRATES = $(MCB_RUN) cargo binstall -y $(1)
 else
-  MCB_INSTALL_CRATES = cargo install --locked $(1)
+  MCB_INSTALL_CRATES = $(MCB_RUN) cargo install --locked $(1)
 endif
 
 # Unknown-WHAT error arm (SSOT): the default case of every verb prints this.
@@ -81,16 +81,16 @@ define MCB_HOOK
 case "$(ACT)" in \
   pre-commit) \
     T="$(THREADS)"; case "$$T" in ''|*[!0-9]*|0) T=1;; esac; \
-    bash $(MCB_SH) guard --staged && \
-    cargo fmt --all -- --check && \
-    cargo clippy --workspace -- -D warnings && \
+    $(MCB_TOOL) guard --staged && \
+    $(MCB_RUN) cargo fmt --all -- --check && \
+    $(MCB_RUN) cargo clippy --workspace -- -D warnings && \
     { ! command -v typos >/dev/null 2>&1 || typos; } && \
     $(MCB_TEST_UNIT) ;; \
   pre-push) \
-    cargo fmt --all -- --check && \
-    cargo clippy --all-targets -- -D warnings && \
+    $(MCB_RUN) cargo fmt --all -- --check && \
+    $(MCB_RUN) cargo clippy --all-targets -- -D warnings && \
     $(MAKE) test && $(MAKE) test SCOPE=doc && \
-    bash $(MCB_SH) validate quick ;; \
+    $(MCB_TOOL) validate quick ;; \
   *)          printf "ERRO: ACT '%s' invalido. Validos: $(ACTS_hook)\n" "$(ACT)" >&2; exit 2 ;; \
 esac
 endef
@@ -104,10 +104,10 @@ endef
 define DISPATCH_BUILD
 @case "$(WHAT)" in \
   ""|build) \
-    if [ "$(RELEASE)" = "1" ]; then echo "Building release..."; cargo build --release; \
-    else echo "Building debug..."; cargo build; fi ;; \
-  release) echo "Building release..."; cargo build --release ;; \
-  debug)   echo "Building debug..."; cargo build ;; \
+    if [ "$(RELEASE)" = "1" ]; then echo "Building release..."; $(MCB_RUN) cargo build --release; \
+    else echo "Building debug..."; $(MCB_RUN) cargo build; fi ;; \
+  release) echo "Building release..."; $(MCB_RUN) cargo build --release ;; \
+  debug)   echo "Building debug..."; $(MCB_RUN) cargo build ;; \
   codegen) $(call MCB_CODEGEN) ;; \
   docs)    $(call MCB_DOCS) ;; \
   *)       $(call BAD_WHAT,$(WHATS_build)) ;; \
@@ -117,10 +117,10 @@ endef
 # codegen (APPLY-gated; phases overwrite generated code). ACT= selects phase.
 define MCB_CODEGEN
 $(call gate,regenerate generated code); case "$(ACT)" in \
-  cli)         echo "Building sea-orm-cli from fork..."; cargo build --manifest-path=third-party/sea-orm/sea-orm-cli/Cargo.toml; echo "✓ $(SEA_ORM_CLI)" ;; \
-  db)          rm -f $(CODEGEN_DB); python3 $(EXTRACT_SCRIPT) $(MIGRATION_RS) | sqlite3 $(CODEGEN_DB); echo "✓ codegen DB at $(CODEGEN_DB)" ;; \
-  entities)    $(MAKE) build WHAT=codegen ACT=db APPLY=Y; $(SEA_ORM_CLI) generate entity --database-url "sqlite://$(CODEGEN_DB)?mode=rwc" --output-dir $(ENTITIES_DIR) --with-serde both --ignore-tables seaql_migrations --date-time-crate time; python3 scripts/codegen-post-process.py $(ENTITIES_DIR)/mod.rs; echo "✓ entities in $(ENTITIES_DIR)/" ;; \
-  conversions) echo "Generating conversions from $(CONVERSIONS_TOML)..."; python3 $(CONVERSIONS_SCRIPT); echo "✓ conversions in $(CONVERSIONS_DIR)/" ;; \
+  cli)         echo "Building sea-orm-cli from fork..."; $(MCB_RUN) cargo build --manifest-path=third-party/sea-orm/sea-orm-cli/Cargo.toml; echo "✓ $(SEA_ORM_CLI)" ;; \
+  db)          rm -f $(CODEGEN_DB); $(MCB_RUN) python3 $(EXTRACT_SCRIPT) $(MIGRATION_RS) | sqlite3 $(CODEGEN_DB); echo "✓ codegen DB at $(CODEGEN_DB)" ;; \
+  entities)    $(MAKE) build WHAT=codegen ACT=db APPLY=Y; $(SEA_ORM_CLI) generate entity --database-url "sqlite://$(CODEGEN_DB)?mode=rwc" --output-dir $(ENTITIES_DIR) --with-serde both --ignore-tables seaql_migrations --date-time-crate time; $(MCB_RUN) python3 scripts/codegen-post-process.py $(ENTITIES_DIR)/mod.rs; echo "✓ entities in $(ENTITIES_DIR)/" ;; \
+  conversions) echo "Generating conversions from $(CONVERSIONS_TOML)..."; $(MCB_RUN) python3 $(CONVERSIONS_SCRIPT); echo "✓ conversions in $(CONVERSIONS_DIR)/" ;; \
   clean)       rm -f $(CODEGEN_DB); echo "✓ cleaned codegen artifacts" ;; \
   ""|all)      $(MAKE) build WHAT=codegen ACT=entities APPLY=Y; $(MAKE) build WHAT=codegen ACT=conversions APPLY=Y; echo "✓ codegen complete" ;; \
   *)           printf "ERRO: ACT '%s' invalido. Validos: $(ACTS_codegen)\n" "$(ACT)" >&2; exit 2 ;; \
@@ -130,12 +130,12 @@ endef
 # docs pipeline. ACT= selects phase.
 define MCB_DOCS
 case "$(ACT)" in \
-  ""|build)  ./scripts/docs/inject-metrics.sh; cargo doc --no-deps --workspace; ./scripts/docs/mdbook-sync.sh; if [ -x "$(MDBOOK)" ]; then $(MDBOOK) build book/; else echo "Warning: mdbook not found, skipping book build" >&2; fi ;; \
-  serve)     ./scripts/docs/mdbook-sync.sh 2>/dev/null || true; if [ -x "$(MDBOOK)" ]; then $(MDBOOK) serve book/ --open; else echo "mdbook not installed (cargo install mdbook)"; fi ;; \
-  lint)      if [ "$(FIX)" = "1" ]; then ./scripts/docs/markdown.sh fix; else ./scripts/docs/markdown.sh lint; fi ;; \
-  validate)  QUICK="$(QUICK)" ./scripts/docs/validate.sh all ;; \
-  sync)      ./scripts/docs/mdbook-sync.sh 2>/dev/null || true ;; \
-  rust)      cargo doc --no-deps --workspace ;; \
+  ""|build)  $(MCB_RUN) ./scripts/docs/inject-metrics.sh; $(MCB_RUN) cargo doc --no-deps --workspace; $(MCB_RUN) ./scripts/docs/mdbook-sync.sh; if [ -x "$(MDBOOK)" ]; then $(MDBOOK) build book/; else echo "Warning: mdbook not found, skipping book build" >&2; fi ;; \
+  serve)     $(MCB_RUN) ./scripts/docs/mdbook-sync.sh 2>/dev/null || true; if [ -x "$(MDBOOK)" ]; then $(MDBOOK) serve book/ --open; else echo "mdbook not installed (cargo install mdbook)"; fi ;; \
+  lint)      if [ "$(FIX)" = "1" ]; then $(MCB_RUN) ./scripts/docs/markdown.sh fix; else $(MCB_RUN) ./scripts/docs/markdown.sh lint; fi ;; \
+  validate)  QUICK="$(QUICK)" $(MCB_RUN) ./scripts/docs/validate.sh all ;; \
+  sync)      $(MCB_RUN) ./scripts/docs/mdbook-sync.sh 2>/dev/null || true ;; \
+  rust)      $(MCB_RUN) cargo doc --no-deps --workspace ;; \
   check)     [ -d docs ] || { echo "ERROR: docs/ directory not found" >&2; exit 1; } ;; \
   setup)     mkdir -p book; [ -f book.toml ] || { echo "ERROR: book.toml not found in root" >&2; exit 1; } ;; \
   adr)       echo "Architecture Decision Records:"; ls -1 docs/adr/[0-9]*.md 2>/dev/null | while read f; do num=$$(basename "$$f" .md | cut -d- -f1); title=$$(head -1 "$$f" | sed 's/^# ADR [0-9]*: //'); printf "  %s: %s\n" "$$num" "$$title"; done ;; \
@@ -152,11 +152,11 @@ define DISPATCH_TEST
 @T="$(THREADS)"; case "$$T" in ''|*[!0-9]*|0) T=1;; esac; \
 case "$(SCOPE)" in \
   unit)        $(MCB_TEST_UNIT) ;; \
-  doc)         cargo test --workspace --doc ;; \
-  golden)      RUST_TEST_THREADS=$$T cargo test --workspace --tests golden ;; \
-  startup)     cargo test -p mcb --test integration startup_smoke -- --nocapture ;; \
-  warmup)      cargo test -p mcb-server --test integration test_init_app_with_default_config_succeeds -- --nocapture ;; \
-  integration) MCB_MODEL_ID=test-model RUST_TEST_THREADS=$$T cargo test --workspace --test '*integration*' ;; \
+  doc)         $(MCB_RUN) cargo test --workspace --doc ;; \
+  golden)      RUST_TEST_THREADS=$$T $(MCB_RUN) cargo test --workspace --tests golden ;; \
+  startup)     $(MCB_RUN) cargo test -p mcb --test integration startup_smoke -- --nocapture ;; \
+  warmup)      $(MCB_RUN) cargo test -p mcb-server --test integration test_init_app_with_default_config_succeeds -- --nocapture ;; \
+  integration) MCB_MODEL_ID=test-model RUST_TEST_THREADS=$$T $(MCB_RUN) cargo test --workspace --test '*integration*' ;; \
   e2e)         $(call MCB_E2E) ;; \
   all)         $(MCB_TEST_ALL) && $(call MCB_E2E) ;; \
   '')          $(MCB_TEST_ALL) ;; \
@@ -167,12 +167,12 @@ endef
 define MCB_E2E
 echo "Running Playwright E2E on port $(MCB_TEST_PORT)..."; \
 lsof -ti:$(MCB_TEST_PORT) | xargs -r kill -9 2>/dev/null || true; sleep 1; \
-command -v npx >/dev/null || { echo "Error: npx not found. Install Node.js first." >&2; exit 1; }; \
+command -v node >/dev/null || { echo "Error: node/npm not found. Install Node.js first." >&2; exit 1; }; \
 if [ ! -d tests/node_modules/@playwright ]; then echo "Installing Playwright..."; \
-  npm --prefix tests install --save-dev @playwright/test @types/node typescript 2>&1 | grep -v "npm WARN" || true; \
-  (cd tests && npx playwright install chromium --with-deps 2>&1 | tail -5); fi; \
-cargo build --release --bin mcb; \
-cd tests && MCB_TEST_PORT=$(MCB_TEST_PORT) node_modules/.bin/playwright test --config=playwright.config.ts --reporter=list
+  $(MCB_RUN) npm --prefix tests install --save-dev @playwright/test @types/node typescript 2>&1 | grep -v "npm WARN" || true; \
+  (cd tests && $(MCB_RUN) npm exec -- playwright install chromium --with-deps 2>&1 | tail -5); fi; \
+$(MCB_RUN) cargo build --release --bin mcb; \
+cd tests && $(MCB_RUN) npm exec -- playwright test --config=playwright.config.ts --reporter=list
 endef
 
 # =============================================================================
@@ -186,19 +186,19 @@ endef
 # =============================================================================
 define DISPATCH_CHECK
 @case "$(WHAT)" in \
-  fmt)      cargo fmt --all -- --check ;; \
-  lint)     cargo fmt --all -- --check && cargo clippy --all-targets -- -D warnings ;; \
-  validate) bash $(MCB_SH) validate $(if $(filter 1,$(QUICK)),quick,full) ;; \
-  audit)    cargo audit $(foreach i,$(MCB_AUDIT_IGNORES),--ignore $(i)) && $(MAKE) check WHAT=udeps ;; \
-  udeps)    command -v cargo-udeps >/dev/null 2>&1 || cargo install cargo-udeps; cargo +nightly udeps --workspace ;; \
-  coverage) cargo tarpaulin --engine llvm --out Lcov --output-dir coverage --exclude-files 'crates/*/tests/integration/*' --exclude-files 'crates/*/tests/admin/*' --timeout 300 ;; \
-  qlty)     mkdir -p docs/reports; ./scripts/analyze_qlty.py --scan --check --summary --markdown docs/reports/qlty-check-REPORTS.md; ./scripts/analyze_qlty.py --scan --smells --summary --markdown docs/reports/qlty-smells-REPORTS.md ;; \
+  fmt)      $(MCB_RUN) cargo fmt --all -- --check ;; \
+  lint)     $(MCB_RUN) cargo fmt --all -- --check && $(MCB_RUN) cargo clippy --all-targets -- -D warnings ;; \
+  validate) $(MCB_TOOL) validate $(if $(filter 1,$(QUICK)),quick,full) ;; \
+  audit)    $(MCB_RUN) cargo audit $(foreach i,$(MCB_AUDIT_IGNORES),--ignore $(i)) && $(MAKE) check WHAT=udeps ;; \
+  udeps)    command -v cargo-udeps >/dev/null 2>&1 || $(MCB_RUN) cargo install cargo-udeps; $(MCB_RUN) cargo +nightly udeps --workspace ;; \
+  coverage) $(MCB_RUN) cargo tarpaulin --engine llvm --out Lcov --output-dir coverage --exclude-files 'crates/*/tests/integration/*' --exclude-files 'crates/*/tests/admin/*' --timeout 300 ;; \
+  qlty)     mkdir -p docs/reports; $(MCB_RUN) ./scripts/analyze_qlty.py --scan --check --summary --markdown docs/reports/qlty-check-REPORTS.md; $(MCB_RUN) ./scripts/analyze_qlty.py --scan --smells --summary --markdown docs/reports/qlty-smells-REPORTS.md ;; \
   coordination) bd config get beads.role --json && bd status --json && bd hooks list --json && bash scripts/context/validate-beads-policy.sh && bd dep cycles --json && bd stale --status in_progress --days 1 --limit 25 --json && bd graph --all --compact >/dev/null ;; \
-  guard)    bash $(MCB_SH) guard ;; \
+  guard)    $(MCB_TOOL) guard ;; \
   fix)      $(call MCB_FIX) ;; \
   dev)      $(call MCB_DEV) ;; \
-  optimize) bash scripts/dev-env-optimize.sh $(if $(filter Y,$(APPLY)),--apply,) ;; \
-  ci|""|all) cargo fmt --all -- --check && cargo clippy --all-targets -- -D warnings && $(MAKE) test && bash $(MCB_SH) validate $(if $(filter 1,$(QUICK)),quick,full) ;; \
+  optimize) $(MCB_RUN) scripts/dev-env-optimize.sh $(if $(filter Y,$(APPLY)),--apply,) ;; \
+  ci|""|all) $(MCB_RUN) cargo fmt --all -- --check && $(MCB_RUN) cargo clippy --all-targets -- -D warnings && $(MAKE) test && $(MCB_TOOL) validate $(if $(filter 1,$(QUICK)),quick,full) ;; \
   *)        $(call BAD_WHAT,$(WHATS_check)) ;; \
 esac
 endef
@@ -206,10 +206,10 @@ endef
 # mutating auto-fix (rustfmt, clippy --fix, markdown). ACT= selects phase.
 define MCB_FIX
 case "$(ACT)" in \
-  fmt)        cargo fmt --all ;; \
-  lint)       cargo fmt --all && cargo clippy --fix --allow-dirty --all-targets ;; \
+  fmt)        $(MCB_RUN) cargo fmt --all ;; \
+  lint)       $(MCB_RUN) cargo fmt --all && $(MCB_RUN) cargo clippy --fix --allow-dirty --all-targets ;; \
   docs)       $(MAKE) build WHAT=docs ACT=lint FIX=1 ;; \
-  ""|all)     cargo fmt --all && cargo clippy --fix --allow-dirty --all-targets && $(MAKE) build WHAT=docs ACT=lint FIX=1 ;; \
+  ""|all)     $(MCB_RUN) cargo fmt --all && $(MCB_RUN) cargo clippy --fix --allow-dirty --all-targets && $(MAKE) build WHAT=docs ACT=lint FIX=1 ;; \
   *)          printf "ERRO: ACT '%s' invalido. Validos: $(ACTS_fix)\n" "$(ACT)" >&2; exit 2 ;; \
 esac
 endef
@@ -217,11 +217,11 @@ endef
 # dev server / docker test services. ACT= selects mode.
 define MCB_DEV
 case "$(ACT)" in \
-  ""|run)       echo "Starting dev server..."; cargo watch -x 'run' 2>/dev/null || cargo run ;; \
-  docker-up)    echo "Starting Docker test services..."; docker-compose -f tests/docker-compose.yml up -d; sleep 5 ;; \
-  docker-down)  echo "Stopping Docker test services..."; docker-compose -f tests/docker-compose.yml down -v ;; \
-  docker-logs)  docker-compose -f tests/docker-compose.yml logs -f ;; \
-  docker-test)  docker-compose -f tests/docker-compose.yml --profile test up --build --abort-on-container-exit test-runner; docker-compose -f tests/docker-compose.yml --profile test rm -f test-runner ;; \
+  ""|run)       echo "Starting dev server..."; $(MCB_RUN) cargo watch -x 'run' 2>/dev/null || $(MCB_RUN) cargo run ;; \
+  docker-up)    echo "Starting Docker test services..."; $(MCB_RUN) docker-compose -f tests/docker-compose.yml up -d; sleep 5 ;; \
+  docker-down)  echo "Stopping Docker test services..."; $(MCB_RUN) docker-compose -f tests/docker-compose.yml down -v ;; \
+  docker-logs)  $(MCB_RUN) docker-compose -f tests/docker-compose.yml logs -f ;; \
+  docker-test)  $(MCB_RUN) docker-compose -f tests/docker-compose.yml --profile test up --build --abort-on-container-exit test-runner; $(MCB_RUN) docker-compose -f tests/docker-compose.yml --profile test rm -f test-runner ;; \
   *)            printf "ERRO: ACT '%s' invalido. Validos: $(ACTS_dev)\n" "$(ACT)" >&2; exit 2 ;; \
 esac
 endef
@@ -242,8 +242,8 @@ define DISPATCH_SHIP
   diff)       git diff; git diff --cached ;; \
   log)        git log --oneline -$(or $(LOG_N),10) ;; \
   show)       git show --stat $(or $(REF),HEAD) ;; \
-  add)        bash $(MCB_SH) files-safe "$(FILES)"; $(call require_var,FILES); git add $(FILES) ;; \
-  commit)     $(call require_var,MSG); bash $(MCB_SH) files-safe "$(FILES)"; [ -n "$(FILES)" ] && git add $(FILES) || true; $(call gate,commit); git commit -m "$(MSG)" ;; \
+  add)        $(MCB_TOOL) files-safe "$(FILES)"; $(call require_var,FILES); git add $(FILES) ;; \
+  commit)     $(call require_var,MSG); $(MCB_TOOL) files-safe "$(FILES)"; [ -n "$(FILES)" ] && git add $(FILES) || true; $(call gate,commit); git commit -m "$(MSG)" ;; \
   push)       $(call gate,push $(BRANCH)); git push origin $(BRANCH) ;; \
   pull)       git pull origin $(BRANCH) ;; \
   branch)     [ -z "$(REF)" ] && git branch -a || git branch $(REF) $(BASE) ;; \
@@ -267,10 +267,10 @@ endef
 # GitHub PR. ACT= selects action.
 define MCB_PR
 case "$(ACT)" in \
-  checks)     $(call require_var,PR); gh pr checks $(PR) || true ;; \
-  ""|view)    $(call require_var,PR); gh pr view $(PR) ;; \
-  merge)      $(call require_var,PR); $(call gate,merge PR #$(PR)); gh pr merge $(PR) --merge ;; \
-  rerun)      $(call require_var,RUN); gh run rerun $(RUN) --failed ;; \
+  checks)     $(call require_var,PR); $(MCB_RUN) gh pr checks $(PR) || true ;; \
+  ""|view)    $(call require_var,PR); $(MCB_RUN) gh pr view $(PR) ;; \
+  merge)      $(call require_var,PR); $(call gate,merge PR #$(PR)); $(MCB_RUN) gh pr merge $(PR) --merge ;; \
+  rerun)      $(call require_var,RUN); $(MCB_RUN) gh run rerun $(RUN) --failed ;; \
   *)          printf "ERRO: ACT '%s' invalido. Validos: $(ACTS_pr)\n" "$(ACT)" >&2; exit 2 ;; \
 esac
 endef
@@ -291,7 +291,7 @@ endef
 # release / install / version. ACT= selects phase.
 define MCB_RELEASE
 case "$(ACT)" in \
-  ""|package) echo "Creating release v$(VERSION)..."; $(MAKE) check WHAT=lint && $(MAKE) test && bash $(MCB_SH) validate quick && $(MAKE) build WHAT=release; mkdir -p dist; [ -f "target/release/$(BINARY_NAME)" ] || { echo "Error: target/release/$(BINARY_NAME) not found" >&2; exit 1; }; cp target/release/$(BINARY_NAME) dist/; (cd dist && tar -czf $(BINARY_NAME)-$(VERSION).tar.gz $(BINARY_NAME)); echo "Release ready: dist/$(BINARY_NAME)-$(VERSION).tar.gz" ;; \
+  ""|package) echo "Creating release v$(VERSION)..."; $(MAKE) check WHAT=lint && $(MAKE) test && $(MCB_TOOL) validate quick && $(MAKE) build WHAT=release; mkdir -p dist; [ -f "target/release/$(BINARY_NAME)" ] || { echo "Error: target/release/$(BINARY_NAME) not found" >&2; exit 1; }; cp target/release/$(BINARY_NAME) dist/; (cd dist && tar -czf $(BINARY_NAME)-$(VERSION).tar.gz $(BINARY_NAME)); echo "Release ready: dist/$(BINARY_NAME)-$(VERSION).tar.gz" ;; \
   version)    $(call MCB_VERSION_BUMP) ;; \
   install)    $(call gate,install MCB v$(VERSION) to $(INSTALL_DIR) + systemd + MCP configs); $(call MCB_INSTALL) ;; \
   install-validate) $(call MCB_INSTALL_VALIDATE) ;; \
@@ -301,9 +301,9 @@ endef
 
 define MCB_VERSION_BUMP
 case "$(BUMP)" in \
-  patch) sed -i 's/^version = "$(VERSION)"/version = "$(NEXT_PATCH)"/' Cargo.toml; cargo check 2>/dev/null || true; echo "Version → $(NEXT_PATCH)" ;; \
-  minor) sed -i 's/^version = "$(VERSION)"/version = "$(NEXT_MINOR)"/' Cargo.toml; cargo check 2>/dev/null || true; echo "Version → $(NEXT_MINOR)" ;; \
-  major) sed -i 's/^version = "$(VERSION)"/version = "$(NEXT_MAJOR)"/' Cargo.toml; cargo check 2>/dev/null || true; echo "Version → $(NEXT_MAJOR)" ;; \
+  patch) sed -i 's/^version = "$(VERSION)"/version = "$(NEXT_PATCH)"/' Cargo.toml; $(MCB_RUN) cargo check 2>/dev/null || true; echo "Version → $(NEXT_PATCH)" ;; \
+  minor) sed -i 's/^version = "$(VERSION)"/version = "$(NEXT_MINOR)"/' Cargo.toml; $(MCB_RUN) cargo check 2>/dev/null || true; echo "Version → $(NEXT_MINOR)" ;; \
+  major) sed -i 's/^version = "$(VERSION)"/version = "$(NEXT_MAJOR)"/' Cargo.toml; $(MCB_RUN) cargo check 2>/dev/null || true; echo "Version → $(NEXT_MAJOR)" ;; \
   *)     echo "Current: $(VERSION)"; echo "patch:   $(NEXT_PATCH)"; echo "minor:   $(NEXT_MINOR)"; echo "major:   $(NEXT_MAJOR)" ;; \
 esac
 endef
@@ -361,9 +361,9 @@ endef
 # =============================================================================
 define DISPATCH_CLEAN
 @$(call gate,clean build artifacts); case "$(WHAT)" in \
-  ""|build)  cargo clean; echo "✓ build artifacts cleaned" ;; \
+  ""|build)  $(MCB_RUN) cargo clean; echo "✓ build artifacts cleaned" ;; \
   codegen)   rm -f $(CODEGEN_DB); echo "✓ codegen DB removed" ;; \
-  all)       cargo clean; rm -f $(CODEGEN_DB); echo "✓ all artifacts cleaned" ;; \
+  all)       $(MCB_RUN) cargo clean; rm -f $(CODEGEN_DB); echo "✓ all artifacts cleaned" ;; \
   *)         $(call BAD_WHAT,$(WHATS_clean)) ;; \
 esac
 endef

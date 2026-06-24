@@ -8,6 +8,10 @@ SHELL := bash
 
 MCB_SH := scripts/lib/mcb.sh
 MCB_AUDIT_IGNORES := $(shell bash $(MCB_SH) ignores)
+# Central executor that keeps automation in one place.
+# Use for external commands that should run through mise when present.
+MCB_TOOL := bash $(MCB_SH)
+MCB_RUN := bash $(MCB_SH) run
 
 include makefiles/ui.mk
 include makefiles/dispatch.mk

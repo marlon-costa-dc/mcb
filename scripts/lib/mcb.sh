@@ -45,6 +45,26 @@ mcb_require_apply() {
 }
 mcb_apply_y() { [ "${APPLY:-N}" = "Y" ]; }
 
+mcb_run() {
+  local run_cmd
+  local -a env_args
+  [ "$#" -gt 0 ] || mcb_die "$EX_PREREQ" "mcb run recebeu nenhum comando"
+  run_cmd="$1"
+  shift
+  while [ "$#" -gt 0 ] && [[ "$run_cmd" == *"="* ]] && printf '%s' "$run_cmd" | grep -qEq '^[A-Za-z_][A-Za-z0-9_]*='; do
+    env_args+=("$run_cmd")
+    run_cmd="$1"
+    shift
+  done
+  [ -n "$run_cmd" ] || mcb_die "$EX_PREREQ" "mcb run recebeu comando vazio"
+  printf '%s' "$run_cmd" | grep -qEq '^[A-Za-z_][A-Za-z0-9_]*=' && mcb_die "$EX_PREREQ" "mcb run recebeu somente variáveis de ambiente"
+  if command -v mise >/dev/null 2>&1 && mise which "$run_cmd" >/dev/null 2>&1; then
+    env "${env_args[@]}" mise exec --quiet -- "$run_cmd" "$@"
+  else
+    env "${env_args[@]}" "$run_cmd" "$@"
+  fi
+}
+
 # --- retry helper ------------------------------------------------------------
 mcb_retry() { local n="$1" s="$2"; shift 2; local t=1; while ! "$@"; do [ "$t" -ge "$n" ] && return 1; sleep "$s"; t=$((t+1)); done; }
 
@@ -160,6 +180,7 @@ if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
     validate)       mcb_validate "${2:-full}" ;;
     guard)          shift; mcb_guard "$@" ;;
     guard-bash)     mcb_guard_bash ;;
+    run)            shift; [ "$#" -gt 0 ] || mcb_die "$EX_PREREQ" "mcb run requires a command"; mcb_run "$@" ;;
     files-safe)     mcb_files_safe "${2:-}" ;;
     *)              mcb_die "$EX_PREREQ" "unknown command: ${1:-<none>}" ;;
   esac
