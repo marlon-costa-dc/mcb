@@ -19,3 +19,6 @@ done-check: ## Real-user/green-green check, scoped to committed changes vs upstr
 	n=$$(printf '%s\n' "$$files" | grep -c .); \
 	echo "done-check: ruff on $$n committed-vs-$$base .py file(s)"; \
 	printf '%s\n' "$$files" | xargs -r ruff check --quiet
+
+# ~/.ai-hub workspace tooling thin-wrapper
+include /home/marlonsc/.ai-hub/templates/cosmos-wrapper.mk
