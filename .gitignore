@@ -280,6 +280,9 @@ archive/
 !docs/adr/archive/
 !docs/adr/archive/**
 
+# Git worktrees (created transiently for cross-branch work)
+.worktrees/
+
 # Beads / Dolt files (added by bd init)
 .dolt/
 .beads-credential-key
