@@ -2,11 +2,13 @@
 //!
 //! Builds and wires the MCP server and `McbState` through Loco's initializer pipeline.
 //! All handler state is managed by Loco; no manual bootstrap in Hooks.
+//!
+//! Route construction lives in `mcb_server::axum_routes` so the production route
+//! table can be reused verbatim by integration tests without duplicating logic.
 
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use axum::Extension;
 use axum::Router as AxumRouter;
 use loco_rs::prelude::*;
 
@@ -19,10 +21,20 @@ use mcb_domain::registry::vector_store::{
 use mcb_server::build_mcp_server_bootstrap;
 use mcb_server::tools::ExecutionFlow;
 use mcb_server::transport::stdio::StdioServerExt;
-use rmcp::transport::streamable_http_server::{
-    StreamableHttpServerConfig, StreamableHttpService, session::local::LocalSessionManager,
-};
-use tokio_util::sync::CancellationToken;
+
+/// Watch receiver that fires when the stdio MCP server shuts down.
+///
+/// Inserted into the Loco `AppContext` shared store so the `serve` command can
+/// await stdio-only shutdown without starting the HTTP server.
+#[derive(Clone)]
+pub struct StdioServerShutdown(tokio::sync::watch::Receiver<bool>);
+
+impl StdioServerShutdown {
+    /// Wait for the stdio server to terminate.
+    pub async fn wait(mut self) {
+        let _ = self.0.changed().await;
+    }
+}
 
 /// Build the embedding provider config from the resolved `AppConfig`.
 fn build_embedding_config(
@@ -74,131 +86,6 @@ fn build_vector_store_config(
         vec_cfg = vec_cfg.with_dimensions(d);
     }
     Ok(vec_cfg)
-}
-
-/// Public routes — no auth required (static assets + redirect).
-fn build_public_routes() -> AxumRouter {
-    axum::Router::new()
-        .route(
-            "/",
-            axum::routing::get(|| async { axum::response::Redirect::temporary("/ui/") }),
-        )
-        .route(
-            "/favicon.ico",
-            axum::routing::get(|| async {
-                (
-                    [(axum::http::header::CONTENT_TYPE, "image/svg+xml")],
-                    include_str!("../../../../assets/admin/favicon.svg"),
-                )
-            }),
-        )
-        .route(
-            "/ui/theme.css",
-            axum::routing::get(|| async {
-                (
-                    [(axum::http::header::CONTENT_TYPE, "text/css")],
-                    include_str!("../../../../assets/admin/ui/theme.css"),
-                )
-            }),
-        )
-        .route(
-            "/ui/shared.js",
-            axum::routing::get(|| async {
-                (
-                    [(axum::http::header::CONTENT_TYPE, "application/javascript")],
-                    include_str!("../../../../assets/admin/ui/shared.js"),
-                )
-            }),
-        )
-}
-
-/// Admin web UI page routes.
-fn admin_ui_routes() -> AxumRouter {
-    axum::Router::new()
-        .route(
-            "/ui",
-            axum::routing::get(mcb_server::controllers::web::dashboard),
-        )
-        .route(
-            "/ui/",
-            axum::routing::get(mcb_server::controllers::web::dashboard),
-        )
-        .route(
-            "/ui/config",
-            axum::routing::get(mcb_server::controllers::web::config_page),
-        )
-        .route(
-            "/ui/health",
-            axum::routing::get(mcb_server::controllers::web::health_page),
-        )
-        .route(
-            "/ui/jobs",
-            axum::routing::get(mcb_server::controllers::web::jobs_page),
-        )
-        .route(
-            "/ui/browse",
-            axum::routing::get(mcb_server::controllers::web::browse_page),
-        )
-}
-
-/// Admin JSON API routes.
-fn admin_api_routes() -> AxumRouter {
-    axum::Router::new()
-        .route(
-            "/health",
-            axum::routing::get(mcb_server::controllers::health_api::health),
-        )
-        .route(
-            "/jobs",
-            axum::routing::get(mcb_server::controllers::jobs_api::jobs),
-        )
-        .route(
-            "/collections",
-            axum::routing::get(mcb_server::controllers::collections_api::collections),
-        )
-        .route(
-            "/chunks",
-            axum::routing::get(mcb_server::controllers::collections_api::chunks),
-        )
-        .route(
-            "/config",
-            axum::routing::get(mcb_server::controllers::admin::config_via_middleware),
-        )
-}
-
-/// Admin route table (without auth layer applied).
-fn admin_route_table() -> AxumRouter {
-    admin_ui_routes().merge(admin_api_routes())
-}
-
-/// Protected routes — require admin API-key auth.
-///
-/// Captures `state`/`settings` clones for the admin-auth middleware closure so
-/// authorization does not depend on Extension-layer ordering.
-fn build_protected_routes(
-    state: mcb_server::McbState,
-    settings: Option<serde_json::Value>,
-) -> AxumRouter {
-    let admin_auth_middleware = axum::middleware::from_fn(
-        move |req: axum::http::Request<axum::body::Body>, next: axum::middleware::Next| {
-            let settings = settings.clone();
-            let state = state.clone();
-            async move {
-                if let Err(_e) = mcb_server::auth::authorize_admin_api_key(
-                    state.auth_repo.as_ref(),
-                    req.headers(),
-                    settings.as_ref(),
-                )
-                .await
-                {
-                    return Err(axum::http::StatusCode::UNAUTHORIZED);
-                }
-                Ok(next.run(req).await)
-            }
-        },
-    );
-
-    admin_route_table().layer(admin_auth_middleware)
 }
 
 /// Whether the MCP stdio transport should be started.
@@ -303,27 +190,14 @@ fn build_bootstrap(ctx: &AppContext) -> Result<(mcb_server::state::McpServerBoot
     Ok((bootstrap, start_stdio))
 }
 
-/// Build the HTTP MCP streamable service from the resolved server handle.
-fn build_mcp_service(
-    mcp_server: Arc<mcb_server::McpServer>,
-) -> StreamableHttpService<mcb_server::McpServer, LocalSessionManager> {
-    let ct = CancellationToken::new();
-    // rmcp 1.x marks StreamableHttpServerConfig #[non_exhaustive]; build via Default.
-    let mut config = StreamableHttpServerConfig::default();
-    config.stateful_mode = false;
-    config.cancellation_token = ct.child_token();
-    StreamableHttpService::new(
-        move || {
-            let server = (*mcp_server).clone();
-            Ok(server)
-        },
-        LocalSessionManager::default().into(),
-        config,
-    )
-}
-
 /// Spawn the MCP stdio server, detaching the task.
-fn spawn_stdio_server(mcp_server: Arc<mcb_server::McpServer>) {
+///
+/// The supplied watch sender is set to `true` when the stdio server finishes,
+/// allowing the main thread to await shutdown in stdio-only mode.
+fn spawn_stdio_server(
+    mcp_server: Arc<mcb_server::McpServer>,
+    shutdown_tx: tokio::sync::watch::Sender<bool>,
+) {
     // Detached: handle intentionally dropped so the stdio server runs for the
     // process lifetime. `let _ =` is rejected by clippy::let_underscore_future.
     let _handle = tokio::spawn(async move {
@@ -331,6 +205,7 @@ fn spawn_stdio_server(mcp_server: Arc<mcb_server::McpServer>) {
         if let Err(e) = server.serve_stdio().await {
             mcb_domain::error!("mcp_initializer", "MCP stdio server stopped", &e);
         }
+        let _ = shutdown_tx.send(true);
     });
 }
 
@@ -349,34 +224,21 @@ impl Initializer for McpServerInitializer {
         let (bootstrap, start_stdio) = build_bootstrap(ctx)?;
 
         if start_stdio {
-            spawn_stdio_server(Arc::clone(&bootstrap.mcp_server));
+            let (shutdown_tx, shutdown_rx) = tokio::sync::watch::channel(false);
+            ctx.shared_store.insert(StdioServerShutdown(shutdown_rx));
+            spawn_stdio_server(Arc::clone(&bootstrap.mcp_server), shutdown_tx);
         }
 
+        let mcp_server = Arc::clone(&bootstrap.mcp_server);
         let mcb_state = bootstrap.into_mcb_state();
         ctx.shared_store.insert(mcb_state.clone());
 
-        let mcp_service = build_mcp_service(Arc::clone(&mcb_state.mcp_server));
+        let mcb_router = mcb_server::axum_routes::build_router_without_fallback(
+            mcb_state,
+            mcp_server,
+            ctx.config.settings.clone(),
+        );
 
-        let protected_routes =
-            build_protected_routes(mcb_state.clone(), ctx.config.settings.clone());
-
-        // Merge public + protected routes, then apply Extension layer so all routes get McbState
-        let router = router
-            .merge(build_public_routes())
-            .merge(protected_routes)
-            .layer(Extension(mcb_state));
-        let mcp_routes = axum::Router::new().nest_service("/mcp", mcp_service);
-
-        // 404 fallback handler for unknown routes
-        let router = router
-            .merge(mcp_routes)
-            .fallback(axum::routing::get(|| async {
-                (
-                    axum::http::StatusCode::NOT_FOUND,
-                    axum::response::Html(mcb_server::controllers::web::not_found_html()),
-                )
-            }));
-
-        Ok(router)
+        Ok(router.merge(mcb_router))
     }
 }

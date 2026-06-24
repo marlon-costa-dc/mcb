@@ -17,9 +17,12 @@ MCB_NEXTEST := $(shell command -v cargo-nextest >/dev/null 2>&1 && echo 1)
 ifeq ($(MCB_NEXTEST),1)
   MCB_TEST_UNIT := MCB_MODEL_ID=test-model RUST_TEST_THREADS=$$T $(MCB_RUN) cargo nextest run --workspace --lib --test-threads=$$T
   MCB_TEST_ALL  := MCB_MODEL_ID=test-model RUST_TEST_THREADS=$$T $(MCB_RUN) cargo nextest run --workspace --test-threads=$$T
+  # Run only crates that contain changed .rs files vs origin/$(BRANCH).
+  MCB_TEST_CHANGED := MCB_MODEL_ID=test-model $(MCB_RUN) cargo nextest run --test-threads=$$T $$(git diff --name-only origin/$$(git rev-parse --abbrev-ref HEAD) -- 'crates/**/*.rs' 'crates/**/*.toml' | sed -n 's|^crates/\([^/]*\)/.*|\\-p \1|p' | sort -u | tr '\\n' ' ')
 else
   MCB_TEST_UNIT := MCB_MODEL_ID=test-model RUST_TEST_THREADS=$$T $(MCB_RUN) cargo test --workspace --lib
   MCB_TEST_ALL  := MCB_MODEL_ID=test-model RUST_TEST_THREADS=$$T $(MCB_RUN) cargo test --workspace --all-targets
+  MCB_TEST_CHANGED := MCB_MODEL_ID=test-model $(MCB_RUN) cargo test $$(git diff --name-only origin/$$(git rev-parse --abbrev-ref HEAD) -- 'crates/**/*.rs' 'crates/**/*.toml' | sed -n 's|^crates/\([^/]*\)/.*|-p \1|p' | sort -u | tr '\\n' ' ')
 endif
 
 # Install Rust tooling: prefer cargo-binstall when available, else cargo install.
@@ -108,6 +111,7 @@ define DISPATCH_BUILD
     else echo "Building debug..."; $(MCB_RUN) cargo build; fi ;; \
   release) echo "Building release..."; $(MCB_RUN) cargo build --release ;; \
   debug)   echo "Building debug..."; $(MCB_RUN) cargo build ;; \
+  prebuild) echo "Pre-building all test targets..."; $(MCB_RUN) cargo test --workspace --all-targets --no-run ;; \
   codegen) $(call MCB_CODEGEN) ;; \
   docs)    $(call MCB_DOCS) ;; \
   *)       $(call BAD_WHAT,$(WHATS_build)) ;; \
@@ -157,10 +161,13 @@ case "$(SCOPE)" in \
   startup)     $(MCB_RUN) cargo test -p mcb --test integration startup_smoke -- --nocapture ;; \
   warmup)      $(MCB_RUN) cargo test -p mcb-server --test integration test_init_app_with_default_config_succeeds -- --nocapture ;; \
   integration) MCB_MODEL_ID=test-model RUST_TEST_THREADS=$$T $(MCB_RUN) cargo test --workspace --test '*integration*' ;; \
+  changed)     MCB_MODEL_ID=test-model $(MCB_RUN) echo "Running tests for changed crates..."; \
+               CRATES="$$(git diff --name-only origin/$$(git rev-parse --abbrev-ref HEAD) -- 'crates/**/*.rs' 'crates/**/*.toml' | sed -n 's|^crates/\\([^/]*\\)/.*|-p \\1|p' | sort -u | tr '\\n' ' ')"; \
+               [ -z "$$CRATES" ] && { echo "No changed crates; running full workspace tests."; $(MCB_TEST_ALL); } || { echo "Changed crates: $$CRATES"; $(MCB_RUN) cargo test --all-targets $$CRATES; } ;; \
   e2e)         $(call MCB_E2E) ;; \
   all)         $(MCB_TEST_ALL) && $(call MCB_E2E) ;; \
   '')          $(MCB_TEST_ALL) ;; \
-  *)           printf "ERRO: SCOPE '%s' invalido. Validos: unit doc golden startup warmup integration e2e all\n" "$(SCOPE)" >&2; exit 2 ;; \
+  *)           printf "ERRO: SCOPE '%s' invalido. Validos: unit doc golden startup warmup integration e2e changed all\n" "$(SCOPE)" >&2; exit 2 ;; \
 esac
 endef
 

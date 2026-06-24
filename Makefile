@@ -20,7 +20,7 @@ include makefiles/dispatch.mk
 export RELEASE ?= 1
 export QUICK ?= 0
 export FIX ?= 0
-export THREADS ?= 1
+export THREADS ?= $(shell nproc 2>/dev/null || echo 1)
 export SCOPE ?=
 WHAT ?=
 ACT ?=
@@ -56,7 +56,7 @@ gate = [ "$(APPLY)" = "Y" ] || { printf "DRY-RUN: would %s; set APPLY=Y to execu
 # WHAT= values for each canonical verb. Nested namespaces select with ACT= and
 # publish their phase list as ACTS_<namespace>.
 WHATS_boot    := hooks tools adr hook all
-WHATS_build   := build debug release codegen docs
+WHATS_build   := build debug release prebuild codegen docs
 WHATS_check   := fmt lint validate audit udeps coverage qlty coordination guard fix dev optimize ci all
 WHATS_ship    := status diff log show add commit push pull branch checkout tag tags stash stash-pop stash-list merge rebase unstage push-tags pr sub release
 WHATS_clean   := build codegen all
@@ -86,7 +86,7 @@ help:
 	@printf "  %-7s %s\n" help  "Show this help"
 	@printf "  %-7s %s\n" boot  "Bootstrap dev env: hooks/tools/adr (WHAT=$(WHATS_boot)); WHAT=hook ACT=$(ACTS_hook)"
 	@printf "  %-7s %s\n" build "Build/codegen/docs (WHAT=$(WHATS_build)); RELEASE=0|1"
-	@printf "  %-7s %s\n" test  "Test (SCOPE=unit|doc|golden|startup|warmup|integration|e2e|all, THREADS=N)"
+	@printf "  %-7s %s\n" test  "Test (SCOPE=unit|doc|golden|startup|warmup|integration|e2e|changed|all, THREADS=N)"
 	@printf "  %-7s %s\n" check "Gates/fix/scan/CI (WHAT=$(WHATS_check))"
 	@printf "  %-7s %s\n" ship  "Git/PR/sub/release (WHAT=$(WHATS_ship)) [mutating: APPLY=Y]"
 	@printf "  %-7s %s\n" clean "Clean artifacts [APPLY=Y] (WHAT=$(WHATS_clean))"

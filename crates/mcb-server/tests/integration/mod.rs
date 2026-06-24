@@ -20,4 +20,6 @@ mod golden_acceptance_integration;
 mod hooks_integration;
 
 mod admin_api_tests;
+mod admin_http_tests;
 mod auto_context_tests;
+mod http_mcp_tests;
