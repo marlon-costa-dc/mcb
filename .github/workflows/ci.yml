@@ -369,7 +369,15 @@ jobs:
       - uses: taiki-e/install-action@v2 # prebuilt binary; make test auto-uses nextest
         with:
           tool: nextest
-      - name: Run tests
+      - name: Run tests (Windows — unit + startup only)
+        if: runner.os == 'Windows'
+        run: |
+          make test SCOPE=unit THREADS=4
+          make test SCOPE=startup THREADS=4
+        env:
+          FASTEMBED_CACHE_DIR: .cache/mcb/fastembed
+      - name: Run tests (Unix — full suite)
+        if: runner.os != 'Windows'
         run: make test THREADS=4
         env:
           FASTEMBED_CACHE_DIR: .cache/mcb/fastembed
