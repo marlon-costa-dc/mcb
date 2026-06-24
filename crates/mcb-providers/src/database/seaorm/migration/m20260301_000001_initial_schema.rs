@@ -230,7 +230,7 @@ const UP_STATEMENTS: &[&str] = &[
         project_id TEXT NOT NULL,
         org_id TEXT NOT NULL,
         content TEXT NOT NULL,
-        content_hash TEXT NOT NULL UNIQUE,
+        content_hash TEXT NOT NULL,
         tags TEXT,
         observation_type TEXT,
         metadata TEXT,
@@ -344,6 +344,7 @@ const UP_STATEMENTS: &[&str] = &[
         resolved_at INTEGER
     )",
     "CREATE INDEX IF NOT EXISTS idx_obs_project ON observations(project_id)",
+    "CREATE UNIQUE INDEX IF NOT EXISTS idx_obs_org_content_hash ON observations(org_id, content_hash)",
     "CREATE INDEX IF NOT EXISTS idx_organizations_name ON organizations(name)",
     "CREATE INDEX IF NOT EXISTS idx_branches_repo ON branches(repository_id)",
 ];

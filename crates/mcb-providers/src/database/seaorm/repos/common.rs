@@ -24,7 +24,7 @@ use sea_orm::{ConnectionTrait, EntityTrait, Set};
 
 use crate::database::seaorm::entities::{organization, project};
 
-/// Ensures the default organization and a project row exist (idempotent).
+/// Ensures an organization and a project row exist (idempotent).
 ///
 /// Uses `ON CONFLICT DO NOTHING` so concurrent calls are safe.
 pub(crate) async fn ensure_org_and_project(
@@ -36,7 +36,7 @@ pub(crate) async fn ensure_org_and_project(
     let org = organization::ActiveModel {
         id: Set(org_id.to_owned()),
         name: Set(DEFAULT_ORG_NAME.to_owned()),
-        slug: Set(DEFAULT_ORG_NAME.to_owned()),
+        slug: Set(org_id.to_owned()),
         settings_json: Set("{}".to_owned()),
         created_at: Set(timestamp),
         updated_at: Set(timestamp),

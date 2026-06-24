@@ -88,6 +88,7 @@ pub async fn store_session(
         None => return Ok(tool_error("Missing session_id for session summary")),
     };
     let session_id_str = session_id.as_str().clone();
+    let org_id = resolve_org_id(args.org_id.as_deref());
 
     let origin_context = resolve_session_origin_context(args, &payload, session_id_str.as_str())?;
     let project_id = origin_context.project_id.clone().ok_or_else(|| {
@@ -96,10 +97,7 @@ pub async fn store_session(
     match memory_service
         .create_session_summary(CreateSessionSummaryInput {
             project_id,
-            org_id: args
-                .org_id
-                .clone()
-                .unwrap_or(mcb_utils::constants::values::DEFAULT_ORG_ID.to_owned()),
+            org_id,
             session_id,
             topics: payload.topics,
             decisions: payload.decisions,

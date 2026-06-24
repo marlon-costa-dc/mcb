@@ -6,7 +6,6 @@ use mcb_domain::error::Result;
 use mcb_domain::ports::{FtsSearchResult, MemoryRepository};
 use mcb_domain::value_objects::{ObservationId, SessionId};
 use mcb_utils::constants::limits::OBSERVATION_LIST_MAX_LIMIT;
-use mcb_utils::constants::values::DEFAULT_ORG_ID;
 use sea_orm::entity::prelude::*;
 use sea_orm::sea_query::{Expr, ExprTrait, OnConflict, Order, Query};
 use sea_orm::{
@@ -205,7 +204,7 @@ impl MemoryRepository for SeaOrmObservationRepository {
     async fn store_observation(&self, observation: &Observation) -> Result<()> {
         ensure_org_and_project(
             &self.db,
-            DEFAULT_ORG_ID,
+            &observation.org_id,
             &observation.project_id,
             observation.created_at,
         )
@@ -213,7 +212,7 @@ impl MemoryRepository for SeaOrmObservationRepository {
         let active: observation::ActiveModel = observation.clone().into();
         observation::Entity::insert(active)
             .on_conflict(
-                OnConflict::column(observation::Column::ContentHash)
+                OnConflict::columns([observation::Column::OrgId, observation::Column::ContentHash])
                     .update_columns([observation::Column::Tags, observation::Column::Metadata])
                     .to_owned(),
             )
@@ -372,11 +371,12 @@ impl MemoryRepository for SeaOrmObservationRepository {
 
     async fn get_session_summary(
         &self,
-        _org_id: &str,
+        org_id: &str,
         session_id: &SessionId,
     ) -> Result<Option<SessionSummary>> {
         session_summary::Entity::find()
             .filter(session_summary::Column::SessionId.eq(session_id.to_string()))
+            .filter(session_summary::Column::OrgId.eq(org_id))
             .order_by_desc(session_summary::Column::CreatedAt)
             .one(&self.db)
             .await
