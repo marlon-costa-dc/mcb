@@ -207,7 +207,7 @@ define DISPATCH_CHECK
   fix)      $(call MCB_FIX) ;; \
   dev)      $(call MCB_DEV) ;; \
   optimize) $(MCB_RUN) scripts/dev-env-optimize.sh $(if $(filter Y,$(APPLY)),--apply,) ;; \
-  ci|""|all) $(MCB_RUN) cargo fmt --all -- --check && $(MCB_RUN) cargo clippy --all-targets -- -D warnings && $(MAKE) test && $(MCB_TOOL) validate $(if $(filter 1,$(QUICK)),quick,full) ;; \
+  ci|""|all) $(MAKE) check WHAT=gitops && $(MCB_RUN) cargo fmt --all -- --check && $(MCB_RUN) cargo clippy --all-targets -- -D warnings && $(MAKE) test && $(MCB_TOOL) validate $(if $(filter 1,$(QUICK)),quick,full) ;; \
   *)        $(call BAD_WHAT,$(WHATS_check)) ;; \
 esac
 endef
