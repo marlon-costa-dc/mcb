@@ -42,6 +42,38 @@ class GitOpsDiscoveryTests(unittest.TestCase):
 
         self.assertEqual([(target.kind, target.path.name) for target in targets], [("helm", "chart"), ("kustomize", "overlay")])
 
+    def test_policy_issues_reuse_qlty_report_model(self) -> None:
+        from lib.gitops import analyze
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            workload = root / "k8s" / "workload.yaml"
+            workload.parent.mkdir(parents=True)
+            workload.write_text(
+                "\n".join(
+                    [
+                        "apiVersion: apps/v1",
+                        "kind: Deployment",
+                        "metadata:",
+                        "  name: sample",
+                        "spec:",
+                        "  template:",
+                        "    spec:",
+                        "      containers:",
+                        "        - name: app",
+                        "          image: nginx:latest",
+                    ]
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            report = analyze(root / "k8s")
+
+        self.assertEqual(report.total_issues, 1)
+        self.assertEqual(report.issues[0].rule_id, "gitops:no-latest-image")
+        self.assertEqual(report.by_category["gitops"], 1)
+
 
 class GitOpsCommandTests(unittest.TestCase):
     def test_command_skips_without_using_cluster_clis(self) -> None:
@@ -60,6 +92,27 @@ class GitOpsCommandTests(unittest.TestCase):
         self.assertNotIn("kubectl", combined)
         self.assertNotIn("vault ", combined)
         self.assertNotIn("argocd ", combined)
+
+    def test_command_fails_on_latest_image_policy_issue(self) -> None:
+        command = SCRIPTS / "check" / "gitops.py"
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            manifest = root / "k8s" / "pod.yaml"
+            manifest.parent.mkdir(parents=True)
+            manifest.write_text(
+                "apiVersion: v1\nkind: Pod\nmetadata:\n  name: latest\nspec:\n  containers:\n    - name: app\n      image: busybox:latest\n",
+                encoding="utf-8",
+            )
+
+            result = subprocess.run(
+                [sys.executable, str(command), "--root", str(root)],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("gitops:no-latest-image", result.stdout)
 
 
 if __name__ == "__main__":

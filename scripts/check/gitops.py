@@ -37,6 +37,8 @@ def main() -> int:
     k8s_root = args.root / "k8s"
     summary = summarize(k8s_root)
     print(f"GITOPS {summary.status}: {summary.message}")
+    if summary.report.total_issues:
+        print(summary.report.generate_summary())
     for target in summary.targets:
         print(f"{target.kind}\t{target.path}")
     return 0 if summary.status in {"OK", "SKIP"} else 1
