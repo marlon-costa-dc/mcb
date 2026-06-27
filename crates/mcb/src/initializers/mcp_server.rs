@@ -18,9 +18,9 @@ use mcb_domain::registry::embedding::{EmbeddingProviderConfig, resolve_embedding
 use mcb_domain::registry::vector_store::{
     VectorStoreProviderConfig, resolve_vector_store_provider,
 };
-use mcb_server::build_mcp_server_bootstrap;
 use mcb_server::tools::ExecutionFlow;
 use mcb_server::transport::stdio::StdioServerExt;
+use mcb_server::{McpBootstrapProviders, build_mcp_server_bootstrap};
 
 /// Watch receiver that fires when the stdio MCP server shuts down.
 ///
@@ -181,10 +181,12 @@ fn build_bootstrap(ctx: &AppContext) -> Result<(mcb_server::state::McpServerBoot
     let bootstrap = build_mcp_server_bootstrap(
         &resolution_ctx,
         Arc::clone(&resolution_ctx.db),
-        Arc::clone(&resolution_ctx.embedding_provider),
-        Arc::clone(&resolution_ctx.vector_store_provider),
-        hybrid_search,
-        execution_flow,
+        McpBootstrapProviders {
+            embedding: Arc::clone(&resolution_ctx.embedding_provider),
+            vector_store: Arc::clone(&resolution_ctx.vector_store_provider),
+            hybrid_search,
+            execution_flow,
+        },
     )
     .map_err(|e| loco_rs::Error::string(&e.to_string()))?;
     Ok((bootstrap, start_stdio))

@@ -15,6 +15,20 @@ pub struct FtsSearchResult {
     pub rank: f64,
 }
 
+/// Query parameters for retrieving observations around an anchor.
+pub struct TimelineQuery<'a> {
+    /// Tenant/org scope.
+    pub org_id: &'a str,
+    /// Anchor observation id.
+    pub anchor_id: &'a ObservationId,
+    /// Number of observations before the anchor.
+    pub before: usize,
+    /// Number of observations after the anchor.
+    pub after: usize,
+    /// Optional memory filter.
+    pub filter: Option<MemoryFilter>,
+}
+
 /// Port for observation storage (CRUD, FTS, timeline).
 #[async_trait]
 pub trait MemoryRepository: Send + Sync {
@@ -46,14 +60,7 @@ pub trait MemoryRepository: Send + Sync {
     ) -> Result<Vec<Observation>>;
 
     /// Get observations in timeline order around an anchor, scoped to `org_id`.
-    async fn get_timeline(
-        &self,
-        org_id: &str,
-        anchor_id: &ObservationId,
-        before: usize,
-        after: usize,
-        filter: Option<MemoryFilter>,
-    ) -> Result<Vec<Observation>>;
+    async fn get_timeline(&self, query: TimelineQuery<'_>) -> Result<Vec<Observation>>;
     /// Store a session summary.
     async fn store_session_summary(&self, summary: &SessionSummary) -> Result<()>;
     /// Gets the latest session summary, scoped to `org_id` for tenant isolation.

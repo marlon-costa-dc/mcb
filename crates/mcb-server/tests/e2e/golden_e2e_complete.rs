@@ -181,22 +181,29 @@ async fn test_golden_e2e_handles_concurrent_operations() -> TestResult {
 async fn test_golden_e2e_respects_collection_isolation() -> TestResult {
     let (server, _temp) = crate::utils::test_fixtures::create_test_mcp_server().await?;
     let clear = server.index_handler();
-    clear
+    let clear_a = clear
         .handle(Parameters(index_args(
             IndexAction::Clear,
             None,
             Some("collection_a".to_owned()),
         )))
-        .await
-        .expect("clear a");
-    clear
+        .await;
+    assert!(
+        clear_a.is_ok(),
+        "clear collection_a should succeed: {clear_a:?}"
+    );
+
+    let clear_b = clear
         .handle(Parameters(index_args(
             IndexAction::Clear,
             None,
             Some("collection_b".to_owned()),
         )))
-        .await
-        .expect("clear b");
+        .await;
+    assert!(
+        clear_b.is_ok(),
+        "clear collection_b should succeed: {clear_b:?}"
+    );
     Ok(())
 }
 

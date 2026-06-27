@@ -3,7 +3,7 @@
 //!
 use std::sync::Arc;
 
-use mcb_domain::ports::MemoryServiceInterface;
+use mcb_domain::ports::{MemoryServiceInterface, TimelineQuery};
 use mcb_domain::value_objects::ObservationId;
 use rmcp::ErrorData as McpError;
 use rmcp::model::CallToolResult;
@@ -96,16 +96,23 @@ pub async fn get_timeline(
     };
     let filter = build_memory_filter(args, None, None);
     let org_id = resolve_org_id(args.org_id.as_deref());
-    let depth_before = args.depth_before.unwrap_or(DEFAULT_TIMELINE_DEPTH);
-    let depth_after = args.depth_after.unwrap_or(DEFAULT_TIMELINE_DEPTH);
+    let depth_before = args
+        .timeline_depth
+        .depth_before
+        .unwrap_or(DEFAULT_TIMELINE_DEPTH);
+    let depth_after = args
+        .timeline_depth
+        .depth_after
+        .unwrap_or(DEFAULT_TIMELINE_DEPTH);
+    let anchor_observation_id = ObservationId::from_string(&anchor_id);
     match memory_service
-        .get_timeline(
-            &org_id,
-            &ObservationId::from_string(&anchor_id),
-            depth_before,
-            depth_after,
-            Some(filter),
-        )
+        .get_timeline(TimelineQuery {
+            org_id: &org_id,
+            anchor_id: &anchor_observation_id,
+            before: depth_before,
+            after: depth_after,
+            filter: Some(filter),
+        })
         .await
     {
         Ok(timeline) => {

@@ -7,6 +7,7 @@ use crate::entities::memory::{
     ObservationMetadata, ObservationType, OriginContext, SessionSummary,
 };
 use crate::error::Result;
+use crate::ports::repositories::memory::TimelineQuery;
 use crate::value_objects::{Embedding, ObservationId, SessionId};
 
 /// Input payload for creating or updating a session summary.
@@ -131,14 +132,7 @@ pub trait MemorySearcher: Send + Sync {
     /// Get observations in timeline order around an anchor (for progressive disclosure).
     ///
     /// `org_id` enforces tenant isolation: the timeline never crosses organizations.
-    async fn get_timeline(
-        &self,
-        org_id: &str,
-        anchor_id: &ObservationId,
-        before: usize,
-        after: usize,
-        filter: Option<MemoryFilter>,
-    ) -> Result<Vec<Observation>>;
+    async fn get_timeline(&self, query: TimelineQuery<'_>) -> Result<Vec<Observation>>;
 
     /// Token-efficient memory search - returns index only (no full content).
     ///

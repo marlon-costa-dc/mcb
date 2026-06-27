@@ -74,9 +74,9 @@ pub use repositories::{
     MemoryRepository, OrgEntityRepository, OrgRegistry, PlanEntityRepository, PlanRegistry,
     PlanReviewRegistry, PlanVersionRegistry, ProjectCrudRepository, ProjectDecisionRepository,
     ProjectDependencyRepository, ProjectIssueRepository, ProjectPhaseRepository, ProjectRepository,
-    TeamMemberManager, TeamRegistry, TransitionRepository, UserRegistry, UserWithApiKey,
-    VcsBranchRegistry, VcsEntityRepository, VcsRepositoryRegistry, VcsWorktreeRegistry,
-    WorkflowSessionRepository,
+    TeamMemberManager, TeamRegistry, TimelineQuery, TransitionRepository, UserRegistry,
+    UserWithApiKey, VcsBranchRegistry, VcsEntityRepository, VcsRepositoryRegistry,
+    VcsWorktreeRegistry, WorkflowSessionRepository,
 };
 
 // --- Services ---

@@ -193,49 +193,61 @@ impl WeaviateVectorStoreProvider {
             )
             .await?;
 
-        if let Some(errors) = response.get("errors").and_then(Value::as_array)
-            && !errors.is_empty()
-        {
-            return Err(Error::vector_db(format!(
-                "Weaviate GraphQL error: {errors:?}"
-            )));
-        }
-
-        let items = response
-            .get("data")
-            .and_then(|d| d.get("Get"))
-            .and_then(|g| g.get(class))
-            .and_then(Value::as_array)
-            .ok_or_else(|| {
-                Error::vector_db("Invalid Weaviate response: missing data.Get array".to_owned())
-            })?;
-
-        let results = items
+        ensure_no_graphql_errors(&response)?;
+        let items = graphql_items(&response, class)?;
+        Ok(items
             .iter()
-            .map(|obj| {
-                let additional = obj.get("_additional");
-                let id = additional
-                    .and_then(|a| a.get("id"))
-                    .and_then(Value::as_str)
-                    .unwrap_or_default()
-                    .to_owned();
-                let score = additional
-                    .and_then(|a| a.get("certainty"))
-                    .and_then(Value::as_f64)
-                    .or_else(|| {
-                        additional
-                            .and_then(|a| a.get("distance"))
-                            .and_then(Value::as_f64)
-                            .map(|d| 1.0 - d)
-                    })
-                    .unwrap_or(0.0);
-                let mut metadata = obj.clone();
-                if let Some(map) = metadata.as_object_mut() {
-                    map.remove("_additional");
-                }
-                search_result_from_json_metadata(id, &metadata, score)
-            })
-            .collect();
-        Ok(results)
+            .map(search_result_from_weaviate_object)
+            .collect())
     }
+}
+
+fn ensure_no_graphql_errors(response: &Value) -> Result<()> {
+    if let Some(errors) = response.get("errors").and_then(Value::as_array)
+        && !errors.is_empty()
+    {
+        return Err(Error::vector_db(format!(
+            "Weaviate GraphQL error: {errors:?}"
+        )));
+    }
+    Ok(())
+}
+
+fn graphql_items<'a>(response: &'a Value, class: &str) -> Result<&'a Vec<Value>> {
+    response
+        .get("data")
+        .and_then(|data| data.get("Get"))
+        .and_then(|get| get.get(class))
+        .and_then(Value::as_array)
+        .ok_or_else(|| {
+            Error::vector_db("Invalid Weaviate response: missing data.Get array".to_owned())
+        })
+}
+
+fn search_result_from_weaviate_object(obj: &Value) -> SearchResult {
+    let additional = obj.get("_additional");
+    let id = additional
+        .and_then(|item| item.get("id"))
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_owned();
+    let score = weaviate_score(additional);
+    let mut metadata = obj.clone();
+    if let Some(map) = metadata.as_object_mut() {
+        map.remove("_additional");
+    }
+    search_result_from_json_metadata(id, &metadata, score)
+}
+
+fn weaviate_score(additional: Option<&Value>) -> f64 {
+    additional
+        .and_then(|item| item.get("certainty"))
+        .and_then(Value::as_f64)
+        .or_else(|| {
+            additional
+                .and_then(|item| item.get("distance"))
+                .and_then(Value::as_f64)
+                .map(|distance| 1.0 - distance)
+        })
+        .unwrap_or(0.0)
 }

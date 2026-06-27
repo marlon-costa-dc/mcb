@@ -3,7 +3,7 @@
 use async_trait::async_trait;
 use mcb_domain::entities::memory::{MemoryFilter, Observation, SessionSummary};
 use mcb_domain::error::Result;
-use mcb_domain::ports::{FtsSearchResult, MemoryRepository};
+use mcb_domain::ports::{FtsSearchResult, MemoryRepository, TimelineQuery};
 use mcb_domain::value_objects::{ObservationId, SessionId};
 use mcb_utils::constants::limits::OBSERVATION_LIST_MAX_LIMIT;
 use sea_orm::entity::prelude::*;
@@ -312,30 +312,23 @@ impl MemoryRepository for SeaOrmObservationRepository {
             .map_err(db_error("get observations by ids"))
     }
 
-    async fn get_timeline(
-        &self,
-        org_id: &str,
-        anchor_id: &ObservationId,
-        before: usize,
-        after: usize,
-        filter: Option<MemoryFilter>,
-    ) -> Result<Vec<Observation>> {
-        let Some(anchor) = self.get_observation(org_id, anchor_id).await? else {
+    async fn get_timeline(&self, query: TimelineQuery<'_>) -> Result<Vec<Observation>> {
+        let Some(anchor) = self.get_observation(query.org_id, query.anchor_id).await? else {
             return Ok(Vec::new());
         };
-        let mut before_filter = filter.clone().unwrap_or_default();
+        let mut before_filter = query.filter.clone().unwrap_or_default();
         before_filter.time_range = Some((i64::MIN, anchor.created_at - 1));
-        let mut after_filter = filter.unwrap_or_default();
+        let mut after_filter = query.filter.unwrap_or_default();
         after_filter.time_range = Some((anchor.created_at + 1, i64::MAX));
 
         let mut before_items = self
-            .list_by_filter(org_id, Some(&before_filter), before)
+            .list_by_filter(query.org_id, Some(&before_filter), query.before)
             .await?;
         before_items.sort_by_key(|obs| obs.created_at);
         let mut timeline = before_items;
         timeline.push(anchor);
         let mut after_items = self
-            .list_by_filter(org_id, Some(&after_filter), after)
+            .list_by_filter(query.org_id, Some(&after_filter), query.after)
             .await?;
         after_items.sort_by_key(|obs| obs.created_at);
         timeline.extend(after_items);

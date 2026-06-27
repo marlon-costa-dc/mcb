@@ -43,11 +43,9 @@ async fn test_golden_memory_store_with_default_project() -> TestResult {
         tags: None,
         query: None,
         anchor_id: None,
-        depth_before: None,
-        depth_after: None,
+        timeline_depth: mcb_server::args::MemoryTimelineDepthArgs::default(),
         window_secs: None,
-        observation_types: None,
-        max_tokens: None,
+        inject: mcb_server::args::MemoryInjectArgs::default(),
         limit: None,
     };
 
@@ -80,11 +78,9 @@ async fn test_golden_memory_list_empty_graceful() -> TestResult {
         tags: None,
         query: Some("missingterm".to_owned()),
         anchor_id: None,
-        depth_before: None,
-        depth_after: None,
+        timeline_depth: mcb_server::args::MemoryTimelineDepthArgs::default(),
         window_secs: None,
-        observation_types: None,
-        max_tokens: None,
+        inject: mcb_server::args::MemoryInjectArgs::default(),
         limit: Some(10),
     };
 
@@ -132,11 +128,9 @@ async fn test_golden_context_search_basic() -> TestResult {
             tags: None,
             query: None,
             anchor_id: None,
-            depth_before: None,
-            depth_after: None,
+            timeline_depth: mcb_server::args::MemoryTimelineDepthArgs::default(),
             window_secs: None,
-            observation_types: None,
-            max_tokens: None,
+            inject: mcb_server::args::MemoryInjectArgs::default(),
             limit: None,
         }))
         .await;

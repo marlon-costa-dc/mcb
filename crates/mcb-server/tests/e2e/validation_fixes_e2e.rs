@@ -139,11 +139,9 @@ async fn test_validation_memory_observation_enum_error() -> TestResult {
             tags: None,
             query: None,
             anchor_id: None,
-            depth_before: None,
-            depth_after: None,
+            timeline_depth: mcb_server::args::MemoryTimelineDepthArgs::default(),
             window_secs: None,
-            observation_types: None,
-            max_tokens: None,
+            inject: mcb_server::args::MemoryInjectArgs::default(),
             limit: None,
         }))
         .await;

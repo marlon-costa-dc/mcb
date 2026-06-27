@@ -21,10 +21,10 @@ use mcb_domain::registry::vector_store::{
     VectorStoreProviderConfig, resolve_vector_store_provider,
 };
 use mcb_domain::value_objects::Embedding;
-use mcb_server::build_mcp_server_bootstrap;
 use mcb_server::mcp_server::McpServer;
 use mcb_server::state::McbState;
 use mcb_server::tools::ExecutionFlow;
+use mcb_server::{McpBootstrapProviders, build_mcp_server_bootstrap};
 use tempfile::TempDir;
 
 // linkme force-link only — DO NOT use for type/function imports (CA019 enforced)
@@ -285,10 +285,12 @@ pub async fn create_test_mcp_server() -> Result<(McpServer, TempDir), Box<dyn st
     let bootstrap = build_mcp_server_bootstrap(
         &resolution_ctx,
         db,
-        embedding_provider,
-        vector_store_provider,
-        hybrid_search,
-        ExecutionFlow::ServerHybrid,
+        McpBootstrapProviders {
+            embedding: embedding_provider,
+            vector_store: vector_store_provider,
+            hybrid_search,
+            execution_flow: ExecutionFlow::ServerHybrid,
+        },
     )?;
     let server = Arc::unwrap_or_clone(bootstrap.mcp_server);
 

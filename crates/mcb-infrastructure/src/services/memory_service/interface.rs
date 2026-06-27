@@ -187,14 +187,9 @@ impl MemorySearcher for MemoryServiceImpl {
     /// Returns an error if the repository timeline query fails.
     async fn get_timeline(
         &self,
-        org_id: &str,
-        anchor_id: &ObservationId,
-        before: usize,
-        after: usize,
-        filter: Option<MemoryFilter>,
+        query: mcb_domain::ports::repositories::memory::TimelineQuery<'_>,
     ) -> Result<Vec<Observation>> {
-        self.get_timeline_impl(org_id, anchor_id, before, after, filter)
-            .await
+        self.get_timeline_impl(query).await
     }
 
     /// # Errors

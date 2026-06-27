@@ -163,8 +163,12 @@ impl YamlRuleLoader {
             let loaded: Result<Vec<Vec<ValidatedRule>>> = rule_files
                 .par_iter()
                 .map(|path| {
-                    let content =
-                        std::fs::read_to_string(path).map_err(crate::ValidationError::Io)?;
+                    let content = std::fs::read_to_string(path).map_err(|e| {
+                        crate::ValidationError::Read {
+                            file: path.clone(),
+                            source: e,
+                        }
+                    })?;
                     self.load_rule_from_str(path, &content)
                 })
                 .collect();
@@ -211,9 +215,13 @@ impl YamlRuleLoader {
     ///
     /// Returns an error if the file cannot be read or YAML parsing fails.
     pub async fn load_rule_file(&self, path: &Path) -> Result<Vec<ValidatedRule>> {
-        let content = tokio::fs::read_to_string(path)
-            .await
-            .map_err(crate::ValidationError::Io)?;
+        let content =
+            tokio::fs::read_to_string(path)
+                .await
+                .map_err(|e| crate::ValidationError::Read {
+                    file: path.to_path_buf(),
+                    source: e,
+                })?;
 
         self.load_rule_from_str(path, &content)
     }

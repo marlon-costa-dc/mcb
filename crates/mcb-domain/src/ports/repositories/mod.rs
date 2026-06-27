@@ -41,7 +41,7 @@ pub use issue::{
     IssueCommentRegistry, IssueEntityRepository, IssueLabelAssignmentManager, IssueLabelRegistry,
     IssueRegistry,
 };
-pub use memory::{FtsSearchResult, MemoryRepository};
+pub use memory::{FtsSearchResult, MemoryRepository, TimelineQuery};
 pub use org::{
     ApiKeyRegistry, OrgEntityRepository, OrgRegistry, TeamMemberManager, TeamRegistry, UserRegistry,
 };

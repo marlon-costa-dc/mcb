@@ -25,10 +25,10 @@ use mcb_domain::utils::tests::mcp_assertions::assert_error_shape;
 use mcb_domain::value_objects::SessionId;
 
 use mcb_server::args::{MemoryAction, MemoryArgs, MemoryResource, SessionAction, SessionArgs};
-use mcb_server::build_mcp_server_bootstrap;
 use mcb_server::handlers::{MemoryHandler, SessionHandler};
 use mcb_server::state::McbState;
 use mcb_server::tools::ExecutionFlow;
+use mcb_server::{McpBootstrapProviders, build_mcp_server_bootstrap};
 use rmcp::handler::server::wrapper::Parameters;
 use serde_json::{Value, json};
 
@@ -57,11 +57,9 @@ fn create_base_memory_args(
         tags: None,
         query: None,
         anchor_id: None,
-        depth_before: None,
-        depth_after: None,
+        timeline_depth: mcb_server::args::MemoryTimelineDepthArgs::default(),
         window_secs: None,
-        observation_types: None,
-        max_tokens: None,
+        inject: mcb_server::args::MemoryInjectArgs::default(),
         limit: None,
     }
 }
@@ -112,10 +110,12 @@ async fn create_test_mcb_state() -> Option<(McbState, tempfile::TempDir)> {
     let bootstrap = build_mcp_server_bootstrap(
         &resolution_ctx,
         Arc::clone(&resolution_ctx.db),
-        Arc::clone(&resolution_ctx.embedding_provider),
-        Arc::clone(&resolution_ctx.vector_store_provider),
-        hybrid_search,
-        ExecutionFlow::ServerHybrid,
+        McpBootstrapProviders {
+            embedding: Arc::clone(&resolution_ctx.embedding_provider),
+            vector_store: Arc::clone(&resolution_ctx.vector_store_provider),
+            hybrid_search,
+            execution_flow: ExecutionFlow::ServerHybrid,
+        },
     )
     .ok()?;
     let state = bootstrap.into_mcb_state();

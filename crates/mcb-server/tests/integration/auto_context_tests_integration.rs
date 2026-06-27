@@ -57,7 +57,7 @@ fn probe_agent_program(
     let mut command = Command::new(exe);
     command
         .arg("--exact")
-        .arg("auto_context_tests::test_ide_probe_runtime_defaults")
+        .arg("auto_context_tests_integration::test_ide_probe_runtime_defaults")
         .arg("--nocapture")
         .env("MCB_IDE_PROBE", "1");
 
@@ -107,12 +107,19 @@ fn detect_agent_program_from_env() -> String {
 #[rstest]
 #[tokio::test]
 async fn test_ide_probe_runtime_defaults() {
-    if std::env::var("MCB_IDE_PROBE").ok().as_deref() != Some("1") {
+    let probe_enabled = std::env::var("MCB_IDE_PROBE").ok().as_deref() == Some("1");
+    if !probe_enabled {
+        assert!(!probe_enabled, "probe is disabled unless MCB_IDE_PROBE=1");
         return;
     }
 
     let Some(provider) = resolve_default_vcs() else {
-        println!("AGENT_PROGRAM={}", detect_agent_program_from_env());
+        let detected = detect_agent_program_from_env();
+        println!("AGENT_PROGRAM={detected}");
+        assert!(
+            !detected.is_empty(),
+            "fallback agent program detection should return a value"
+        );
         return;
     };
     let defaults =
@@ -121,6 +128,10 @@ async fn test_ide_probe_runtime_defaults() {
 
     let agent_program = defaults.agent_program.unwrap_or_default();
     println!("AGENT_PROGRAM={agent_program}");
+    assert!(
+        !agent_program.is_empty(),
+        "runtime default discovery should return an agent program"
+    );
 }
 
 #[rstest]

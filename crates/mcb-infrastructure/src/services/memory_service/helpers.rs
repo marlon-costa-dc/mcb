@@ -4,6 +4,7 @@
 
 use mcb_domain::entities::memory::{MemoryFilter, MemorySearchIndex, Observation};
 use mcb_domain::error::Result;
+use mcb_domain::ports::repositories::memory::TimelineQuery;
 use mcb_domain::value_objects::ObservationId;
 
 use super::MemoryServiceImpl;
@@ -12,15 +13,9 @@ impl MemoryServiceImpl {
     /// Get timeline of observations around an anchor.
     pub(crate) async fn get_timeline_impl(
         &self,
-        org_id: &str,
-        anchor_id: &ObservationId,
-        before: usize,
-        after: usize,
-        filter: Option<MemoryFilter>,
+        query: TimelineQuery<'_>,
     ) -> Result<Vec<Observation>> {
-        self.repository
-            .get_timeline(org_id, anchor_id, before, after, filter)
-            .await
+        self.repository.get_timeline(query).await
     }
 
     /// Get observations by their IDs.

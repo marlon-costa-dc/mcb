@@ -2,6 +2,10 @@
 
 #[allow(missing_docs)]
 pub mod analysis_tests;
+/// Shared assertion helper tests.
+pub mod assertions_tests;
+/// Test collection helper tests.
+pub mod collection_tests;
 #[allow(missing_docs)]
 pub mod di_strict_enforcement_tests;
 /// Path utility tests.

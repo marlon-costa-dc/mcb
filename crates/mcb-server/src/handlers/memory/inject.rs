@@ -3,6 +3,7 @@
 //!
 use std::sync::Arc;
 
+use mcb_domain::entities::memory::MemorySearchResult;
 use mcb_domain::error;
 use mcb_domain::ports::MemoryServiceInterface;
 use mcb_utils::utils::vcs_context::capture_vcs_context;
@@ -17,6 +18,38 @@ use mcb_utils::constants::limits::{
     CHARS_PER_TOKEN_ESTIMATE, DEFAULT_MAX_CONTEXT_TOKENS, DEFAULT_MEMORY_LIST_LIMIT,
 };
 
+struct InjectedMemoryContext {
+    context: String,
+    observation_ids: Vec<String>,
+}
+
+fn build_injected_context(
+    results: Vec<MemorySearchResult>,
+    max_tokens: usize,
+) -> InjectedMemoryContext {
+    let mut context = String::new();
+    let mut observation_ids = Vec::new();
+    let max_chars = max_tokens * CHARS_PER_TOKEN_ESTIMATE;
+    for result in results {
+        let obs = result.observation;
+        let entry = format!(
+            "[{}] {}: {}\n\n",
+            obs.r#type.as_str().to_uppercase(),
+            obs.id,
+            obs.content
+        );
+        observation_ids.push(obs.id);
+        if context.len() + entry.len() > max_chars {
+            break;
+        }
+        context.push_str(&entry);
+    }
+    InjectedMemoryContext {
+        context,
+        observation_ids,
+    }
+}
+
 /// Injects semantic memory context into the MCP tool result based on the provided filter.
 #[tracing::instrument(skip_all)]
 pub async fn inject_context(
@@ -26,35 +59,20 @@ pub async fn inject_context(
     let filter = build_memory_filter(args, None, None);
     let org_id = resolve_org_id(args.org_id.as_deref());
     let limit = args.limit.unwrap_or(DEFAULT_MEMORY_LIST_LIMIT as u32) as usize;
-    let max_tokens = args.max_tokens.unwrap_or(DEFAULT_MAX_CONTEXT_TOKENS);
+    let max_tokens = args.inject.max_tokens.unwrap_or(DEFAULT_MAX_CONTEXT_TOKENS);
     let vcs_context = capture_vcs_context();
     match memory_service
         .search_memories(&org_id, "", Some(filter), limit)
         .await
     {
         Ok(results) => {
-            let mut context = String::new();
-            let mut observation_ids = Vec::new();
-            let max_chars = max_tokens * CHARS_PER_TOKEN_ESTIMATE;
-            for result in results {
-                let obs = result.observation;
-                let entry = format!(
-                    "[{}] {}: {}\n\n",
-                    obs.r#type.as_str().to_uppercase(),
-                    obs.id,
-                    obs.content
-                );
-                observation_ids.push(obs.id);
-                if context.len() + entry.len() > max_chars {
-                    break;
-                }
-                context.push_str(&entry);
-            }
+            let injected = build_injected_context(results, max_tokens);
+            let estimated_tokens = injected.context.len() / CHARS_PER_TOKEN_ESTIMATE;
             ResponseFormatter::json_success(&serde_json::json!({
-                "observation_count": observation_ids.len(),
-                "observation_ids": observation_ids,
-                "context": context,
-                "estimated_tokens": context.len() / CHARS_PER_TOKEN_ESTIMATE,
+                "observation_count": injected.observation_ids.len(),
+                "observation_ids": injected.observation_ids,
+                "context": injected.context,
+                "estimated_tokens": estimated_tokens,
                 "vcs_context": {
                     "branch": vcs_context.branch,
                     "commit": vcs_context.commit,

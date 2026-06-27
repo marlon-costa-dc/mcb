@@ -116,14 +116,15 @@ async fn observation_repo_round_trip_store_get_list_timeline_and_inject() -> Tes
         ]
     );
 
+    let anchor_id = ObservationId::from_string("22222222-2222-2222-2222-222222222222");
     let timeline = repo
-        .get_timeline(
-            DEFAULT_ORG_ID,
-            &ObservationId::from_string("22222222-2222-2222-2222-222222222222"),
-            1,
-            1,
-            None,
-        )
+        .get_timeline(mcb_domain::ports::TimelineQuery {
+            org_id: DEFAULT_ORG_ID,
+            anchor_id: &anchor_id,
+            before: 1,
+            after: 1,
+            filter: None,
+        })
         .await?;
     let timeline_ids: Vec<&str> = timeline.iter().map(|obs| obs.id.as_str()).collect();
     assert_eq!(

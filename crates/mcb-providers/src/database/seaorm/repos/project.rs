@@ -246,14 +246,13 @@ impl SeaOrmProjectRepository {
 
             let edges = self.outgoing_dependencies(&current).await?;
             for dependency in edges {
-                if !visited_edges.insert(dependency.id.clone()) {
-                    continue;
-                }
-                let next = dependency.to_issue_id.clone();
-                traversed.push(dependency);
-                if visited_nodes.insert(next.clone()) {
-                    queue.push_back((next, depth + 1));
-                }
+                let mut state = DependencyTraversalState {
+                    visited_edges: &mut visited_edges,
+                    visited_nodes: &mut visited_nodes,
+                    queue: &mut queue,
+                    traversed: &mut traversed,
+                };
+                enqueue_unvisited_dependency(dependency, depth, &mut state);
             }
         }
 
@@ -282,6 +281,28 @@ impl SeaOrmProjectRepository {
             id,
             "delete project dependency"
         )
+    }
+}
+
+struct DependencyTraversalState<'a> {
+    visited_edges: &'a mut HashSet<String>,
+    visited_nodes: &'a mut HashSet<String>,
+    queue: &'a mut VecDeque<(String, usize)>,
+    traversed: &'a mut Vec<ProjectDependency>,
+}
+
+fn enqueue_unvisited_dependency(
+    dependency: ProjectDependency,
+    depth: usize,
+    state: &mut DependencyTraversalState<'_>,
+) {
+    if !state.visited_edges.insert(dependency.id.clone()) {
+        return;
+    }
+    let next = dependency.to_issue_id.clone();
+    state.traversed.push(dependency);
+    if state.visited_nodes.insert(next.clone()) {
+        state.queue.push_back((next, depth + 1));
     }
 }
 

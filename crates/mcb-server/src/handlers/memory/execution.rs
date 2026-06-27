@@ -30,6 +30,14 @@ struct ValidatedExecutionData {
     execution_type: mcb_domain::entities::memory::ExecutionType,
 }
 
+struct ExecutionObservationStore {
+    org_id: String,
+    project_id: String,
+    content: String,
+    tags: Vec<String>,
+    metadata: mcb_domain::entities::memory::ObservationMetadata,
+}
+
 impl ValidatedExecutionData {
     /// Validate and extract all required fields from JSON data
     fn validate(data: &serde_json::Map<String, serde_json::Value>) -> Result<Self, CallToolResult> {
@@ -110,23 +118,15 @@ fn build_execution_tags(
     ]
 }
 
-/// Store an execution observation in memory
-#[tracing::instrument(skip_all)]
-pub async fn store_execution(
-    memory_service: &Arc<dyn MemoryServiceInterface>,
+fn build_execution_observation(
     args: &MemoryArgs,
-) -> Result<CallToolResult, McpError> {
-    let data = extract_field!(require_data_map(
-        &args.data,
-        "Missing data payload for execution store"
-    ));
-    let validated = extract_field!(ValidatedExecutionData::validate(data));
-    let metadata = build_execution_metadata(&validated, data);
-    let content = format_execution_content(&validated);
-    let tags = build_execution_tags(&validated, &metadata);
+    data: &serde_json::Map<String, serde_json::Value>,
+    metadata: ExecutionMetadata,
+    content: String,
+    tags: Vec<String>,
+) -> Result<ExecutionObservationStore, McpError> {
     let payload_execution_id = opt_str(data, "execution_id");
     let generated_execution_id = metadata.id.clone();
-
     let origin = resolve_memory_origin_context(
         args,
         data,
@@ -143,43 +143,52 @@ pub async fn store_execution(
             None,
         )
     })?;
-
-    let obs_metadata = build_observation_metadata(
+    let observation_metadata = build_observation_metadata(
         origin.canonical_session_id,
         origin.origin_context,
         Some(metadata),
         None,
     );
-
-    let org_id = resolve_org_id(args.org_id.as_deref());
-    persist_execution_observation(
-        memory_service,
-        org_id,
-        origin.project_id,
+    Ok(ExecutionObservationStore {
+        org_id: resolve_org_id(args.org_id.as_deref()),
+        project_id: origin.project_id,
         content,
         tags,
-        obs_metadata,
-    )
-    .await
+        metadata: observation_metadata,
+    })
+}
+
+/// Store an execution observation in memory
+#[tracing::instrument(skip_all)]
+pub async fn store_execution(
+    memory_service: &Arc<dyn MemoryServiceInterface>,
+    args: &MemoryArgs,
+) -> Result<CallToolResult, McpError> {
+    let data = extract_field!(require_data_map(
+        &args.data,
+        "Missing data payload for execution store"
+    ));
+    let validated = extract_field!(ValidatedExecutionData::validate(data));
+    let metadata = build_execution_metadata(&validated, data);
+    let content = format_execution_content(&validated);
+    let tags = build_execution_tags(&validated, &metadata);
+    let observation = build_execution_observation(args, data, metadata, content, tags)?;
+    persist_execution_observation(memory_service, observation).await
 }
 
 /// Store the execution observation and format the MCP response.
 async fn persist_execution_observation(
     memory_service: &Arc<dyn MemoryServiceInterface>,
-    org_id: String,
-    project_id: String,
-    content: String,
-    tags: Vec<String>,
-    obs_metadata: mcb_domain::entities::memory::ObservationMetadata,
+    observation: ExecutionObservationStore,
 ) -> Result<CallToolResult, McpError> {
     match memory_service
         .store_observation(StoreObservationInput {
-            project_id,
-            org_id,
-            content,
+            project_id: observation.project_id,
+            org_id: observation.org_id,
+            content: observation.content,
             r#type: ObservationType::Execution,
-            tags,
-            metadata: obs_metadata,
+            tags: observation.tags,
+            metadata: observation.metadata,
         })
         .await
     {
