@@ -9,14 +9,16 @@ This document describes the Serena setup for the Memory Context Browser (MCB) pr
 ## Current Configuration
 
 ### Version
+
 - **Serena Agent**: 1.5.3 (installed via `uv tool install serena-agent`)
 - **Language Backend**: LSP (rust-analyzer for Rust)
 
 ### Project Configuration
+
 The MCB-specific configuration lives in `.serena/project.yml`:
 
 | Setting | Value | Rationale |
-|---------|-------|-----------|
+| ------- | ----- | --------- |
 | `project_name` | `mcb` | Project identifier |
 | `languages` | `rust` | Primary language |
 | `tool_timeout` | `60` | Large Rust projects need more time |
@@ -25,6 +27,7 @@ The MCB-specific configuration lives in `.serena/project.yml`:
 | `ignore_all_files_in_gitignore` | `true` | Respect .gitignore |
 
 ### Indexed Files
+
 - **Total Rust files**: 1361
 - **Cache location**: `.serena/cache/rust/`
 - **Index command**: `serena project index`
@@ -34,8 +37,9 @@ The MCB-specific configuration lives in `.serena/project.yml`:
 The following tools are exposed through the MCP interface to AI assistants. **All 20 tools have been tested and confirmed working** on the MCB codebase.
 
 ### Navigation & Discovery (5)
+
 | Tool | Status | Avg Time | Description |
-|------|--------|----------|-------------|
+| ---- | ------ | -------- | ----------- |
 | **`get_symbols_overview`** | ✅ | ~2s* | High-level symbol map of a file |
 | **`find_symbol`** | ✅ | ~2s | Global/local symbol search by name path pattern |
 | **`find_declaration`** | ✅ | ~2s | Jump to symbol declaration/definition |
@@ -45,13 +49,15 @@ The following tools are exposed through the MCP interface to AI assistants. **Al
 \* First call after server start takes ~24s due to rust-analyzer initialization. Subsequent calls are fast.
 
 ### Code Analysis (1)
+
 | Tool | Status | Avg Time | Description |
-|------|--------|----------|-------------|
+| ---- | ------ | -------- | ----------- |
 | **`get_diagnostics_for_file`** | ✅ | ~2.5s | LSP diagnostics (errors, warnings) for a file |
 
 ### Code Editing (6)
+
 | Tool | Status | Avg Time | Description |
-|------|--------|----------|-------------|
+| ---- | ------ | -------- | ----------- |
 | **`replace_content`** | ✅ | ~0.1s | Replace text patterns in a file (regex supported) |
 | **`replace_symbol_body`** | ✅ | ~0.3s | Replace full symbol definition via LSP |
 | **`insert_after_symbol`** | ✅ | ~0.3s | Insert code after a symbol definition |
@@ -60,8 +66,9 @@ The following tools are exposed through the MCP interface to AI assistants. **Al
 | **`safe_delete_symbol`** | ✅ | ~2.5s | Safe symbol deletion with reference checking |
 
 ### Memory System (5)
+
 | Tool | Status | Avg Time | Description |
-|------|--------|----------|-------------|
+| ---- | ------ | -------- | ----------- |
 | **`write_memory`** | ✅ | ~0.1s | Write persistent project knowledge |
 | **`read_memory`** | ✅ | ~0.1s | Read a memory file |
 | **`list_memories`** | ✅ | ~0.1s | List all available memories |
@@ -69,13 +76,16 @@ The following tools are exposed through the MCP interface to AI assistants. **Al
 | **`delete_memory`** | ✅ | ~0.1s | Delete a memory file |
 
 ### Project Onboarding (2)
+
 | Tool | Status | Avg Time | Description |
-|------|--------|----------|-------------|
+| ---- | ------ | -------- | ----------- |
 | **`onboarding`** | ✅ | ~0.1s | Project structure discovery |
 | **`initial_instructions`** | ✅ | ~0.1s | Serena usage instructions |
 
 ### ⚠️ Tools Removed from MCP Interface
+
 The following tools exist in the Serena CLI but **are NOT available** through the MCP interface in v1.5.3:
+
 - `list_dir` — use `Read`/`Glob`/`Grep` tools instead
 - `read_file` — use `Read` tool instead
 - `find_file` — use `Glob` tool instead
@@ -89,9 +99,10 @@ The following tools exist in the Serena CLI but **are NOT available** through th
 ## Validated Usage Patterns
 
 ### Pattern 1: Starting Any Task (Fastest — 0.2s)
+
 **Always start here.** Memories are instant and provide critical context.
 
-```
+```text
 1. list_memories()
    → ["architecture", "build_test_guide", "coding_standards", "project_overview"]
 
@@ -99,10 +110,11 @@ The following tools exist in the Serena CLI but **are NOT available** through th
    → Clean Architecture rules, dependency flow, crate boundaries
 ```
 
-**Measured time: 0.21s total**
+Measured time: 0.21s total.
 
 ### Pattern 2: Understanding a New File (~7s after LSP warmup)
-```
+
+```text
 1. get_symbols_overview(relative_path="crates/mcb-domain/src/lib.rs")
    → {"Module": ["macros", "entities", "error", "events", ...]}
 
@@ -121,10 +133,11 @@ The following tools exist in the Serena CLI but **are NOT available** through th
    → All usage sites (limited to avoid truncation)
 ```
 
-**Measured time: ~28s on cold LSP, ~7s after warmup**
+Measured time: ~28s on cold LSP, ~7s after warmup.
 
 ### Pattern 3: Before Editing
-```
+
+```text
 1. get_symbols_overview(relative_path="target_file.rs")
    → Understand structure
 
@@ -136,7 +149,8 @@ The following tools exist in the Serena CLI but **are NOT available** through th
 ```
 
 ### Pattern 4: Making Edits
-```
+
+```text
 1. replace_content(
        relative_path="...",
        needle="old_text",
@@ -160,6 +174,7 @@ The following tools exist in the Serena CLI but **are NOT available** through th
 ## Important Tool Behaviors & Limitations
 
 ### `find_declaration` — Regex Capture Group Required
+
 The regex parameter **must contain exactly one capture group** `(pattern)`:
 
 ```python
@@ -171,6 +186,7 @@ find_declaration(relative_path="...", regex=r"(EmbeddingProvider)")
 ```
 
 ### `find_referencing_symbols` — Large Results
+
 For widely-used symbols, results can exceed 10,000 characters. **Always set `max_answer_chars`**:
 
 ```python
@@ -182,9 +198,11 @@ find_referencing_symbols(
 ```
 
 ### `rename_symbol` — Requires Indexed File
+
 `rename_symbol` only works on files already indexed by rust-analyzer. It will fail on newly created files. Run `serena project index` after creating new files.
 
 ### `safe_delete_symbol` — Parameter Name
+
 Uses `name_path_pattern` (not `name_path`):
 
 ```python
@@ -196,9 +214,11 @@ safe_delete_symbol(
 ```
 
 ### `get_symbols_overview` — LSP Warmup
+
 The first call after server start takes ~24s because rust-analyzer initializes. Subsequent calls are fast (~2s). Keep the server alive for multiple operations.
 
 ### Memory Tools — Instant
+
 All memory operations (`list_memories`, `read_memory`, `write_memory`, `edit_memory`, `delete_memory`) complete in **under 0.1s**. Use them liberally for context.
 
 ## Health Check
@@ -211,6 +231,7 @@ serena project health-check
 ```
 
 This validates:
+
 - Language server startup
 - Symbol overview retrieval
 - Symbol finding
@@ -231,7 +252,9 @@ serena project index --log-level INFO --timeout 60
 ## Client Configuration
 
 ### VS Code
+
 Configured in `~/.config/Code/User/mcp.json`:
+
 ```json
 "oraios/serena": {
     "type": "stdio",
@@ -246,10 +269,13 @@ Configured in `~/.config/Code/User/mcp.json`:
 ```
 
 ### Cursor
+
 Configured in `~/.config/cursor-mcp.json` (same pattern as VS Code).
 
 ### OpenCode
+
 Configured in `~/.config/opencode/opencode.json`:
+
 ```json
 "serena": {
     "type": "local",
@@ -265,7 +291,9 @@ Configured in `~/.config/opencode/opencode.json`:
 ```
 
 ### Kimi Code / Claude
+
 Tools permitted in `.claude/settings.local.json` (20 tools):
+
 - `mcp__serena__get_symbols_overview`
 - `mcp__serena__find_symbol`
 - `mcp__serena__find_declaration`
@@ -292,7 +320,7 @@ Tools permitted in `.claude/settings.local.json` (20 tools):
 Project memories are stored in `.serena/memories/`:
 
 | Memory | Purpose |
-|--------|---------|
+| ------ | ------- |
 | `project_overview.md` | Project identity, tech stack, structure |
 | `architecture.md` | Clean Architecture rules, DI pattern |
 | `coding_standards.md` | Rust conventions, lint policy |
@@ -303,6 +331,7 @@ Project memories are stored in `.serena/memories/`:
 > ⚠️ **Warning**: Running multiple agent sessions simultaneously on this machine (62GB RAM, 20 cores) can exhaust available memory. Each session spawns its own `rust-analyzer` instance (~4–8GB RAM) and may trigger parallel cargo builds.
 
 ### Problem
+
 Each `serena start-mcp-server` instance launches an independent `rust-analyzer` via LSP. The MCB workspace contains 7 first-party crates plus `third-party/` patches (sea-orm, sea-query, loco, etc.), all of which rust-analyzer analyzes. With 2+ concurrent sessions, RAM usage quickly exceeds 50GB + swap.
 
 ### Optimizations Applied
@@ -310,7 +339,7 @@ Each `serena start-mcp-server` instance launches an independent `rust-analyzer` 
 The following project-level optimizations are already configured:
 
 | File | Optimization | Effect |
-|------|--------------|--------|
+| ---- | ------------ | ------ |
 | `.cargo/config.toml` | `jobs = 8` (was `-1`) | Limits cargo parallelism to 8 cores |
 | `.cargo/config.toml` | `[env]` `RAYON_NUM_THREADS=4` | Limits rust-analyzer internal threads |
 | `Cargo.toml` | `split-debuginfo = "packed"` | Reduces linker memory usage |
@@ -333,6 +362,7 @@ make check WHAT=optimize APPLY=Y
 ```
 
 This script:
+
 - Detects and kills duplicate `rust-analyzer` instances (keeps 1 most recent)
 - Detects and kills duplicate Serena MCP servers (keeps 2 most recent)
 - Flags stale `cargo` processes running > 30 minutes
@@ -379,29 +409,37 @@ sccache --zero-stats && sccache --stop-server
 ## Troubleshooting
 
 ### Language server timeout
+
 Increase `symbol_info_budget` in `.serena/project.yml` (default: 15s).
 
 ### First call is very slow (~24s)
+
 Normal behavior — rust-analyzer initializes on first LSP request. Subsequent calls are fast. Keep the MCP server alive for batch operations.
 
 ### `rename_symbol` fails on new files
+
 New files must be indexed first. Run `serena project index` before using `rename_symbol` on recently created files.
 
 ### Large search results from `find_referencing_symbols`
+
 Always set `max_answer_chars` parameter (default: 5000, max: 8000).
 
 ### Cache issues
+
 Delete `.serena/cache/rust/` and reindex with `serena project index`.
 
 ### rust-analyzer warnings
+
 Warnings about "overly long loop turn" during indexing are normal for large workspaces and do not affect functionality.
 
 ### Context deprecated warning
+
 If you see `Context name 'ide-assistant' is deprecated and has been renamed to 'claude-code'`, update all client configurations to use `--context claude-code`.
 
 ## Global Configuration
 
 The global Serena configuration is in `~/.serena/serena_config.yml`:
+
 - `tool_timeout`: 60s
 - `default_max_tool_answer_chars`: 8000
 - `symbol_info_budget`: 15.0s

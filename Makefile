@@ -6,7 +6,8 @@ SHELL := bash
 .SHELLFLAGS := -euo pipefail -c
 .DEFAULT_GOAL := help
 
-MCB_SH := scripts/lib/mcb.sh
+MCB_ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
+MCB_SH := $(MCB_ROOT)/scripts/lib/mcb.sh
 MCB_AUDIT_IGNORES := $(shell bash $(MCB_SH) ignores)
 # Central executor that keeps automation in one place.
 # Use for external commands that should run through mise when present.

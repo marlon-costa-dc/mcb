@@ -9,7 +9,7 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use axum::Router as AxumRouter;
+use axum::{Router as AxumRouter, http::StatusCode, response::Html};
 use loco_rs::prelude::*;
 
 use mcb_domain::registry::ServiceResolutionContext;
@@ -241,6 +241,14 @@ impl Initializer for McpServerInitializer {
             ctx.config.settings.clone(),
         );
 
-        Ok(router.merge(mcb_router))
+        Ok(router
+            .reset_fallback()
+            .merge(mcb_router)
+            .fallback(axum::routing::get(|| async {
+                (
+                    StatusCode::NOT_FOUND,
+                    Html(mcb_server::controllers::web::not_found_html()),
+                )
+            })))
     }
 }

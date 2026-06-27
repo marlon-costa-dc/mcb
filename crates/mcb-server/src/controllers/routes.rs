@@ -144,9 +144,8 @@ pub fn build_mcp_router(mcp_server: Arc<McpServer>) -> AxumRouter {
 
 /// Build the MCB router without a catch-all fallback.
 ///
-/// Use this in the Loco initializer, where Loco already supplies the
-/// application-wide fallback. Tests should call [`build_full_router`], which
-/// adds the MCB 404 page.
+/// Use this when the embedding application installs the final unmatched-route
+/// response after merging, or intentionally owns all unmatched routes.
 pub fn build_router_without_fallback(
     state: McbState,
     mcp_server: Arc<McpServer>,
@@ -164,9 +163,8 @@ pub fn build_router_without_fallback(
 /// Build the complete MCB router: public assets, protected admin UI/API, MCP,
 /// and a catch-all 404 fallback page.
 ///
-/// This is the canonical route table for integration tests and any context
-/// where MCB owns the entire Axum application. The Loco initializer calls
-/// [`build_router_without_fallback`] because Loco already provides a fallback.
+/// This is the canonical standalone route table for integration tests and
+/// callers where MCB owns the entire Axum application.
 pub fn build_full_router(
     state: McbState,
     mcp_server: Arc<McpServer>,
