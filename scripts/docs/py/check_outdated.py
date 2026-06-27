@@ -64,7 +64,7 @@ def _check_files(docs_dir, project_root):
         checked += 1
 
         try:
-            with open(filepath, "r", encoding="utf-8") as fh:
+            with open(filepath, encoding="utf-8") as fh:
                 lines = fh.readlines()
         except Exception as e:
             print(f"Error reading {rel_filepath}: {e}")

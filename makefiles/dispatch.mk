@@ -70,8 +70,9 @@ define DISPATCH_BOOT
   hooks)     cp scripts/hooks/pre-commit scripts/hooks/pre-push .git/hooks/; chmod +x .git/hooks/pre-commit .git/hooks/pre-push; echo "✓ pre-commit + pre-push hooks installed" ;; \
   tools)     $(call MCB_INSTALL_CRATES,cargo-udeps cargo-audit cargo-tarpaulin cargo-nextest typos-cli) 2>/dev/null || true; echo "✓ tools installed" ;; \
   adr)       ./scripts/setup/install-adr-tools.sh ;; \
+  venv)      UV_CACHE_DIR=.cache/uv uv sync --extra dev --extra gitops ;; \
   hook)      $(call MCB_HOOK) ;; \
-  ""|all)    cp scripts/hooks/pre-commit scripts/hooks/pre-push .git/hooks/; chmod +x .git/hooks/pre-commit .git/hooks/pre-push; echo "✓ hooks installed"; $(call MCB_INSTALL_CRATES,cargo-udeps cargo-audit cargo-tarpaulin cargo-nextest typos-cli) 2>/dev/null || true; ./scripts/setup/install-adr-tools.sh 2>/dev/null || true; echo "✓ boot complete" ;; \
+  ""|all)    cp scripts/hooks/pre-commit scripts/hooks/pre-push .git/hooks/; chmod +x .git/hooks/pre-commit .git/hooks/pre-push; echo "✓ hooks installed"; $(call MCB_INSTALL_CRATES,cargo-udeps cargo-audit cargo-tarpaulin cargo-nextest typos-cli) 2>/dev/null || true; ./scripts/setup/install-adr-tools.sh 2>/dev/null || true; UV_CACHE_DIR=.cache/uv uv sync --extra dev --extra gitops; echo "✓ boot complete" ;; \
   *)         $(call BAD_WHAT,$(WHATS_boot)) ;; \
 esac
 endef
@@ -202,6 +203,7 @@ define DISPATCH_CHECK
   qlty)     mkdir -p docs/reports; $(MCB_RUN) ./scripts/analyze_qlty.py --scan --check --summary --markdown docs/reports/qlty-check-REPORTS.md; $(MCB_RUN) ./scripts/analyze_qlty.py --scan --smells --summary --markdown docs/reports/qlty-smells-REPORTS.md ;; \
   coordination) bd config get beads.role --json && bd status --json && bd hooks list --json && bash scripts/context/validate-beads-policy.sh && bd dep cycles --json && bd stale --status in_progress --days 1 --limit 25 --json && bd graph --all --compact >/dev/null ;; \
   guard)    $(MCB_TOOL) guard ;; \
+  gitops)   UV_CACHE_DIR=.cache/uv $(MCB_RUN) uv run --no-sync python scripts/check/gitops.py ;; \
   fix)      $(call MCB_FIX) ;; \
   dev)      $(call MCB_DEV) ;; \
   optimize) $(MCB_RUN) scripts/dev-env-optimize.sh $(if $(filter Y,$(APPLY)),--apply,) ;; \

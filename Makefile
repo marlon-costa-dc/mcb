@@ -55,9 +55,9 @@ gate = [ "$(APPLY)" = "Y" ] || { printf "DRY-RUN: would %s; set APPLY=Y to execu
 # --- WHATS_<verb> phase SSOT (drives sub-help + error arms) -------------------
 # WHAT= values for each canonical verb. Nested namespaces select with ACT= and
 # publish their phase list as ACTS_<namespace>.
-WHATS_boot    := hooks tools adr hook all
+WHATS_boot    := hooks tools adr hook venv all
 WHATS_build   := build debug release prebuild codegen docs
-WHATS_check   := fmt lint validate audit udeps coverage qlty coordination guard fix dev optimize ci all
+WHATS_check   := fmt lint validate audit udeps coverage qlty coordination guard fix dev optimize gitops ci all
 WHATS_ship    := status diff log show add commit push pull branch checkout tag tags stash stash-pop stash-list merge rebase unstage push-tags pr sub release
 WHATS_clean   := build codegen all
 
@@ -84,7 +84,7 @@ clean:  ; $(call DISPATCH_CLEAN)
 help:
 	@printf "\n$(BOLD)MCB — make <verb> [WHAT=phase] [ACT=sub] [SCOPE=..] [APPLY=Y]$(RESET)\n\n"
 	@printf "  %-7s %s\n" help  "Show this help"
-	@printf "  %-7s %s\n" boot  "Bootstrap dev env: hooks/tools/adr (WHAT=$(WHATS_boot)); WHAT=hook ACT=$(ACTS_hook)"
+	@printf "  %-7s %s\n" boot  "Bootstrap dev env: hooks/tools/adr/venv (WHAT=$(WHATS_boot)); WHAT=hook ACT=$(ACTS_hook)"
 	@printf "  %-7s %s\n" build "Build/codegen/docs (WHAT=$(WHATS_build)); RELEASE=0|1"
 	@printf "  %-7s %s\n" test  "Test (SCOPE=unit|doc|golden|startup|warmup|integration|e2e|changed|all, THREADS=N)"
 	@printf "  %-7s %s\n" check "Gates/fix/scan/CI (WHAT=$(WHATS_check))"

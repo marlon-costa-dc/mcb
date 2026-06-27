@@ -205,6 +205,7 @@ coverage/
 # ---------------------------------------------------------------------------
 .env
 .env.local
+.venv/
 .envrc
 .direnv/
 
@@ -214,6 +215,8 @@ coverage/
 node_modules/
 .fastembed_cache/
 .cache/
+.gitops-cache/
+*.egg-info/
 __pycache__/
 *.pyc
 *.pyo

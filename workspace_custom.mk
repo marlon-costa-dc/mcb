@@ -21,4 +21,5 @@ done-check: ## Real-user/green-green check, scoped to committed changes vs upstr
 	printf '%s\n' "$$files" | xargs -r ruff check --quiet
 
 # ~/.ai-hub workspace tooling thin-wrapper
-include /home/marlonsc/.ai-hub/templates/cosmos-wrapper.mk
+$(HOME)/.ai-hub/templates/workspace-wrapper.mk: ;
+include $(HOME)/.ai-hub/templates/workspace-wrapper.mk
