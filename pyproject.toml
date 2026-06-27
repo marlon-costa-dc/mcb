@@ -14,13 +14,11 @@ dev = [
     "mypy>=1.10",
     "pytest>=8.0",
     "ruff>=0.6",
-    "types-PyYAML>=6.0",
 ]
 gitops = [
     "hvac",
     "kubernetes",
     "kubernetes-validate",
-    "PyYAML",
     "requests",
     "ruamel.yaml",
 ]

@@ -10,11 +10,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import cast
 
-import yaml
 from qlty.model import SarifIssue, Severity
 from qlty.report import AnalysisReport, analyze_issues
+from ruamel.yaml import YAML
+from ruamel.yaml.comments import CommentedMap, CommentedSeq
+from ruamel.yaml.error import YAMLError
 
 KUSTOMIZE_FILES = frozenset(
     {
@@ -42,6 +44,17 @@ class GitOpsSummary:
     message: str
     targets: list[GitOpsTarget]
     report: AnalysisReport
+
+
+@dataclass(frozen=True, slots=True)
+class ImageReference:
+    """Container image value with its YAML source line."""
+
+    value: str
+    line: int
+
+
+YamlNode = CommentedMap | CommentedSeq | str | int | float | bool | None
 
 
 def discover_targets(root: Path) -> list[GitOpsTarget]:
@@ -109,10 +122,9 @@ def policy_issues(root: Path) -> list[SarifIssue]:
 
     issues: list[SarifIssue] = []
     for path in _yaml_files(root):
-        text = path.read_text(encoding="utf-8")
         try:
-            documents = list(yaml.safe_load_all(text))
-        except yaml.YAMLError as exc:
+            documents = _load_yaml_documents(path)
+        except YAMLError as exc:
             issues.append(
                 _issue(
                     "gitops:yaml-parse",
@@ -123,16 +135,14 @@ def policy_issues(root: Path) -> list[SarifIssue]:
             )
             continue
         for document in documents:
-            if not isinstance(document, dict):
-                continue
-            for image in _images(document):
-                if image.endswith(":latest"):
+            for image in _image_references(document):
+                if image.value.endswith(":latest"):
                     issues.append(
                         _issue(
                             "gitops:no-latest-image",
-                            f"Container image must not use the mutable latest tag: {image}",
+                            f"Container image must not use the mutable latest tag: {image.value}",
                             path,
-                            _line_for(text, image),
+                            image.line,
                         )
                     )
     return issues
@@ -144,25 +154,28 @@ def _yaml_files(root: Path) -> list[Path]:
     return sorted(path for path in root.rglob("*") if path.is_file() and path.suffix in YAML_SUFFIXES)
 
 
-def _images(value: Any) -> list[str]:
-    images: list[str] = []
-    if isinstance(value, dict):
-        image = value.get("image")
+def _load_yaml_documents(path: Path) -> list[YamlNode]:
+    parser = YAML(typ="rt")
+    return cast("list[YamlNode]", list(parser.load_all(path)))
+
+
+def _image_references(node: YamlNode) -> list[ImageReference]:
+    references: list[ImageReference] = []
+    if isinstance(node, CommentedMap):
+        image = node.get("image")
         if isinstance(image, str):
-            images.append(image)
-        for child in value.values():
-            images.extend(_images(child))
-    elif isinstance(value, list):
-        for child in value:
-            images.extend(_images(child))
-    return images
+            references.append(ImageReference(value=image, line=_line_for_key(node, "image")))
+        for child in node.values():
+            references.extend(_image_references(cast("YamlNode", child)))
+    elif isinstance(node, CommentedSeq):
+        for child in node:
+            references.extend(_image_references(cast("YamlNode", child)))
+    return references
 
 
-def _line_for(text: str, needle: str) -> int:
-    for index, line in enumerate(text.splitlines(), start=1):
-        if needle in line:
-            return index
-    return 1
+def _line_for_key(node: CommentedMap, key: str) -> int:
+    line, _column = cast("tuple[int, int]", node.lc.key(key))
+    return line + 1
 
 
 def _issue(rule_id: str, message: str, path: Path, line: int) -> SarifIssue:

@@ -74,6 +74,37 @@ class GitOpsDiscoveryTests(unittest.TestCase):
         self.assertEqual(report.issues[0].rule_id, "gitops:no-latest-image")
         self.assertEqual(report.by_category["gitops"], 1)
 
+    def test_policy_issue_line_points_to_image_key_not_first_matching_value(self) -> None:
+        from lib.gitops import analyze
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            workload = root / "k8s" / "workload.yaml"
+            workload.parent.mkdir(parents=True)
+            workload.write_text(
+                "\n".join(
+                    [
+                        "apiVersion: v1",
+                        "kind: Pod",
+                        "metadata:",
+                        "  name: latest",
+                        "  annotations:",
+                        "    copied-image: busybox:latest",
+                        "spec:",
+                        "  containers:",
+                        "    - name: app",
+                        "      image: busybox:latest",
+                    ]
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            report = analyze(root / "k8s")
+
+        self.assertEqual(report.total_issues, 1)
+        self.assertEqual(report.issues[0].start_line, 10)
+
 
 class GitOpsCommandTests(unittest.TestCase):
     def test_command_skips_without_using_cluster_clis(self) -> None:
