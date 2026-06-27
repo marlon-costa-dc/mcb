@@ -57,7 +57,7 @@ gate = [ "$(APPLY)" = "Y" ] || { printf "DRY-RUN: would %s; set APPLY=Y to execu
 # publish their phase list as ACTS_<namespace>.
 WHATS_boot    := hooks tools adr hook venv all
 WHATS_build   := build debug release prebuild codegen docs
-WHATS_check   := fmt lint validate audit udeps coverage qlty coordination guard fix dev optimize gitops ci all
+WHATS_check   := fmt lint validate audit udeps coverage qlty coordination guard fix dev optimize gitops surface ci all
 WHATS_ship    := status diff log show add commit push pull branch checkout tag tags stash stash-pop stash-list merge rebase unstage push-tags pr sub release
 WHATS_clean   := build codegen all
 
@@ -92,10 +92,11 @@ help:
 	@printf "  %-7s %s\n" clean "Clean artifacts [APPLY=Y] (WHAT=$(WHATS_clean))"
 	@printf "\n  $(BOLD)Nested ACT= namespaces$(RESET)\n"
 	@printf "    build WHAT=codegen ACT=%s [APPLY=Y]\n" "$(ACTS_codegen)"
-	@printf "    build WHAT=docs    ACT=%s [QUICK=1] [FIX=1]\n" "$(ACTS_docs)"
-	@printf "    check WHAT=fix     ACT=%s\n" "$(ACTS_fix)"
-	@printf "    check WHAT=dev     ACT=%s\n" "$(ACTS_dev)"
-	@printf "    check WHAT=guard | WHAT=ci | WHAT=optimize [APPLY=Y]\n"
+	@printf "    build WHAT=docs    ACT=%s [QUICK=1] [FIX=1] [mutating: APPLY=Y]\n" "$(ACTS_docs)"
+	@printf "    check WHAT=fix     ACT=%s [APPLY=Y]\n" "$(ACTS_fix)"
+	@printf "    check WHAT=dev     ACT=%s [APPLY=Y]\n" "$(ACTS_dev)"
+	@printf "    check WHAT=guard | WHAT=ci\n"
+	@printf "    check WHAT=optimize [APPLY=Y]\n"
 	@printf "    ship  WHAT=pr      ACT=%s  PR= RUN=\n" "$(ACTS_pr)"
 	@printf "    ship  WHAT=sub     ACT=%s  SUB= MSG=\n" "$(ACTS_sub)"
 	@printf "    ship  WHAT=release ACT=%s  BUMP=patch|minor|major [APPLY=Y]\n" "$(ACTS_release)"

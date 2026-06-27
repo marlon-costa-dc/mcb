@@ -121,13 +121,13 @@ endef
 
 # codegen (APPLY-gated; phases overwrite generated code). ACT= selects phase.
 define MCB_CODEGEN
-$(call gate,regenerate generated code); case "$(ACT)" in \
-  cli)         echo "Building sea-orm-cli from fork..."; $(MCB_RUN) cargo build --manifest-path=third-party/sea-orm/sea-orm-cli/Cargo.toml; echo "✓ $(SEA_ORM_CLI)" ;; \
-  db)          rm -f $(CODEGEN_DB); $(MCB_RUN) python3 $(EXTRACT_SCRIPT) $(MIGRATION_RS) | sqlite3 $(CODEGEN_DB); echo "✓ codegen DB at $(CODEGEN_DB)" ;; \
-  entities)    $(MAKE) build WHAT=codegen ACT=db APPLY=Y; $(SEA_ORM_CLI) generate entity --database-url "sqlite://$(CODEGEN_DB)?mode=rwc" --output-dir $(ENTITIES_DIR) --with-serde both --ignore-tables seaql_migrations --date-time-crate time; $(MCB_RUN) python3 scripts/codegen-post-process.py $(ENTITIES_DIR)/mod.rs; echo "✓ entities in $(ENTITIES_DIR)/" ;; \
-  conversions) echo "Generating conversions from $(CONVERSIONS_TOML)..."; $(MCB_RUN) python3 $(CONVERSIONS_SCRIPT); echo "✓ conversions in $(CONVERSIONS_DIR)/" ;; \
-  clean)       rm -f $(CODEGEN_DB); echo "✓ cleaned codegen artifacts" ;; \
-  ""|all)      $(MAKE) build WHAT=codegen ACT=entities APPLY=Y; $(MAKE) build WHAT=codegen ACT=conversions APPLY=Y; echo "✓ codegen complete" ;; \
+case "$(ACT)" in \
+  cli)         $(call gate,build sea-orm-cli from fork); echo "Building sea-orm-cli from fork..."; $(MCB_RUN) cargo build --manifest-path=third-party/sea-orm/sea-orm-cli/Cargo.toml; echo "✓ $(SEA_ORM_CLI)" ;; \
+  db)          $(call gate,regenerate codegen database); rm -f $(CODEGEN_DB); $(MCB_RUN) python3 $(EXTRACT_SCRIPT) $(MIGRATION_RS) | sqlite3 $(CODEGEN_DB); echo "✓ codegen DB at $(CODEGEN_DB)" ;; \
+  entities)    $(call gate,regenerate SeaORM entities); $(MAKE) build WHAT=codegen ACT=db APPLY=Y; $(SEA_ORM_CLI) generate entity --database-url "sqlite://$(CODEGEN_DB)?mode=rwc" --output-dir $(ENTITIES_DIR) --with-serde both --ignore-tables seaql_migrations --date-time-crate time; $(MCB_RUN) python3 scripts/codegen-post-process.py $(ENTITIES_DIR)/mod.rs; echo "✓ entities in $(ENTITIES_DIR)/" ;; \
+  conversions) $(call gate,regenerate SeaORM conversions); echo "Generating conversions from $(CONVERSIONS_TOML)..."; $(MCB_RUN) python3 $(CONVERSIONS_SCRIPT); echo "✓ conversions in $(CONVERSIONS_DIR)/" ;; \
+  clean)       $(call gate,clean codegen artifacts); rm -f $(CODEGEN_DB); echo "✓ cleaned codegen artifacts" ;; \
+  ""|all)      $(call gate,regenerate generated code); $(MAKE) build WHAT=codegen ACT=entities APPLY=Y; $(MAKE) build WHAT=codegen ACT=conversions APPLY=Y; echo "✓ codegen complete" ;; \
   *)           printf "ERRO: ACT '%s' invalido. Validos: $(ACTS_codegen)\n" "$(ACT)" >&2; exit 2 ;; \
 esac
 endef
@@ -135,17 +135,17 @@ endef
 # docs pipeline. ACT= selects phase.
 define MCB_DOCS
 case "$(ACT)" in \
-  ""|build)  $(MCB_RUN) ./scripts/docs/inject-metrics.sh; $(MCB_RUN) cargo doc --no-deps --workspace; $(MCB_RUN) ./scripts/docs/mdbook-sync.sh; if [ -x "$(MDBOOK)" ]; then $(MDBOOK) build book/; else echo "Warning: mdbook not found, skipping book build" >&2; fi ;; \
-  serve)     $(MCB_RUN) ./scripts/docs/mdbook-sync.sh 2>/dev/null || true; if [ -x "$(MDBOOK)" ]; then $(MDBOOK) serve book/ --open; else echo "mdbook not installed (cargo install mdbook)"; fi ;; \
-  lint)      if [ "$(FIX)" = "1" ]; then $(MCB_RUN) ./scripts/docs/markdown.sh fix; else $(MCB_RUN) ./scripts/docs/markdown.sh lint; fi ;; \
+  ""|build)  $(call gate,build generated docs); $(MCB_RUN) ./scripts/docs/inject-metrics.sh; $(MCB_RUN) cargo doc --no-deps --workspace; $(MCB_RUN) ./scripts/docs/mdbook-sync.sh; if [ -x "$(MDBOOK)" ]; then $(MDBOOK) build book/; else echo "Warning: mdbook not found, skipping book build" >&2; fi ;; \
+  serve)     $(call gate,serve generated docs); $(MCB_RUN) ./scripts/docs/mdbook-sync.sh 2>/dev/null || true; if [ -x "$(MDBOOK)" ]; then $(MDBOOK) serve book/ --open; else echo "mdbook not installed (cargo install mdbook)"; fi ;; \
+  lint)      if [ "$(FIX)" = "1" ]; then $(call gate,fix markdown docs); $(MCB_RUN) ./scripts/docs/markdown.sh fix; else $(MCB_RUN) ./scripts/docs/markdown.sh lint; fi ;; \
   validate)  QUICK="$(QUICK)" $(MCB_RUN) ./scripts/docs/validate.sh all ;; \
-  sync)      $(MCB_RUN) ./scripts/docs/mdbook-sync.sh 2>/dev/null || true ;; \
+  sync)      $(call gate,sync generated docs); $(MCB_RUN) ./scripts/docs/mdbook-sync.sh 2>/dev/null || true ;; \
   rust)      $(MCB_RUN) cargo doc --no-deps --workspace ;; \
   check)     [ -d docs ] || { echo "ERROR: docs/ directory not found" >&2; exit 1; } ;; \
-  setup)     mkdir -p book; [ -f book.toml ] || { echo "ERROR: book.toml not found in root" >&2; exit 1; } ;; \
+  setup)     $(call gate,setup docs workspace); mkdir -p book; [ -f book.toml ] || { echo "ERROR: book.toml not found in root" >&2; exit 1; } ;; \
   adr)       echo "Architecture Decision Records:"; ls -1 docs/adr/[0-9]*.md 2>/dev/null | while read f; do num=$$(basename "$$f" .md | cut -d- -f1); title=$$(head -1 "$$f" | sed 's/^# ADR [0-9]*: //'); printf "  %s: %s\n" "$$num" "$$title"; done ;; \
-  adr-new)   ./scripts/docs/create-adr.sh 2>/dev/null || echo "create-adr.sh not found" ;; \
-  diagrams)  mkdir -p docs/architecture/diagrams/generated; if command -v plantuml >/dev/null 2>&1; then for f in docs/architecture/diagrams/*.puml; do [ -f "$$f" ] && plantuml -o generated "$$f" 2>/dev/null || true; done; fi ;; \
+  adr-new)   $(call gate,create ADR); ./scripts/docs/create-adr.sh 2>/dev/null || echo "create-adr.sh not found" ;; \
+  diagrams)  $(call gate,generate diagrams); mkdir -p docs/architecture/diagrams/generated; if command -v plantuml >/dev/null 2>&1; then for f in docs/architecture/diagrams/*.puml; do [ -f "$$f" ] && plantuml -o generated "$$f" 2>/dev/null || true; done; fi ;; \
   *)         printf "ERRO: ACT '%s' invalido. Validos: $(ACTS_docs)\n" "$(ACT)" >&2; exit 2 ;; \
 esac
 endef
@@ -173,6 +173,7 @@ esac
 endef
 
 define MCB_E2E
+$(call gate,run Playwright E2E on port $(MCB_TEST_PORT)); \
 echo "Running Playwright E2E on port $(MCB_TEST_PORT)..."; \
 lsof -ti:$(MCB_TEST_PORT) | xargs -r kill -9 2>/dev/null || true; sleep 1; \
 command -v node >/dev/null || { echo "Error: node/npm not found. Install Node.js first." >&2; exit 1; }; \
@@ -204,6 +205,7 @@ define DISPATCH_CHECK
   coordination) bd config get beads.role --json && bd status --json && bd hooks list --json && bash scripts/context/validate-beads-policy.sh && bd dep cycles --json && bd stale --status in_progress --days 1 --limit 25 --json && bd graph --all --compact >/dev/null ;; \
   guard)    $(MCB_TOOL) guard ;; \
   gitops)   UV_CACHE_DIR=.cache/uv $(MCB_RUN) uv run --no-sync python scripts/check/gitops.py ;; \
+  surface)  UV_CACHE_DIR=.cache/uv $(MCB_RUN) uv run --no-sync python scripts/check/surface.py ;; \
   fix)      $(call MCB_FIX) ;; \
   dev)      $(call MCB_DEV) ;; \
   optimize) $(MCB_RUN) scripts/dev-env-optimize.sh $(if $(filter Y,$(APPLY)),--apply,) ;; \
@@ -215,10 +217,10 @@ endef
 # mutating auto-fix (rustfmt, clippy --fix, markdown). ACT= selects phase.
 define MCB_FIX
 case "$(ACT)" in \
-  fmt)        $(MCB_RUN) cargo fmt --all ;; \
-  lint)       $(MCB_RUN) cargo fmt --all && $(MCB_RUN) cargo clippy --fix --allow-dirty --all-targets ;; \
-  docs)       $(MAKE) build WHAT=docs ACT=lint FIX=1 ;; \
-  ""|all)     $(MCB_RUN) cargo fmt --all && $(MCB_RUN) cargo clippy --fix --allow-dirty --all-targets && $(MAKE) build WHAT=docs ACT=lint FIX=1 ;; \
+  fmt)        $(call gate,auto-fix fmt); $(MCB_RUN) cargo fmt --all ;; \
+  lint)       $(call gate,auto-fix lint); $(MCB_RUN) cargo fmt --all && $(MCB_RUN) cargo clippy --fix --allow-dirty --all-targets ;; \
+  docs)       $(call gate,auto-fix docs); $(MAKE) build WHAT=docs ACT=lint FIX=1 APPLY=Y ;; \
+  ""|all)     $(call gate,auto-fix all); $(MCB_RUN) cargo fmt --all && $(MCB_RUN) cargo clippy --fix --allow-dirty --all-targets && $(MAKE) build WHAT=docs ACT=lint FIX=1 APPLY=Y ;; \
   *)          printf "ERRO: ACT '%s' invalido. Validos: $(ACTS_fix)\n" "$(ACT)" >&2; exit 2 ;; \
 esac
 endef
@@ -226,11 +228,11 @@ endef
 # dev server / docker test services. ACT= selects mode.
 define MCB_DEV
 case "$(ACT)" in \
-  ""|run)       echo "Starting dev server..."; $(MCB_RUN) cargo watch -x 'run' 2>/dev/null || $(MCB_RUN) cargo run ;; \
-  docker-up)    echo "Starting Docker test services..."; $(MCB_RUN) docker-compose -f tests/docker-compose.yml up -d; sleep 5 ;; \
-  docker-down)  echo "Stopping Docker test services..."; $(MCB_RUN) docker-compose -f tests/docker-compose.yml down -v ;; \
-  docker-logs)  $(MCB_RUN) docker-compose -f tests/docker-compose.yml logs -f ;; \
-  docker-test)  $(MCB_RUN) docker-compose -f tests/docker-compose.yml --profile test up --build --abort-on-container-exit test-runner; $(MCB_RUN) docker-compose -f tests/docker-compose.yml --profile test rm -f test-runner ;; \
+  ""|run)       $(call gate,start dev server); echo "Starting dev server..."; $(MCB_RUN) cargo watch -x 'run' 2>/dev/null || $(MCB_RUN) cargo run ;; \
+  docker-up)    $(call gate,start Docker test services); echo "Starting Docker test services..."; $(MCB_RUN) docker-compose -f tests/docker-compose.yml up -d; sleep 5 ;; \
+  docker-down)  $(call gate,stop Docker test services); echo "Stopping Docker test services..."; $(MCB_RUN) docker-compose -f tests/docker-compose.yml down -v ;; \
+  docker-logs)  $(call gate,follow Docker logs); $(MCB_RUN) docker-compose -f tests/docker-compose.yml logs -f ;; \
+  docker-test)  $(call gate,run Docker test services); $(MCB_RUN) docker-compose -f tests/docker-compose.yml --profile test up --build --abort-on-container-exit test-runner; $(MCB_RUN) docker-compose -f tests/docker-compose.yml --profile test rm -f test-runner ;; \
   *)            printf "ERRO: ACT '%s' invalido. Validos: $(ACTS_dev)\n" "$(ACT)" >&2; exit 2 ;; \
 esac
 endef
@@ -251,20 +253,20 @@ define DISPATCH_SHIP
   diff)       git diff; git diff --cached ;; \
   log)        git log --oneline -$(or $(LOG_N),10) ;; \
   show)       git show --stat $(or $(REF),HEAD) ;; \
-  add)        $(MCB_TOOL) files-safe "$(FILES)"; $(call require_var,FILES); git add $(FILES) ;; \
-  commit)     $(call require_var,MSG); $(MCB_TOOL) files-safe "$(FILES)"; [ -n "$(FILES)" ] && git add $(FILES) || true; $(call gate,commit); git commit -m "$(MSG)" ;; \
+  add)        $(call require_var,FILES); $(MCB_TOOL) files-safe "$(FILES)"; $(call gate,stage files $(FILES)); git add $(FILES) ;; \
+  commit)     $(call require_var,MSG); $(call gate,commit); $(MCB_TOOL) files-safe "$(FILES)"; [ -n "$(FILES)" ] && git add $(FILES) || true; git commit -m "$(MSG)" ;; \
   push)       $(call gate,push $(BRANCH)); git push origin $(BRANCH) ;; \
-  pull)       git pull origin $(BRANCH) ;; \
-  branch)     [ -z "$(REF)" ] && git branch -a || git branch $(REF) $(BASE) ;; \
-  checkout)   $(call require_var,REF); git checkout $(REF) ;; \
-  tag)        $(call require_var,TAG); [ -n "$(MSG)" ] && git tag -a $(TAG) -m "$(MSG)" || git tag $(TAG) ;; \
+  pull)       $(call gate,pull origin $(BRANCH)); git pull origin $(BRANCH) ;; \
+  branch)     [ -z "$(REF)" ] && git branch -a || { $(call gate,create branch $(REF) from $(BASE)); git branch $(REF) $(BASE); } ;; \
+  checkout)   $(call require_var,REF); $(call gate,checkout $(REF)); git checkout $(REF) ;; \
+  tag)        $(call require_var,TAG); $(call gate,tag $(TAG)); [ -n "$(MSG)" ] && git tag -a $(TAG) -m "$(MSG)" || git tag $(TAG) ;; \
   tags)       git tag -l --sort=-version:refname | head -20 ;; \
-  stash)      [ -n "$(MSG)" ] && git stash push -m "$(MSG)" || git stash push ;; \
-  stash-pop)  git stash pop ;; \
+  stash)      $(call gate,stash changes); [ -n "$(MSG)" ] && git stash push -m "$(MSG)" || git stash push ;; \
+  stash-pop)  $(call gate,stash pop); git stash pop ;; \
   stash-list) git stash list ;; \
   merge)      $(call require_var,REF); $(call gate,merge $(REF)); git merge --no-ff $(REF) ;; \
   rebase)     $(call gate,rebase onto $(BASE)); git rebase $(BASE) ;; \
-  unstage)    $(call require_var,FILES); git restore --staged $(FILES) ;; \
+  unstage)    $(call require_var,FILES); $(call gate,unstage files $(FILES)); git reset -q HEAD -- $(FILES) ;; \
   push-tags)  $(call require_var,TAG); $(call gate,push tag $(TAG) to origin); git push origin $(TAG) ;; \
   pr)         $(call MCB_PR) ;; \
   sub)        $(call MCB_SUB) ;; \
@@ -279,7 +281,7 @@ case "$(ACT)" in \
   checks)     $(call require_var,PR); $(MCB_RUN) gh pr checks $(PR) || true ;; \
   ""|view)    $(call require_var,PR); $(MCB_RUN) gh pr view $(PR) ;; \
   merge)      $(call require_var,PR); $(call gate,merge PR #$(PR)); $(MCB_RUN) gh pr merge $(PR) --merge ;; \
-  rerun)      $(call require_var,RUN); $(MCB_RUN) gh run rerun $(RUN) --failed ;; \
+  rerun)      $(call require_var,RUN); $(call gate,rerun GitHub Actions run $(RUN)); $(MCB_RUN) gh run rerun $(RUN) --failed ;; \
   *)          printf "ERRO: ACT '%s' invalido. Validos: $(ACTS_pr)\n" "$(ACT)" >&2; exit 2 ;; \
 esac
 endef
@@ -288,11 +290,11 @@ endef
 define MCB_SUB
 case "$(ACT)" in \
   ""|status)  git submodule status ;; \
-  sync)       git submodule sync --recursive; git submodule update --init --recursive ;; \
+  sync)       $(call gate,sync submodules); git submodule sync --recursive; git submodule update --init --recursive ;; \
   diff)       git submodule foreach --quiet 'D=$$(git diff); [ -n "$$D" ] && { echo "=== $$name ==="; git diff; } || true' ;; \
   commit)     $(call require_var,SUB); $(call require_var,MSG); $(call gate,commit in submodule $(SUB)); (cd third-party/$(SUB) && git add -A && git commit -m "$(MSG)") ;; \
   push)       $(call require_var,SUB); $(call gate,push submodule $(SUB)); (cd third-party/$(SUB) && git push) ;; \
-  propagate)  $(call require_var,SUB); git add third-party/$(SUB); echo "staged third-party/$(SUB); commit with: make ship WHAT=commit MSG='chore: update $(SUB)' APPLY=Y" ;; \
+  propagate)  $(call require_var,SUB); $(call gate,stage submodule $(SUB)); git add third-party/$(SUB); echo "staged third-party/$(SUB); commit with: make ship WHAT=commit MSG='chore: update $(SUB)' APPLY=Y" ;; \
   *)          printf "ERRO: ACT '%s' invalido. Validos: $(ACTS_sub)\n" "$(ACT)" >&2; exit 2 ;; \
 esac
 endef
@@ -300,7 +302,7 @@ endef
 # release / install / version. ACT= selects phase.
 define MCB_RELEASE
 case "$(ACT)" in \
-  ""|package) echo "Creating release v$(VERSION)..."; $(MAKE) check WHAT=lint && $(MAKE) test && $(MCB_TOOL) validate quick && $(MAKE) build WHAT=release; mkdir -p dist; [ -f "target/release/$(BINARY_NAME)" ] || { echo "Error: target/release/$(BINARY_NAME) not found" >&2; exit 1; }; cp target/release/$(BINARY_NAME) dist/; (cd dist && tar -czf $(BINARY_NAME)-$(VERSION).tar.gz $(BINARY_NAME)); echo "Release ready: dist/$(BINARY_NAME)-$(VERSION).tar.gz" ;; \
+  ""|package) $(call gate,package release v$(VERSION)); echo "Creating release v$(VERSION)..."; $(MAKE) check WHAT=lint && $(MAKE) test && $(MCB_TOOL) validate quick && $(MAKE) build WHAT=release; mkdir -p dist; [ -f "target/release/$(BINARY_NAME)" ] || { echo "Error: target/release/$(BINARY_NAME) not found" >&2; exit 1; }; cp target/release/$(BINARY_NAME) dist/; (cd dist && tar -czf $(BINARY_NAME)-$(VERSION).tar.gz $(BINARY_NAME)); echo "Release ready: dist/$(BINARY_NAME)-$(VERSION).tar.gz" ;; \
   version)    $(call MCB_VERSION_BUMP) ;; \
   install)    $(call gate,install MCB v$(VERSION) to $(INSTALL_DIR) + systemd + MCP configs); $(call MCB_INSTALL) ;; \
   install-validate) $(call MCB_INSTALL_VALIDATE) ;; \
@@ -310,9 +312,9 @@ endef
 
 define MCB_VERSION_BUMP
 case "$(BUMP)" in \
-  patch) sed -i 's/^version = "$(VERSION)"/version = "$(NEXT_PATCH)"/' Cargo.toml; $(MCB_RUN) cargo check 2>/dev/null || true; echo "Version → $(NEXT_PATCH)" ;; \
-  minor) sed -i 's/^version = "$(VERSION)"/version = "$(NEXT_MINOR)"/' Cargo.toml; $(MCB_RUN) cargo check 2>/dev/null || true; echo "Version → $(NEXT_MINOR)" ;; \
-  major) sed -i 's/^version = "$(VERSION)"/version = "$(NEXT_MAJOR)"/' Cargo.toml; $(MCB_RUN) cargo check 2>/dev/null || true; echo "Version → $(NEXT_MAJOR)" ;; \
+  patch) $(call gate,version bump to $(NEXT_PATCH)); sed -i 's/^version = "$(VERSION)"/version = "$(NEXT_PATCH)"/' Cargo.toml; $(MCB_RUN) cargo check 2>/dev/null || true; echo "Version → $(NEXT_PATCH)" ;; \
+  minor) $(call gate,version bump to $(NEXT_MINOR)); sed -i 's/^version = "$(VERSION)"/version = "$(NEXT_MINOR)"/' Cargo.toml; $(MCB_RUN) cargo check 2>/dev/null || true; echo "Version → $(NEXT_MINOR)" ;; \
+  major) $(call gate,version bump to $(NEXT_MAJOR)); sed -i 's/^version = "$(VERSION)"/version = "$(NEXT_MAJOR)"/' Cargo.toml; $(MCB_RUN) cargo check 2>/dev/null || true; echo "Version → $(NEXT_MAJOR)" ;; \
   *)     echo "Current: $(VERSION)"; echo "patch:   $(NEXT_PATCH)"; echo "minor:   $(NEXT_MINOR)"; echo "major:   $(NEXT_MAJOR)" ;; \
 esac
 endef
@@ -369,10 +371,10 @@ endef
 # clean (APPLY-gated). WHAT=build|codegen|all
 # =============================================================================
 define DISPATCH_CLEAN
-@$(call gate,clean build artifacts); case "$(WHAT)" in \
-  ""|build)  $(MCB_RUN) cargo clean; echo "✓ build artifacts cleaned" ;; \
-  codegen)   rm -f $(CODEGEN_DB); echo "✓ codegen DB removed" ;; \
-  all)       $(MCB_RUN) cargo clean; rm -f $(CODEGEN_DB); echo "✓ all artifacts cleaned" ;; \
+@case "$(WHAT)" in \
+  ""|build)  $(call gate,clean build artifacts); $(MCB_RUN) cargo clean; echo "✓ build artifacts cleaned" ;; \
+  codegen)   $(call gate,clean codegen artifacts); rm -f $(CODEGEN_DB); echo "✓ codegen DB removed" ;; \
+  all)       $(call gate,clean all artifacts); $(MCB_RUN) cargo clean; rm -f $(CODEGEN_DB); echo "✓ all artifacts cleaned" ;; \
   *)         $(call BAD_WHAT,$(WHATS_clean)) ;; \
 esac
 endef
