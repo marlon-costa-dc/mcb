@@ -70,6 +70,13 @@ The v0.3.0 release is a full platform rebuild on SeaQL (SeaORM, SeaQuery, SeaSch
 - [ADR 052: Schema Resolution with SeaORM 2.x](052-schema-resolution-seaorm.md) — Domain-driven DDL generation — **Accepted**
 - [ADR 053: Shared Provider Resolution](053-shared-provider-resolution.md) — Extends ADR-050, shared provider lifecycle — **Accepted**
 
+### Governance and SSOT
+
+- [ADR 054: mcb-utils Innermost Crate](054-mcb-utils-innermost-crate.md) — Utility crate boundary — **Accepted**
+- [ADR 055: Constants SSOT Enforcement](055-constants-ssot-enforcement.md) — Shared constants and validation — **Accepted**
+- [ADR 056: Multi-Tenant Isolation and OIDC Boundary](056-multitenant-isolation-and-oidc-boundary.md) — Tenant identity and vector-store boundary — **Proposed**
+- [ADR 057: Multi-Agent Coordination and SSOT Consolidation](057-multi-agent-coordination-ssot-consolidation.md) — Generated pointers and rule ownership — **Accepted**
+
 ### Workflow FSM & Policies (v0.4.0, previously v0.3.0)
 
 - [ADR 034: Workflow Core FSM](034-workflow-core-fsm.md) — Finite state machine and persistence
@@ -136,9 +143,9 @@ live implementation state is tracked in `bd`.
 
 ## ADR Count
 
-**Total ADRs**: 55 (ADR-001 through ADR-055)
+**Total ADRs**: 57 (ADR-001 through ADR-057)
 
-- **Active numbered files**: 50 ADRs in this directory
+- **Active numbered files**: 52 ADRs in this directory
 - **Archived copies**: 3 superseded ADR files in [`archive/`](archive/)
 - **Core Architecture**: ADR-001–006 (5 active)
 - **v0.2.0 Features**: ADR-008–010 (3 ADRs)
@@ -147,7 +154,7 @@ live implementation state is tracked in `bd`.
 - **v0.2.1 Additions**: ADR-032–033, 039–040 (4 ADRs)
 - **v0.2.2 Observability**: ADR-048 (1 ADR)
 - **v0.3.0 Platform Rebuild**: ADR-049–053 (5 ADRs)
-- **v0.3.2 Governance/SSOT**: ADR-054–055 (2 ADRs)
+- **v0.3.2+ Governance/SSOT**: ADR-054–057 (4 ADRs)
 - **v0.4.0 Workflow**: ADR-034–038 (5 ADRs)
 - **v0.5.0 Context System**: ADR-041–047 (7 ADRs)
 

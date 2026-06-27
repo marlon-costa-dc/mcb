@@ -4,8 +4,8 @@ adr: 47
 title: Project Architecture - Central Hub and Multi-Dimensional Coordination
 status: PROPOSED
 created: 2026-02-08
-updated: 2026-02-08
-related: [14, 34, 41]
+updated: 2026-06-27
+related: [14, 34, 41, 57]
 supersedes: []
 superseded_by: []
 implementation_status: "Historical snapshot; see bd for live work"
@@ -67,7 +67,12 @@ Each worktree within a project will maintain its own isolated semantic index (Mi
 
 ### 4. Multi-Agent Coordination
 
-Projects will track active agent sessions, allowing parallel agents to work on the same project while maintaining shared context and individual session state.
+Projects will track active agent sessions, allowing parallel agents to work on
+the same project while maintaining shared context and individual session state.
+The operational coordination contract lives in
+[`AGENTS.md`](../../AGENTS.md) and
+[ADR-057](057-multi-agent-coordination-ssot-consolidation.md); this ADR only
+defines the project-domain anchor.
 
 ## Consequences
 

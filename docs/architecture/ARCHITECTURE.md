@@ -2000,6 +2000,11 @@ See [ADR-013](../adr/013-clean-architecture-crate-separation.md) for full detail
 - [ADR-038](../adr/038-multi-tier-execution-model.md) Multi-Tier Execution Model
 - [ADR-039](../adr/039-context-persistence-boundary.md) Context Persistence Boundary
 - [ADR-040](../adr/040-unified-tool-execution-gate.md) Unified Tool Execution Gate
+- [ADR-048](../adr/048-observability-strategy.md) Observability Strategy
+- [ADR-052](../adr/052-schema-resolution-seaorm.md) Schema Resolution
+- [ADR-053](../adr/053-shared-provider-resolution.md) Shared Provider Resolution
+- [ADR-056](../adr/056-multitenant-isolation-and-oidc-boundary.md) Multi-Tenant Isolation and OIDC Boundary
+- [ADR-057](../adr/057-multi-agent-coordination-ssot-consolidation.md) Multi-Agent Coordination and SSOT Consolidation
 
 See [ADR index](../adr/README.md) for the full list.
 
