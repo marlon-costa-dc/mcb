@@ -15,12 +15,12 @@ MCB_TEST_PORT  ?= 18080
 # run them) — semantics preserved since `cargo test --all-targets` also skips doctests.
 MCB_NEXTEST := $(shell command -v cargo-nextest >/dev/null 2>&1 && echo 1)
 ifeq ($(MCB_NEXTEST),1)
-  MCB_TEST_UNIT := MCB_MODEL_ID=test-model RUST_TEST_THREADS=$$T $(MCB_RUN) cargo nextest run --workspace --lib --test-threads=$$T
+  MCB_TEST_UNIT := MCB_MODEL_ID=test-model RUST_TEST_THREADS=$$T $(MCB_RUN) cargo nextest run --workspace --test unit --test-threads=$$T
   MCB_TEST_ALL  := MCB_MODEL_ID=test-model RUST_TEST_THREADS=$$T $(MCB_RUN) cargo nextest run --workspace --test-threads=$$T
   # Run only crates that contain changed .rs files vs origin/$(BRANCH).
   MCB_TEST_CHANGED := MCB_MODEL_ID=test-model $(MCB_RUN) cargo nextest run --test-threads=$$T $$(git diff --name-only origin/$$(git rev-parse --abbrev-ref HEAD) -- 'crates/**/*.rs' 'crates/**/*.toml' | sed -n 's|^crates/\([^/]*\)/.*|\\-p \1|p' | sort -u | tr '\\n' ' ')
 else
-  MCB_TEST_UNIT := MCB_MODEL_ID=test-model RUST_TEST_THREADS=$$T $(MCB_RUN) cargo test --workspace --lib
+  MCB_TEST_UNIT := MCB_MODEL_ID=test-model RUST_TEST_THREADS=$$T $(MCB_RUN) cargo test --workspace --test unit
   MCB_TEST_ALL  := MCB_MODEL_ID=test-model RUST_TEST_THREADS=$$T $(MCB_RUN) cargo test --workspace --all-targets
   MCB_TEST_CHANGED := MCB_MODEL_ID=test-model $(MCB_RUN) cargo test $$(git diff --name-only origin/$$(git rev-parse --abbrev-ref HEAD) -- 'crates/**/*.rs' 'crates/**/*.toml' | sed -n 's|^crates/\([^/]*\)/.*|-p \1|p' | sort -u | tr '\\n' ' ')
 endif
