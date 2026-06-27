@@ -77,9 +77,24 @@ jobs:
             ci:
               - '.github/workflows/ci.yml'
               - '.github/setup-ci.sh'
+              - '.clinerules'
+              - '.continue/rules/mcb.md'
+              - '.cursor/rules/mcb.mdc'
+              - '.gemini/styleguide.md'
               - 'Makefile'
+              - 'AGENTS.md'
+              - 'CLAUDE.md'
+              - 'CONVENTIONS.md'
+              - 'GEMINI.md'
+              - 'codex.md'
               - 'makefiles/*.mk'
+              - 'scripts/lib/agent_pointers.py'
               - 'scripts/lib/mcb.sh'
+              - 'scripts/lib/tests/test_agent_pointers.py'
+              - 'typos.toml'
+              - 'workspace_custom.mk'
+              - '.github/copilot-instructions.md'
+              - '.windsurfrules'
 
   classify:
     name: Classify PR
@@ -155,6 +170,26 @@ jobs:
           tool: typos
       - run: typos
       - run: make check WHAT=lint
+
+  agent-pointers:
+    name: Agent Pointer Sync
+    timeout-minutes: 5
+    needs: [changes, classify]
+    if: |
+      (needs.changes.outputs.docs == 'true' || needs.changes.outputs.ci == 'true') &&
+      ((needs.classify.outputs.run_full == 'true' ||
+      github.event_name == 'push' ||
+      github.event_name == 'workflow_dispatch') ||
+      needs.classify.outputs.run_simplified == 'true')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Manual checkout
+        run: |
+          git clone --depth 1 https://github.com/${{ github.repository }}.git .
+          git fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +${{ github.sha }}:refs/remotes/origin/temp
+          git checkout ${{ github.sha }}
+      - name: Verify generated agent pointers
+        run: make gen-agent-pointers CHECK=1
 
   audit:
     name: Security Audit
@@ -595,6 +630,7 @@ jobs:
       - changes
       - classify
       - lint
+      - agent-pointers
       - test-linux
       - test-cross
       - validate
@@ -611,6 +647,7 @@ jobs:
           RUN_FULL: ${{ needs.classify.outputs.run_full }}
           RUN_SIMPLIFIED: ${{ needs.classify.outputs.run_simplified }}
           LINT_RESULT: ${{ needs.lint.result }}
+          AGENT_POINTERS_RESULT: ${{ needs.agent-pointers.result }}
           TEST_LINUX_RESULT: ${{ needs.test-linux.result }}
           TEST_CROSS_RESULT: ${{ needs.test-cross.result }}
           VALIDATE_RESULT: ${{ needs.validate.result }}
@@ -625,6 +662,7 @@ jobs:
           echo ""
           echo "=== Job Results ==="
           echo "Lint:          $LINT_RESULT"
+          echo "Agent Pointers: $AGENT_POINTERS_RESULT"
           echo "Test Linux:    $TEST_LINUX_RESULT"
           echo "Test Cross:    $TEST_CROSS_RESULT"
           echo "Validate:      $VALIDATE_RESULT"
@@ -637,7 +675,7 @@ jobs:
           if [[ "$RUN_SIMPLIFIED" == "true" ]]; then
             echo "=== Simplified Suite Policy (Draft/Bot PR) ==="
             FAILED=0
-            for job in LINT_RESULT TEST_LINUX_RESULT VALIDATE_RESULT; do
+            for job in LINT_RESULT AGENT_POINTERS_RESULT TEST_LINUX_RESULT VALIDATE_RESULT; do
               result="${!job}"
               if [[ "$result" != "success" && "$result" != "skipped" ]]; then
                 echo "✗ $job: $result"
@@ -660,7 +698,7 @@ jobs:
             # with "Test failed during run" on multi-threaded/tokio test binaries even
             # when every test passes. Correctness is already enforced by the gates
             # below. Root-cause engine fix tracked in mcb-xgji; advisory policy mcb-xku4.
-            for job in LINT_RESULT TEST_LINUX_RESULT TEST_CROSS_RESULT \
+            for job in LINT_RESULT AGENT_POINTERS_RESULT TEST_LINUX_RESULT TEST_CROSS_RESULT \
                        VALIDATE_RESULT AUDIT_RESULT GOLDEN_RESULT \
                        RELEASE_BUILD_RESULT; do
               result="${!job}"

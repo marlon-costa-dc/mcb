@@ -20,6 +20,10 @@ done-check: ## Real-user/green-green check, scoped to committed changes vs upstr
 	echo "done-check: ruff on $$n committed-vs-$$base .py file(s)"; \
 	printf '%s\n' "$$files" | xargs -r ruff check --quiet
 
+.PHONY: gen-agent-pointers
+gen-agent-pointers: ## Synchronize generated agent pointer files from AGENTS.md
+	@$(MCB_RUN) python scripts/lib/agent_pointers.py $(if $(filter 1,$(CHECK)),--check,)
+
 # ~/.ai-hub workspace tooling thin-wrapper
 $(HOME)/.ai-hub/templates/workspace-wrapper.mk: ;
 include $(HOME)/.ai-hub/templates/workspace-wrapper.mk

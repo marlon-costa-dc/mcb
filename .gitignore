@@ -44,7 +44,6 @@ oracle/
 .oracle/
 **/oracle/
 **/.oracle/
-GEMINI.md
 .check_*
 .test_*
 .mcp.json
