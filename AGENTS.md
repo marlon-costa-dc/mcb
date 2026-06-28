@@ -216,7 +216,7 @@ make ship WHAT=sub ACT=status|diff
 Multiple agents/sessions share this repo. The canonical rules of engagement — claim-before-edit,
 never-revert-others, no-pattern-deviation, breaking-glass-to-operator, converge-fast, return-to-plan —
 live in **`CLAUDE.md › Multi-Agent Coordination Doctrine`** (SSOT). Execution loop:
-`.claude/skills/orchestrate/SKILL.md`. Task tracking is **beads (`bd`) only**. Do not restate the
+`.agents/skills/orchestrate/SKILL.md`. Task tracking is **beads (`bd`) only**. Do not restate the
 doctrine here.
 
 Single-test local debugging is allowed when it is materially faster than the

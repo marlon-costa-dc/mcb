@@ -2,7 +2,7 @@
 # Memory Context Browser - Documentation
 
 [![Documentation Status](https://img.shields.io/badge/docs-automated-green)](https://github.com/marlonsc/mcb/actions)
-[![Version](https://img.shields.io/badge/version-0.2.1-blue)](https://github.com/marlonsc/mcb/releases)
+[![Version](https://img.shields.io/badge/version-0.3.2-blue)](https://github.com/marlonsc/mcb/releases)
 [![Architecture](https://img.shields.io/badge/architecture-C4--model-blue)](architecture/ARCHITECTURE.md)
 [![ADRs](https://img.shields.io/badge/ADRs-52-blue)](adr/README.md)
 
@@ -27,6 +27,10 @@ Documentation for developers contributing to the project.
 
 - **[Contributing](developer/CONTRIBUTING.md)** - Development setup and
   contribution guidelines
+- **[Quick Reference](developer/QUICK_REFERENCE.md)** - One-pager for daily MCB work
+- **[FLEXT to MCB Mapping](developer/FLEXT_TO_MCB_MAPPING.md)** - Pattern translation
+  from the FLEXT workspace
+- **[Skill Index](developer/SKILL_INDEX.md)** - Project ECC skills
 - **[Roadmap](developer/ROADMAP.md)** - Development roadmap and milestones
 
 ### 🏗️ Architecture
