@@ -7,40 +7,43 @@ SPDX-License-Identifier: MIT
 from __future__ import annotations
 
 import argparse
-import sys
 from pathlib import Path
+
+from lib.core import get_logger
 
 from qlty.model import SarifIssue, Severity
 from qlty.parser import parse_sarif_file
 from qlty.report import analyze_issues
 from qlty.runner import run_qlty_check, run_qlty_smells
 
+logger = get_logger(__name__)
+
 
 def _load_checks_from_file(args: argparse.Namespace, all_issues: list[SarifIssue]) -> bool:
     if args.checks_file and args.checks_file.exists():
-        print(f"📖 Reading checks from {args.checks_file}")
+        logger.info(f"📖 Reading checks from {args.checks_file}")
         checks = parse_sarif_file(args.checks_file)
         for check in checks:
             check.category = "check"
         all_issues.extend(checks)
-        print(f"   Found {len(checks)} check issues")
+        logger.info(f"   Found {len(checks)} check issues")
         return True
     return False
 
 
 def _collect_smells_issues(args: argparse.Namespace, all_issues: list[SarifIssue]) -> None:
     if args.smells_file.exists() and not args.scan:
-        print(f"📖 Reading smells from {args.smells_file}")
+        logger.info(f"📖 Reading smells from {args.smells_file}")
         smells = parse_sarif_file(args.smells_file)
         for smell in smells:
             smell.category = "smell"
         all_issues.extend(smells)
-        print(f"   Found {len(smells)} code smells")
+        logger.info(f"   Found {len(smells)} code smells")
     elif args.scan:
         smells = run_qlty_smells(args.smells_file or Path("qlty.smells.sarif"))
         all_issues.extend(smells)
     else:
-        print(f"⚠️  Smells file not found: {args.smells_file}", file=sys.stderr)
+        logger.error(f"⚠️  Smells file not found: {args.smells_file}")
 
 
 def _collect_checks_issues(args: argparse.Namespace, all_issues: list[SarifIssue]) -> None:
@@ -54,7 +57,7 @@ def _collect_checks_issues(args: argparse.Namespace, all_issues: list[SarifIssue
         return
     else:
         if args.checks_file:
-            print(f"⚠️  Checks file not found: {args.checks_file}", file=sys.stderr)
+            logger.error(f"⚠️  Checks file not found: {args.checks_file}")
 
 
 def _collect_all_issues(args: argparse.Namespace) -> list[SarifIssue]:
@@ -91,21 +94,21 @@ def _apply_severity_filter(args: argparse.Namespace, filtered: list[SarifIssue])
     if args.severity:
         target_sev = Severity.from_str(args.severity)
         filtered = [i for i in filtered if i.level == target_sev]
-        print(f"🔍 Filtered to {len(filtered)} {args.severity} issues")
+        logger.info(f"🔍 Filtered to {len(filtered)} {args.severity} issues")
     return filtered
 
 
 def _apply_rule_filter(args: argparse.Namespace, filtered: list[SarifIssue]) -> list[SarifIssue]:
     if args.rule:
         filtered = [i for i in filtered if args.rule in i.rule_id]
-        print(f"🔍 Filtered to {len(filtered)} issues matching rule '{args.rule}'")
+        logger.info(f"🔍 Filtered to {len(filtered)} issues matching rule '{args.rule}'")
     return filtered
 
 
 def _apply_category_filter(args: argparse.Namespace, filtered: list[SarifIssue]) -> list[SarifIssue]:
     if args.category:
         filtered = [i for i in filtered if args.category in i.rule_category]
-        print(f"🔍 Filtered to {len(filtered)} issues in category '{args.category}'")
+        logger.info(f"🔍 Filtered to {len(filtered)} issues in category '{args.category}'")
     return filtered
 
 
@@ -114,7 +117,7 @@ def _apply_file_filter(args: argparse.Namespace, filtered: list[SarifIssue]) -> 
         import fnmatch
 
         filtered = [i for i in filtered if fnmatch.fnmatch(i.file_path, args.file)]
-        print(f"🔍 Filtered to {len(filtered)} issues in files matching '{args.file}'")
+        logger.info(f"🔍 Filtered to {len(filtered)} issues in files matching '{args.file}'")
     return filtered
 
 
@@ -122,7 +125,7 @@ def _apply_exclude_rule_filter(args: argparse.Namespace, filtered: list[SarifIss
     if args.exclude_rule:
         for rule in args.exclude_rule:
             filtered = [i for i in filtered if rule not in i.rule_id]
-            print(f"🔍 Excluded issues matching rule '{rule}'")
+            logger.info(f"🔍 Excluded issues matching rule '{rule}'")
     return filtered
 
 
@@ -130,7 +133,7 @@ def _apply_exclude_category_filter(args: argparse.Namespace, filtered: list[Sari
     if args.exclude_category:
         for cat in args.exclude_category:
             filtered = [i for i in filtered if cat not in i.rule_category]
-            print(f"🔍 Excluded issues in category '{cat}'")
+            logger.info(f"🔍 Excluded issues in category '{cat}'")
     return filtered
 
 
@@ -140,7 +143,7 @@ def _apply_exclude_file_filter(args: argparse.Namespace, filtered: list[SarifIss
 
         for pattern in args.exclude_file:
             filtered = [i for i in filtered if not fnmatch.fnmatch(i.file_path, pattern)]
-            print(f"🔍 Excluded issues in files matching '{pattern}'")
+            logger.info(f"🔍 Excluded issues in files matching '{pattern}'")
     return filtered
 
 
@@ -224,7 +227,7 @@ def main() -> None:
     all_issues = _collect_all_issues(args)
 
     if not all_issues:
-        print("✅ No issues found to analyze")
+        logger.info("✅ No issues found to analyze")
         return
 
     # Apply filters
@@ -238,20 +241,20 @@ def main() -> None:
     filtered = _apply_exclude_file_filter(args, filtered)
 
     if not filtered:
-        print("✅ No issues matched filters")
+        logger.info("✅ No issues matched filters")
         return
 
     # Analyze
     report = analyze_issues(filtered)
 
     # Print summary
-    print("\n" + report.generate_summary())
+    logger.info("\n" + report.generate_summary())
 
     # Generate Markdown Report
     if not args.summary_only:
         md_content = report.generate_markdown()
         args.report_file.write_text(md_content, encoding="utf-8")
-        print(f"\n📝 Detailed report written to {args.report_file}")
+        logger.info(f"\n📝 Detailed report written to {args.report_file}")
 
 
 if __name__ == "__main__":

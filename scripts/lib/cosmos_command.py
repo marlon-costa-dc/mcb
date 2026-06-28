@@ -15,6 +15,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import NoReturn, cast
 
+from .logger import get_logger
+
+logger = get_logger(__name__)
+
 TomlValue = str | int | float | bool | list["TomlValue"] | dict[str, "TomlValue"]
 TomlTable = dict[str, TomlValue]
 
@@ -126,11 +130,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 0
         if not args or args[0] in {"help", "--help", "-h"}:
             requested = os.environ.get("WHAT", "").strip()
-            print(render_requested_help(registry, requested))
+            logger.info(render_requested_help(registry, requested))
             return 0
         return dispatch(registry, args[0])
     except RegistryError as exc:
-        print(f"ERRO: {exc}", file=sys.stderr)
+        logger.error(f"ERRO: {exc}")
         return 2
 
 
@@ -138,16 +142,16 @@ def dispatch(registry: Registry, requested_verb: str) -> int:
     verb = registry.resolve_verb(requested_verb)
     what = os.environ.get("WHAT", "").strip() or "all"
     if what in {"all", "help"}:
-        print(render_verb_help(registry, requested_verb))
+        logger.info(render_verb_help(registry, requested_verb))
         return 0
     command = registry.command(verb, what)
     if env_enabled("HELP") or env_enabled("OPTIONS"):
-        print(render_command_help(registry, requested_verb, what))
+        logger.info(render_command_help(registry, requested_verb, what))
         return 0
     is_dry_run = command.mutates and os.environ.get("APPLY", "N") != "Y"
     validate_invocation(command, require_required=not is_dry_run)
     if is_dry_run:
-        print(render_dry_run(command, requested_verb, what))
+        logger.info(render_dry_run(command, requested_verb, what))
         return 0
     return run(command)
 
@@ -176,7 +180,7 @@ def run_python(command: Command, env: Mapping[str, str]) -> int:
                 return 0
             if isinstance(code, int):
                 return code
-            print(code, file=sys.stderr)
+            logger.error(code)
             return 1
         return 0
     finally:
@@ -556,7 +560,7 @@ def require_dispatched(path: Path) -> None:
     expected = str(path.resolve())
     if os.environ.get("COSMOS_COMMAND_DISPATCHED") == "Y" and os.environ.get("COSMOS_COMMAND_PATH") == expected:
         return
-    print("ERRO: comandos publicos devem ser executados via make <verbo> WHAT=<acao>", file=sys.stderr)
+    logger.error("ERRO: comandos publicos devem ser executados via make <verbo> WHAT=<acao>")
     raise SystemExit(2)
 
 
@@ -573,7 +577,7 @@ def require_env(name: str, usage: str | None = None) -> str:
     if value:
         return value
     label = usage or f"{name}=<valor>"
-    print(f"ERRO: {label} obrigatorio", file=sys.stderr)
+    logger.error(f"ERRO: {label} obrigatorio")
     raise SystemExit(2)
 
 

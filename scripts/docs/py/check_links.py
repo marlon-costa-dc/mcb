@@ -11,7 +11,11 @@ import argparse
 import os
 import sys
 
+from lib.core import get_logger
+
 from scripts.docs.py import utils
+
+logger = get_logger(__name__)
 
 
 def _process_links(links, filepath, rel_filepath, project_root):
@@ -52,7 +56,7 @@ def _check_files(docs_dir, project_root):
             with open(filepath, encoding="utf-8") as fh:
                 content = fh.read()
         except Exception as e:
-            print(f"Error reading {rel_filepath}: {e}")
+            logger.error(f"Error reading {rel_filepath}: {e}")
             continue
 
         links = utils.extract_links(content)
@@ -78,20 +82,20 @@ def main():
     docs_dir = os.path.join(project_root, "docs")
 
     if not os.path.exists(docs_dir):
-        print(f"Error: docs directory not found at {docs_dir}")
+        logger.error(f"Error: docs directory not found at {docs_dir}")
         sys.exit(1)
 
     broken, checked_files, checked_links = _check_files(docs_dir, project_root)
 
-    print(f"Checked {checked_files} files, {checked_links} internal links.")
+    logger.info(f"Checked {checked_files} files, {checked_links} internal links.")
 
     if broken:
-        print(f"Found {len(broken)} broken internal links:")
+        logger.info(f"Found {len(broken)} broken internal links:")
         for fp, text, link, target in sorted(broken):
-            print(f"  {fp}: [{text}]({link}) -> {target} (missing)")
+            logger.info(f"  {fp}: [{text}]({link}) -> {target} (missing)")
         sys.exit(1)
     else:
-        print("No broken internal links found.")
+        logger.info("No broken internal links found.")
         sys.exit(0)
 
 

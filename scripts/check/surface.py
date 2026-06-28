@@ -20,6 +20,10 @@ import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
+from lib.core import get_logger
+
+logger = get_logger(__name__)
+
 ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -153,13 +157,13 @@ def main() -> int:
             failures.append(failure)
 
     if failures:
-        print("SURFACE FAIL")
+        logger.info("SURFACE FAIL")
         for failure in failures:
-            print(f"\n--- {failure}")
+            logger.info(f"\n--- {failure}")
         return 1
 
-    print(f"SURFACE OK: {len(cases)} command cases validated")
-    print("External/long-running operations are represented by APPLY-gated dry-runs.")
+    logger.info(f"SURFACE OK: {len(cases)} command cases validated")
+    logger.info("External/long-running operations are represented by APPLY-gated dry-runs.")
     return 0
 
 

@@ -12,7 +12,11 @@ import os
 import re
 import sys
 
+from lib.core import get_logger
+
 from scripts.docs.py import utils
+
+logger = get_logger(__name__)
 
 
 def _process_lines(lines, rel_filepath, outdated_patterns, is_suppressed):
@@ -67,7 +71,7 @@ def _check_files(docs_dir, project_root):
             with open(filepath, encoding="utf-8") as fh:
                 lines = fh.readlines()
         except Exception as e:
-            print(f"Error reading {rel_filepath}: {e}")
+            logger.error(f"Error reading {rel_filepath}: {e}")
             continue
 
         file_issues = _process_lines(lines, rel_filepath, OUTDATED_PATTERNS, is_suppressed)
@@ -90,21 +94,21 @@ def main():
     docs_dir = os.path.join(project_root, "docs")
 
     if not os.path.exists(docs_dir):
-        print(f"Error: docs directory not found at {docs_dir}")
+        logger.error(f"Error: docs directory not found at {docs_dir}")
         sys.exit(1)
 
     issues, checked = _check_files(docs_dir, project_root)
 
-    print(f"Checked {checked} files for outdated content.")
+    logger.info(f"Checked {checked} files for outdated content.")
 
     if issues:
-        print(f"Found {len(issues)} potential outdated references:")
+        logger.info(f"Found {len(issues)} potential outdated references:")
         for fp, lineno, desc, content in sorted(issues):
-            print(f"  {fp}:{lineno} [{desc}] {content}")
+            logger.info(f"  {fp}:{lineno} [{desc}] {content}")
         # Return 0 for now as these are often false positives or acceptable history
         sys.exit(0)
     else:
-        print("No outdated content found.")
+        logger.info("No outdated content found.")
         sys.exit(0)
 
 
