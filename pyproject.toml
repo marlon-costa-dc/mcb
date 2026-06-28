@@ -7,7 +7,11 @@ name = "mcb-scripts"
 version = "0.3.2"
 description = "Repository-local automation helpers for MCB"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "pydantic>=2.13.4",
+    "pydantic-settings>=2.14.2",
+    "structlog>=26.1.0",
+]
 
 [project.optional-dependencies]
 dev = [
@@ -47,9 +51,9 @@ ignore = ["E501"]
 python_version = "3.12"
 mypy_path = "scripts"
 files = [
-    "scripts/check",
-    "scripts/lib",
-    "scripts/qlty",
+    "check",
+    "lib",
+    "qlty",
 ]
 explicit_package_bases = true
 namespace_packages = true
