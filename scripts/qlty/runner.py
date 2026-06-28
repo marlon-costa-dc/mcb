@@ -7,18 +7,21 @@ SPDX-License-Identifier: MIT
 from __future__ import annotations
 
 import subprocess  # nosec B404
-import sys
 from pathlib import Path
+
+from lib.core import get_logger
 
 from qlty.model import SarifIssue
 from qlty.parser import parse_sarif_file
+
+logger = get_logger(__name__)
 
 
 def run_qlty_check(
     output_file: Path = Path("qlty.check.current.sarif"),
 ) -> list[SarifIssue]:
     """Run qlty check --all --sarif, save to file, and parse SARIF output."""
-    print("🔄 Running qlty check --all --sarif...")
+    logger.info("🔄 Running qlty check --all --sarif...")
 
     try:
         result = subprocess.run(  # nosec B603 B607
@@ -30,21 +33,21 @@ def run_qlty_check(
         )
 
         if not result.stdout.strip():
-            print("   ✅ No issues found (clean)")
+            logger.info("   ✅ No issues found (clean)")
             return []
 
         output_file.write_text(result.stdout, encoding="utf-8")
-        print(f"   💾 Saved SARIF to {output_file}")
+        logger.info(f"   💾 Saved SARIF to {output_file}")
 
         issues = parse_sarif_file(output_file)
-        print(f"   📊 Found {len(issues)} issues")
+        logger.info(f"   📊 Found {len(issues)} issues")
         return issues
 
     except subprocess.TimeoutExpired:
-        print("   ❌ qlty check timed out after 300s", file=sys.stderr)
+        logger.error("   ❌ qlty check timed out after 300s")
         return []
     except (OSError, subprocess.SubprocessError) as e:
-        print(f"   ❌ Error running qlty: {e}", file=sys.stderr)
+        logger.error(f"   ❌ Error running qlty: {e}")
         return []
 
 
@@ -52,7 +55,7 @@ def run_qlty_smells(
     output_file: Path = Path("qlty.smells.sarif"),
 ) -> list[SarifIssue]:
     """Run qlty smells --all --sarif, save to file, and parse SARIF output."""
-    print("🔄 Running qlty smells --all --sarif...")
+    logger.info("🔄 Running qlty smells --all --sarif...")
 
     try:
         result = subprocess.run(  # nosec B603 B607
@@ -64,11 +67,11 @@ def run_qlty_smells(
         )
 
         if not result.stdout.strip():
-            print("   ✅ No smells found (clean)")
+            logger.info("   ✅ No smells found (clean)")
             return []
 
         output_file.write_text(result.stdout, encoding="utf-8")
-        print(f"   💾 Saved SARIF to {output_file}")
+        logger.info(f"   💾 Saved SARIF to {output_file}")
 
         issues = parse_sarif_file(output_file)
         # Mark issues as 'smell' category if not present
@@ -76,12 +79,12 @@ def run_qlty_smells(
             if not issue.category:
                 issue.category = "smell"
 
-        print(f"   📊 Found {len(issues)} smells")
+        logger.info(f"   📊 Found {len(issues)} smells")
         return issues
 
     except subprocess.TimeoutExpired:
-        print("   ❌ qlty smells timed out after 300s", file=sys.stderr)
+        logger.error("   ❌ qlty smells timed out after 300s")
         return []
     except (OSError, subprocess.SubprocessError) as e:
-        print(f"   ❌ Error running qlty smells: {e}", file=sys.stderr)
+        logger.error(f"   ❌ Error running qlty smells: {e}")
         return []

@@ -23,6 +23,10 @@ SCRIPTS = Path(__file__).resolve().parents[1]
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
+from lib.core import get_logger  # noqa: E402  # lib/ is only resolvable after sys.path injection above
+
+logger = get_logger(__name__)
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run MCB GitOps validation discovery.")
@@ -41,11 +45,11 @@ def main() -> int:
     args = parse_args()
     k8s_root = args.root / "k8s"
     summary = summarize(k8s_root)
-    print(f"GITOPS {summary.status}: {summary.message}")
+    logger.info(f"GITOPS {summary.status}: {summary.message}")
     if summary.report.total_issues:
-        print(summary.report.generate_summary())
+        logger.info(summary.report.generate_summary())
     for target in summary.targets:
-        print(f"{target.kind}\t{target.path}")
+        logger.info(f"{target.kind}\t{target.path}")
     return 0 if summary.status in {"OK", "SKIP"} else 1
 
 

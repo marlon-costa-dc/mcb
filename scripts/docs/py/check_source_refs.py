@@ -12,7 +12,11 @@ import os
 import re
 import sys
 
+from lib.core import get_logger
+
 from scripts.docs.py import utils
+
+logger = get_logger(__name__)
 
 
 def _check_files(docs_dir, project_root):
@@ -29,7 +33,7 @@ def _check_files(docs_dir, project_root):
             with open(filepath, encoding="utf-8") as file:
                 content = file.read()
         except Exception as e:
-            print(f"Error reading {rel_filepath}: {e}")
+            logger.error(f"Error reading {rel_filepath}: {e}")
             continue
 
         # Strip comments
@@ -68,20 +72,20 @@ def main():
     docs_dir = os.path.join(project_root, "docs")
 
     if not os.path.exists(docs_dir):
-        print(f"Error: docs directory not found at {docs_dir}")
+        logger.error(f"Error: docs directory not found at {docs_dir}")
         sys.exit(1)
 
     issues, checked = _check_files(docs_dir, project_root)
 
-    print(f"Checked source refs in {checked} docs")
+    logger.info(f"Checked source refs in {checked} docs")
 
     if issues:
-        print(f"Found {len(issues)} broken source references:")
+        logger.info(f"Found {len(issues)} broken source references:")
         for fp, ref in sorted(set(issues)):
-            print(f"  {fp}: `{ref}` -> Not found")
+            logger.info(f"  {fp}: `{ref}` -> Not found")
         sys.exit(1)
     else:
-        print("No broken source references found.")
+        logger.info("No broken source references found.")
         sys.exit(0)
 
 
