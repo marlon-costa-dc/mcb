@@ -1,4 +1,10 @@
-"""Reporting and analysis logic."""
+"""Qlty Report.
+
+Copyright (c) 2025 MCB Contributors. All rights reserved.
+SPDX-License-Identifier: MIT
+"""
+
+from __future__ import annotations
 
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field

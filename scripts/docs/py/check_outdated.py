@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""Scan docs/ for outdated content patterns."""
+"""Docs Py Check Outdated.
+
+Copyright (c) 2025 MCB Contributors. All rights reserved.
+SPDX-License-Identifier: MIT
+"""
+
+from __future__ import annotations
 
 import argparse
 import os

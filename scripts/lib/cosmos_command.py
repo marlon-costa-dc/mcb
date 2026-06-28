@@ -1,9 +1,8 @@
-"""Generic dynamic command framework for workspace Make wrappers.
+"""Lib Cosmos Command.
 
-This file is distributed by ~/.ai-hub to workspaces catalogued in CRG.
-When copied into <workspace>/scripts/lib/, ROOT becomes the workspace root.
+Copyright (c) 2025 MCB Contributors. All rights reserved.
+SPDX-License-Identifier: MIT
 """
-
 from __future__ import annotations
 
 import os

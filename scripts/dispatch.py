@@ -1,8 +1,8 @@
-"""Thin entrypoint for the workspace command framework.
+"""Dispatch.
 
-Copied into <workspace>/scripts/dispatch.py by ~/.ai-hub distribution.
+Copyright (c) 2025 MCB Contributors. All rights reserved.
+SPDX-License-Identifier: MIT
 """
-
 from __future__ import annotations
 
 from lib.cosmos_command import main

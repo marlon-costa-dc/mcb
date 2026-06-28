@@ -1,11 +1,8 @@
-"""GitOps validation helpers built on the existing script framework.
+"""Lib Gitops.
 
-This module is intentionally small: it discovers render targets once and returns
-structured summaries that the qlty reporting/fix layers can consume later.
-Online Kubernetes, Vault, and ArgoCD checks must be added through library
-clients here, not through kubectl/vault/argocd shell commands.
+Copyright (c) 2025 MCB Contributors. All rights reserved.
+SPDX-License-Identifier: MIT
 """
-
 from __future__ import annotations
 
 from dataclasses import dataclass

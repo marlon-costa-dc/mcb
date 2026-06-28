@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+"""Check Gitops.
+
+Copyright (c) 2025 MCB Contributors. All rights reserved.
+SPDX-License-Identifier: MIT
+"""
 # /// cosmos-command
 # verb = "check"
 # what = "gitops"

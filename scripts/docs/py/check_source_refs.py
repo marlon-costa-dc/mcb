@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""Scan docs/ for references to source paths that don't exist."""
+"""Docs Py Check Source Refs.
+
+Copyright (c) 2025 MCB Contributors. All rights reserved.
+SPDX-License-Identifier: MIT
+"""
+
+from __future__ import annotations
 
 import argparse
 import os

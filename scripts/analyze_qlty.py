@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""Wrapper for qlty analysis package.
+"""Analyze Qlty.
 
-This wrapper keeps compatibility with older invocations that used
-`--markdown <path>` to request a markdown report.
+Copyright (c) 2025 MCB Contributors. All rights reserved.
+SPDX-License-Identifier: MIT
 """
+
+from __future__ import annotations
 
 import sys
 
