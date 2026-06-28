@@ -6,8 +6,10 @@ SPDX-License-Identifier: MIT
 
 from __future__ import annotations
 
+from typing import cast
+
 import pytest
-from pydantic import BaseModel
+from flext_core import FlextModelsPydantic as fmp
 
 from ..core import (
     BaseMcbSettings,
@@ -24,8 +26,8 @@ from ..core import (
 class TestResult:
     def test_ok_is_ok(self) -> None:
         result: McbResult[int] = r[int].ok(42)
-        assert result.is_ok
-        assert not result.is_err
+        assert result.success
+        assert not result.failure
         assert result.unwrap() == 42
         assert result.value == 42
         assert bool(result)
@@ -33,17 +35,16 @@ class TestResult:
 
     def test_err_is_err(self) -> None:
         result: McbResult[int] = r[int].fail("boom", error_code="E001")
-        assert result.is_err
-        assert not result.is_ok
+        assert result.failure
+        assert not result.success
         assert not bool(result)
         assert result.error == "boom"
         assert result.error_code == "E001"
         assert repr(result) == "r[T].fail('boom')"
 
-    def test_unwrap_raises_captured_exception(self) -> None:
-        exc = ValueError("boom")
-        result: McbResult[int] = r[int].fail("boom", exception=exc)
-        with pytest.raises(ValueError, match="boom"):
+    def test_unwrap_raises_runtime_error(self) -> None:
+        result: McbResult[int] = r[int].fail("boom")
+        with pytest.raises(RuntimeError, match="boom"):
             result.unwrap()
 
     def test_unwrap_raises_on_failure_without_exception(self) -> None:
@@ -64,13 +65,13 @@ class TestResult:
         assert r[int].fail("boom").unwrap_or(0) == 0
 
     def test_unwrap_or_else(self) -> None:
-        assert r[int].ok(42).unwrap_or_else(lambda _: 0) == 42
-        assert r[int].fail("boom").unwrap_or_else(lambda e: len(e)) == 4
+        assert r[int].ok(42).unwrap_or_else(lambda: 0) == 42
+        assert r[int].fail("boom").unwrap_or_else(lambda: 4) == 4
 
     def test_map(self) -> None:
         assert r[int].ok(21).map(lambda x: x * 2).unwrap() == 42
         mapped = r[int].fail("boom").map(lambda x: x * 2)
-        assert mapped.is_err
+        assert mapped.failure
 
     def test_flat_map(self) -> None:
         def double(x: int) -> McbResult[int]:
@@ -81,13 +82,11 @@ class TestResult:
         assert chained.unwrap() == 84
 
         failed = r[int].fail("boom").flat_map(double)
-        assert failed.is_err
+        assert failed.failure
 
-    def test_map_catches_exceptions(self) -> None:
-        result = r[int].ok(21).map(lambda _: 1 / 0)
-        assert result.is_err
-        assert "division" in result.error.lower()
-        assert result.exception is not None
+    def test_map_does_not_catch_exceptions(self) -> None:
+        with pytest.raises(ZeroDivisionError):
+            r[int].ok(21).map(lambda _: 1 / 0)
 
     def test_fold(self) -> None:
         ok_result = r[int].ok(21)
@@ -108,8 +107,8 @@ class TestResult:
     def test_filter(self) -> None:
         assert r[int].ok(42).filter(lambda x: x > 10).unwrap() == 42
         filtered = r[int].ok(5).filter(lambda x: x > 10)
-        assert filtered.is_err
-        assert r[int].fail("boom").filter(lambda x: x > 10).is_err
+        assert filtered.failure
+        assert r[int].fail("boom").filter(lambda x: x > 10).failure
 
     def test_flow_through(self) -> None:
         def add_one(x: int) -> McbResult[int]:
@@ -122,12 +121,12 @@ class TestResult:
             return r[int].fail("stop")
 
         halted = r[int].ok(1).flow_through(add_one, fail, add_one)
-        assert halted.is_err
+        assert halted.failure
 
     def test_tap(self) -> None:
         side_effect: list[int] = []
         result = r[int].ok(42).tap(side_effect.append)
-        assert result.is_ok
+        assert result.success
         assert side_effect == [42]
 
         r[int].fail("boom").tap(side_effect.append)
@@ -136,7 +135,7 @@ class TestResult:
     def test_tap_error(self) -> None:
         side_effect: list[str] = []
         result = r[int].fail("boom").tap_error(side_effect.append)
-        assert result.is_err
+        assert result.failure
         assert side_effect == ["boom"]
 
         r[int].ok(42).tap_error(side_effect.append)
@@ -147,7 +146,7 @@ class TestResult:
         assert result.error == "BOOM"
 
         unchanged = r[int].ok(42).map_error(lambda e: e.upper())
-        assert unchanged.is_ok
+        assert unchanged.success
 
     def test_map_or(self) -> None:
         assert r[int].ok(42).map_or(0) == 42
@@ -157,25 +156,25 @@ class TestResult:
 
     def test_fail_op(self) -> None:
         result = r[int].fail_op("load")
-        assert result.is_err
-        assert "load failed" in result.error
+        assert result.failure
+        assert "load failed" in (result.error or "")
 
         with_exception = r[int].fail_op("load", ValueError("missing"))
-        assert with_exception.is_err
-        assert "load failed: missing" in with_exception.error
+        assert with_exception.failure
+        assert "load failed: missing" in (with_exception.error or "")
         assert isinstance(with_exception.exception, ValueError)
 
     def test_from_validation(self) -> None:
-        class User(BaseModel):
+        class User(fmp.BaseModel):
             name: str
             age: int
 
         result = McbResult.from_validation({"name": "Ada", "age": 36}, User)
-        assert result.is_ok
+        assert result.success
         assert result.value.name == "Ada"
 
         invalid = McbResult.from_validation({"name": "Ada"}, User)
-        assert invalid.is_err
+        assert invalid.failure
 
     def test_accumulate_errors(self) -> None:
         results = [
@@ -184,7 +183,7 @@ class TestResult:
             r[int].ok(3),
         ]
         combined = McbResult.accumulate_errors(*results)
-        assert combined.is_ok
+        assert combined.success
         assert list(combined.value) == [1, 2, 3]
 
         mixed = [
@@ -193,9 +192,9 @@ class TestResult:
             r[int].fail("b"),
         ]
         combined = McbResult.accumulate_errors(*mixed)
-        assert combined.is_err
-        assert "a" in combined.error
-        assert "b" in combined.error
+        assert combined.failure
+        assert "a" in (combined.error or "")
+        assert "b" in (combined.error or "")
 
     def test_safe_decorator(self) -> None:
         @McbResult.safe
@@ -209,8 +208,8 @@ class TestResult:
             raise ValueError("boom")
 
         result = explode()
-        assert result.is_err
-        assert "boom" in result.error
+        assert result.failure
+        assert "boom" in (result.error or "")
 
 
 class TestSettings:
@@ -291,13 +290,13 @@ class TestLogging:
         configure_logging(json_format=False)
         logger = get_logger(__name__)
         log_result = logger.info("test.event", key="value")
-        assert log_result.is_ok
+        assert log_result.success
 
     def test_logger_bind(self) -> None:
         configure_logging(json_format=False)
         logger = get_logger(__name__).bind(request_id="abc")
         assert isinstance(logger, McbLogger)
-        assert logger.info("bound.event").is_ok
+        assert logger.info("bound.event").success
 
 
 class TestService:
@@ -340,6 +339,7 @@ class TestService:
 
         DemoService.reset_for_testing()
         service = DemoService.with_settings(Settings.fetch_global())
-        assert service.runtime_settings.name == "default"
+        runtime_settings = cast(Settings, service.runtime_settings)
+        assert runtime_settings.name == "default"
         DemoService.reset_for_testing()
         BaseMcbSettings.reset_for_testing()

@@ -6,8 +6,10 @@ build-backend = "setuptools.build_meta"
 name = "mcb-scripts"
 version = "0.3.2"
 description = "Repository-local automation helpers for MCB"
-requires-python = ">=3.12"
+requires-python = ">=3.13,<3.14"
 dependencies = [
+    "flext-core @ file:///home/marlonsc/flext/flext-core",
+    "flext-cli @ file:///home/marlonsc/flext/flext-cli",
     "pydantic>=2.13.4",
     "pydantic-settings>=2.14.2",
     "structlog>=26.1.0",
@@ -35,7 +37,7 @@ package = false
 
 [tool.ruff]
 line-length = 120
-target-version = "py312"
+target-version = "py313"
 extend-exclude = [
     # xtask-bound migration lane (mcb-rt1j); do not Pythonize in this workstream.
     "scripts/codegen-conversions.py",
@@ -48,7 +50,7 @@ select = ["B", "C4", "E", "F", "I", "SIM", "UP", "W"]
 ignore = ["E501"]
 
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.13"
 mypy_path = "scripts"
 files = [
     "check",

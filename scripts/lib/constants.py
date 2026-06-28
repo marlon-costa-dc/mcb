@@ -10,37 +10,25 @@ from typing import Final
 
 
 class McbConstants:
-    """Project-wide constants for MCB Python automation."""
+    """Project-wide constants for MCB Python automation.
+
+    This is a standalone SSOT class rather than a subclass of
+    :class:`flext_core.FlextConstants` because the FLEXT constants declare
+    environment names as ``Final`` and therefore cannot be overridden in a
+    subclass without breaking static typing. MCB-specific values are kept here;
+    canonical FLEXT constants remain available through ``flext_core.c``.
+    """
 
     # -- Environment / encoding --
     ENV_PREFIX: Final[str] = "MCB_"
+    ENV_FILE_ENV_VAR: Final[str] = "MCB_ENV_FILE"
+    ENV_FILE_DEFAULT: Final[str] = ".env"
     DEFAULT_ENCODING: Final[str] = "utf-8"
 
-    # -- Result error templates --
-    ERR_RESULT_CANNOT_ACCESS_VALUE: Final[str] = "Cannot access value of failed result: {error}"
-    ERR_RESULT_CANNOT_UNWRAP: Final[str] = "Cannot unwrap failed result: {error}"
-    ERR_RESULT_FILTER_PREDICATE_FAILED: Final[str] = "Value did not pass filter predicate"
-
-    # -- Common exception tuples for boundary catches --
-    EXC_BROAD_RUNTIME: Final[tuple[type[Exception], ...]] = (
-        ArithmeticError,
-        AttributeError,
-        KeyError,
-        LookupError,
-        OSError,
-        RuntimeError,
-        TypeError,
-        ValueError,
-    )
-    """Broad runtime catch for adapter-internal flows (no IO, no import)."""
-
-    EXC_VALIDATION_TYPE_VALUE: Final[tuple[type[Exception], ...]] = (
-        TypeError,
-        ValueError,
-    )
-    """Minimal type-validation catch for value-coercion boundaries."""
+    # -- Project identity --
+    PROJECT_NAME: Final[str] = "mcb"
 
 
-c = McbConstants
+c = McbConstants()
 
 __all__ = ["McbConstants", "c"]

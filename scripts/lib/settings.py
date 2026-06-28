@@ -1,0 +1,56 @@
+"""FLEXT-style settings base for MCB Python tooling.
+
+Copyright (c) 2025 MCB Contributors. All rights reserved.
+SPDX-License-Identifier: MIT
+"""
+
+from __future__ import annotations
+
+import os
+from pathlib import Path
+from typing import ClassVar
+
+from flext_core import FlextSettingsBase
+from pydantic_settings import SettingsConfigDict
+
+from .constants import c
+
+
+class BaseMcbSettings(FlextSettingsBase):
+    """Base settings for MCB scripts with per-class singleton lifecycle.
+
+    Environment variables are read with the ``MCB_`` prefix, e.g.
+    ``MCB_LOG_LEVEL`` maps to ``log_level``.
+    """
+
+    model_config: ClassVar[SettingsConfigDict] = (
+        FlextSettingsBase.model_config.copy()
+    )
+    model_config["env_prefix"] = c.ENV_PREFIX
+    model_config["extra"] = "ignore"
+    model_config["validate_assignment"] = True
+
+    @classmethod
+    def resolve_env_file(cls, namespace: str | None = None) -> str:
+        """Centralised ``.env`` discovery for MCB.
+
+        Honours ``MCB_ENV_FILE``; otherwise prefers ``.env.mcb-{namespace}``
+        when ``namespace`` is given and the file exists, falling back to ``.env``.
+        """
+        custom_env_file = os.environ.get(c.ENV_FILE_ENV_VAR)
+        if custom_env_file:
+            custom_path = Path(custom_env_file)
+            if custom_path.exists():
+                return str(custom_path.resolve())
+            return custom_env_file
+        if namespace:
+            scoped = Path.cwd() / f".env.mcb-{namespace}"
+            if scoped.exists():
+                return str(scoped.resolve())
+        default_path = Path.cwd() / ".env"
+        if default_path.exists():
+            return str(default_path.resolve())
+        return c.ENV_FILE_DEFAULT
+
+
+__all__ = ["BaseMcbSettings"]
