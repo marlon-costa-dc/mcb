@@ -16,6 +16,7 @@ public abstraction (``result``, ``settings``, ``logger``, ``service``).
 
 from __future__ import annotations
 
+from .cli import create_app_with_common_params, register_result_command
 from .constants import McbConstants, c
 from .logger import McbLogger, configure_logging, get_logger
 from .result import McbResult, r
@@ -31,7 +32,9 @@ __all__ = [
     "McbService",
     "c",
     "configure_logging",
+    "create_app_with_common_params",
     "get_logger",
     "r",
+    "register_result_command",
     "s",
 ]

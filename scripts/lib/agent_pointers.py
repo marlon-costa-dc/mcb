@@ -9,7 +9,7 @@ import argparse
 from pathlib import Path
 from typing import NamedTuple
 
-from .logger import get_logger
+from lib.logger import get_logger
 
 logger = get_logger(__name__)
 
