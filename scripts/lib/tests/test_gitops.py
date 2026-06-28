@@ -40,7 +40,9 @@ class GitOpsDiscoveryTests(unittest.TestCase):
 
             targets = discover_targets(root / "k8s")
 
-        self.assertEqual([(target.kind, target.path.name) for target in targets], [("helm", "chart"), ("kustomize", "overlay")])
+        self.assertEqual(
+            [(target.kind, target.path.name) for target in targets], [("helm", "chart"), ("kustomize", "overlay")]
+        )
 
     def test_policy_issues_reuse_qlty_report_model(self) -> None:
         from lib.gitops import analyze

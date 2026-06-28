@@ -24,9 +24,7 @@ def _process_links(links, filepath, rel_filepath, project_root):
             target = os.path.normpath(os.path.join(os.path.dirname(filepath), link))
 
         if not os.path.exists(target):
-            broken_in_file.append(
-                (rel_filepath, text, link, os.path.relpath(target, project_root))
-            )
+            broken_in_file.append((rel_filepath, text, link, os.path.relpath(target, project_root)))
 
     return broken_in_file, checked_in_file
 
@@ -50,9 +48,7 @@ def _check_files(docs_dir, project_root):
             continue
 
         links = utils.extract_links(content)
-        file_broken, file_links = _process_links(
-            links, filepath, rel_filepath, project_root
-        )
+        file_broken, file_links = _process_links(links, filepath, rel_filepath, project_root)
 
         broken.extend(file_broken)
         checked_links += file_links

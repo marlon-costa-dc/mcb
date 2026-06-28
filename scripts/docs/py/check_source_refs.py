@@ -50,9 +50,7 @@ def _check_files(docs_dir, project_root):
 
 def main():
     """Main entry point for checking broken source references in documentation."""
-    parser = argparse.ArgumentParser(
-        description="Check broken source references in docs."
-    )
+    parser = argparse.ArgumentParser(description="Check broken source references in docs.")
     parser.add_argument("--root", default=".", help="Project root directory")
     args = parser.parse_args()
 

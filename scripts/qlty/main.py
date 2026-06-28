@@ -10,9 +10,7 @@ from qlty.report import analyze_issues
 from qlty.runner import run_qlty_check, run_qlty_smells
 
 
-def _load_checks_from_file(
-    args: argparse.Namespace, all_issues: list[SarifIssue]
-) -> bool:
+def _load_checks_from_file(args: argparse.Namespace, all_issues: list[SarifIssue]) -> bool:
     if args.checks_file and args.checks_file.exists():
         print(f"📖 Reading checks from {args.checks_file}")
         checks = parse_sarif_file(args.checks_file)
@@ -24,9 +22,7 @@ def _load_checks_from_file(
     return False
 
 
-def _collect_smells_issues(
-    args: argparse.Namespace, all_issues: list[SarifIssue]
-) -> None:
+def _collect_smells_issues(args: argparse.Namespace, all_issues: list[SarifIssue]) -> None:
     if args.smells_file.exists() and not args.scan:
         print(f"📖 Reading smells from {args.smells_file}")
         smells = parse_sarif_file(args.smells_file)
@@ -41,13 +37,9 @@ def _collect_smells_issues(
         print(f"⚠️  Smells file not found: {args.smells_file}", file=sys.stderr)
 
 
-def _collect_checks_issues(
-    args: argparse.Namespace, all_issues: list[SarifIssue]
-) -> None:
+def _collect_checks_issues(args: argparse.Namespace, all_issues: list[SarifIssue]) -> None:
     if args.scan:
-        outfile = (
-            args.checks_file if args.checks_file else Path("qlty.check.current.sarif")
-        )
+        outfile = args.checks_file if args.checks_file else Path("qlty.check.current.sarif")
         checks = run_qlty_check(output_file=outfile)
         for check in checks:
             check.category = "check"
@@ -89,9 +81,7 @@ def _collect_all_issues(args: argparse.Namespace) -> list[SarifIssue]:
     return all_issues
 
 
-def _apply_severity_filter(
-    args: argparse.Namespace, filtered: list[SarifIssue]
-) -> list[SarifIssue]:
+def _apply_severity_filter(args: argparse.Namespace, filtered: list[SarifIssue]) -> list[SarifIssue]:
     if args.severity:
         target_sev = Severity.from_str(args.severity)
         filtered = [i for i in filtered if i.level == target_sev]
@@ -99,27 +89,21 @@ def _apply_severity_filter(
     return filtered
 
 
-def _apply_rule_filter(
-    args: argparse.Namespace, filtered: list[SarifIssue]
-) -> list[SarifIssue]:
+def _apply_rule_filter(args: argparse.Namespace, filtered: list[SarifIssue]) -> list[SarifIssue]:
     if args.rule:
         filtered = [i for i in filtered if args.rule in i.rule_id]
         print(f"🔍 Filtered to {len(filtered)} issues matching rule '{args.rule}'")
     return filtered
 
 
-def _apply_category_filter(
-    args: argparse.Namespace, filtered: list[SarifIssue]
-) -> list[SarifIssue]:
+def _apply_category_filter(args: argparse.Namespace, filtered: list[SarifIssue]) -> list[SarifIssue]:
     if args.category:
         filtered = [i for i in filtered if args.category in i.rule_category]
         print(f"🔍 Filtered to {len(filtered)} issues in category '{args.category}'")
     return filtered
 
 
-def _apply_file_filter(
-    args: argparse.Namespace, filtered: list[SarifIssue]
-) -> list[SarifIssue]:
+def _apply_file_filter(args: argparse.Namespace, filtered: list[SarifIssue]) -> list[SarifIssue]:
     if args.file:
         import fnmatch
 
@@ -128,9 +112,7 @@ def _apply_file_filter(
     return filtered
 
 
-def _apply_exclude_rule_filter(
-    args: argparse.Namespace, filtered: list[SarifIssue]
-) -> list[SarifIssue]:
+def _apply_exclude_rule_filter(args: argparse.Namespace, filtered: list[SarifIssue]) -> list[SarifIssue]:
     if args.exclude_rule:
         for rule in args.exclude_rule:
             filtered = [i for i in filtered if rule not in i.rule_id]
@@ -138,9 +120,7 @@ def _apply_exclude_rule_filter(
     return filtered
 
 
-def _apply_exclude_category_filter(
-    args: argparse.Namespace, filtered: list[SarifIssue]
-) -> list[SarifIssue]:
+def _apply_exclude_category_filter(args: argparse.Namespace, filtered: list[SarifIssue]) -> list[SarifIssue]:
     if args.exclude_category:
         for cat in args.exclude_category:
             filtered = [i for i in filtered if cat not in i.rule_category]
@@ -148,16 +128,12 @@ def _apply_exclude_category_filter(
     return filtered
 
 
-def _apply_exclude_file_filter(
-    args: argparse.Namespace, filtered: list[SarifIssue]
-) -> list[SarifIssue]:
+def _apply_exclude_file_filter(args: argparse.Namespace, filtered: list[SarifIssue]) -> list[SarifIssue]:
     if args.exclude_file:
         import fnmatch
 
         for pattern in args.exclude_file:
-            filtered = [
-                i for i in filtered if not fnmatch.fnmatch(i.file_path, pattern)
-            ]
+            filtered = [i for i in filtered if not fnmatch.fnmatch(i.file_path, pattern)]
             print(f"🔍 Excluded issues in files matching '{pattern}'")
     return filtered
 
@@ -167,9 +143,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Analyze SARIF quality reports")
 
     # Mode selection
-    parser.add_argument(
-        "--scan", action="store_true", help="Run qlty scan instead of reading files"
-    )
+    parser.add_argument("--scan", action="store_true", help="Run qlty scan instead of reading files")
 
     # Input files
     parser.add_argument(
@@ -230,9 +204,7 @@ def main() -> None:
     )
 
     # Output control
-    parser.add_argument(
-        "--summary-only", action="store_true", help="Print only summary, no report"
-    )
+    parser.add_argument("--summary-only", action="store_true", help="Print only summary, no report")
     parser.add_argument(
         "--report-file",
         type=Path,

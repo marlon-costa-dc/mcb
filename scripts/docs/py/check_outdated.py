@@ -13,11 +13,7 @@ def _process_lines(lines, rel_filepath, outdated_patterns, is_suppressed):
     issues_in_file = []
     for i, line in enumerate(lines, 1):
         # Skip whitespace, comments, code blocks start/end
-        if (
-            not line.strip()
-            or line.strip().startswith("<!--")
-            or line.strip().startswith("```")
-        ):
+        if not line.strip() or line.strip().startswith("<!--") or line.strip().startswith("```"):
             continue
 
         # Check line content
@@ -55,9 +51,7 @@ def _check_files(docs_dir, project_root):
             re.IGNORECASE,
         )
 
-    md_files = utils.find_md_files(
-        docs_dir, exclude_dirs={".git", "fixtures", "archive"}
-    )
+    md_files = utils.find_md_files(docs_dir, exclude_dirs={".git", "fixtures", "archive"})
 
     for filepath in md_files:
         rel_filepath = os.path.relpath(filepath, project_root)
@@ -70,9 +64,7 @@ def _check_files(docs_dir, project_root):
             print(f"Error reading {rel_filepath}: {e}")
             continue
 
-        file_issues = _process_lines(
-            lines, rel_filepath, OUTDATED_PATTERNS, is_suppressed
-        )
+        file_issues = _process_lines(lines, rel_filepath, OUTDATED_PATTERNS, is_suppressed)
         issues.extend(file_issues)
 
     return issues, checked
