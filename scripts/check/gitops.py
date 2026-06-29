@@ -15,43 +15,55 @@ SPDX-License-Identifier: MIT
 # ///
 from __future__ import annotations
 
-import argparse
 import sys
 from pathlib import Path
+
+import typer
+from pydantic import BaseModel
 
 SCRIPTS = Path(__file__).resolve().parents[1]
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-from lib.core import get_logger  # noqa: E402  # lib/ is only resolvable after sys.path injection above
+from lib.cli import create_app_with_common_params, register_result_command  # noqa: E402
+from lib.core import get_logger, r  # noqa: E402
+from lib.gitops import GitOpsSummary, summarize  # noqa: E402
 
 logger = get_logger(__name__)
 
 
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run MCB GitOps validation discovery.")
-    parser.add_argument(
-        "--root",
-        type=Path,
-        default=Path(__file__).resolve().parents[2],
-        help="Workspace root. Defaults to the repository root.",
-    )
-    return parser.parse_args()
+class GitopsParams(BaseModel):
+    root: Path = Path(__file__).resolve().parents[2]
 
 
-def main() -> int:
-    from lib.gitops import summarize
-
-    args = parse_args()
-    k8s_root = args.root / "k8s"
+def run(params: GitopsParams) -> r[GitOpsSummary]:
+    """Discover and validate GitOps manifests."""
+    k8s_root = params.root / "k8s"
     summary = summarize(k8s_root)
     logger.info(f"GITOPS {summary.status}: {summary.message}")
     if summary.report.total_issues:
         logger.info(summary.report.generate_summary())
     for target in summary.targets:
         logger.info(f"{target.kind}\t{target.path}")
-    return 0 if summary.status in {"OK", "SKIP"} else 1
+    if summary.status not in {"OK", "SKIP"}:
+        return r[GitOpsSummary].fail(summary.message)
+    return r[GitOpsSummary].ok(summary)
+
+
+def main() -> None:
+    app = create_app_with_common_params(
+        name="check-gitops",
+        help_text="Run MCB GitOps validation discovery.",
+    )
+    register_result_command(
+        app,
+        name="run",
+        help_text="Discover and validate GitOps manifests.",
+        model_cls=GitopsParams,
+        handler=run,
+    )
+    typer.main.get_command(app)()
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    main()
