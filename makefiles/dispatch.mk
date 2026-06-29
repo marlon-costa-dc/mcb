@@ -201,7 +201,7 @@ define DISPATCH_CHECK
   audit)    $(MCB_RUN) cargo audit $(foreach i,$(MCB_AUDIT_IGNORES),--ignore $(i)) && $(MAKE) check WHAT=udeps ;; \
   udeps)    command -v cargo-udeps >/dev/null 2>&1 || $(MCB_RUN) cargo install cargo-udeps; $(MCB_RUN) cargo +nightly udeps --workspace ;; \
   coverage) $(MCB_RUN) cargo tarpaulin --engine llvm --out Lcov --output-dir coverage --exclude-files 'crates/*/tests/integration/*' --exclude-files 'crates/*/tests/admin/*' --timeout 300 ;; \
-  qlty)     mkdir -p docs/reports; $(MCB_RUN) ./scripts/analyze_qlty.py --scan --check --summary --markdown docs/reports/qlty-check-REPORTS.md; $(MCB_RUN) ./scripts/analyze_qlty.py --scan --smells --summary --markdown docs/reports/qlty-smells-REPORTS.md ;; \
+  qlty)     mkdir -p docs/reports; $(MCB_RUN) ./scripts/analyze_qlty.py --scan --check --summary-only --report-file docs/reports/qlty-check-REPORTS.md; $(MCB_RUN) ./scripts/analyze_qlty.py --scan --smells --summary-only --report-file docs/reports/qlty-smells-REPORTS.md ;; \
   coordination) bd config get beads.role --json && bd status --json && bd hooks list --json && bash scripts/context/validate-beads-policy.sh && bd dep cycles --json && bd stale --status in_progress --days 1 --limit 25 --json && bd graph --all --compact >/dev/null ;; \
   guard)    $(MCB_TOOL) guard ;; \
   gitops)   UV_CACHE_DIR=.cache/uv $(MCB_RUN) uv run --no-sync python scripts/check/gitops.py ;; \
