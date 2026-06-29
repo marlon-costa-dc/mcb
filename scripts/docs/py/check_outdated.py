@@ -18,6 +18,7 @@ if str(SCRIPTS) not in sys.path:
 
 from lib.cli import create_app_with_common_params, register_result_command  # noqa: E402
 from lib.core import BaseMcbSettings, get_logger, r  # noqa: E402
+from lib.settings import McbSettings  # noqa: E402
 from pydantic import Field  # noqa: E402
 
 from docs.py import utils  # noqa: E402
@@ -100,7 +101,7 @@ def run(settings: CheckOutdatedSettings) -> r[int]:
     if settings.root == Path("."):
         project_root = utils.get_project_root()
 
-    docs_dir = os.path.join(project_root, "docs")
+    docs_dir = os.path.join(project_root, str(McbSettings().docs_dir))
 
     if not os.path.exists(docs_dir):
         return r[int].fail(f"docs directory not found at {docs_dir}")

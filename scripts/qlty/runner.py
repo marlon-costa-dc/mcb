@@ -10,6 +10,7 @@ import subprocess  # nosec B404
 from pathlib import Path
 
 from lib.core import get_logger, r
+from lib.settings import McbSettings
 
 from qlty.model import SarifIssue
 from qlty.parser import parse_sarif_file
@@ -18,9 +19,10 @@ logger = get_logger(__name__)
 
 
 def run_qlty_check(
-    output_file: Path = Path("qlty.check.current.sarif"),
+    output_file: Path | None = None,
 ) -> r[list[SarifIssue]]:
     """Run qlty check --all --sarif, save to file, and parse SARIF output."""
+    output_file = output_file or McbSettings().qlty_check_sarif
     logger.info("Running qlty check --all --sarif...")
 
     try:
@@ -52,9 +54,10 @@ def run_qlty_check(
 
 
 def run_qlty_smells(
-    output_file: Path = Path("qlty.smells.sarif"),
+    output_file: Path | None = None,
 ) -> r[list[SarifIssue]]:
     """Run qlty smells --all --sarif, save to file, and parse SARIF output."""
+    output_file = output_file or McbSettings().qlty_smells_sarif
     logger.info("Running qlty smells --all --sarif...")
 
     try:

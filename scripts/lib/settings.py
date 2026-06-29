@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import ClassVar
 
 from flext_core import FlextSettingsBase
+from pydantic import Field
 from pydantic_settings import SettingsConfigDict
 
 from .constants import c
@@ -67,4 +68,38 @@ class BaseCommandSettings(BaseMcbSettings):
     model_config["env_prefix"] = ""
 
 
-__all__ = ["BaseMcbSettings", "BaseCommandSettings"]
+class McbSettings(BaseMcbSettings):
+    """Shared MCB settings with configurable project paths.
+
+    These fields are intentionally overridable through ``MCB_*`` environment
+    variables so that CI, local checkouts, and test workspaces can relocate
+    inputs/outputs without editing source.
+    """
+
+    project_root: Path = Field(
+        default=Path("."),
+        description="Project root directory",
+    )
+    k8s_dir: Path = Field(
+        default=Path("k8s"),
+        description="Kubernetes manifests directory",
+    )
+    docs_dir: Path = Field(
+        default=Path("docs"),
+        description="Documentation directory",
+    )
+    qlty_check_sarif: Path = Field(
+        default=Path("qlty.check.current.sarif"),
+        description="SARIF output path for qlty check",
+    )
+    qlty_smells_sarif: Path = Field(
+        default=Path("qlty.smells.sarif"),
+        description="SARIF output path for qlty smells",
+    )
+    qlty_report_md: Path = Field(
+        default=Path("QUALITY_REPORT.md"),
+        description="Markdown quality report output path",
+    )
+
+
+__all__ = ["BaseMcbSettings", "BaseCommandSettings", "McbSettings"]

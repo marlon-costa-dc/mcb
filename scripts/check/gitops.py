@@ -25,6 +25,7 @@ if str(SCRIPTS) not in sys.path:
 from lib.cli import create_app_with_common_params, register_result_command  # noqa: E402
 from lib.core import BaseCommandSettings, get_logger, r  # noqa: E402
 from lib.gitops import GitOpsSummary, summarize  # noqa: E402
+from lib.settings import McbSettings  # noqa: E402
 from pydantic import Field  # noqa: E402
 
 logger = get_logger(__name__)
@@ -46,7 +47,7 @@ class GitopsSettings(BaseCommandSettings):
 
 def run(settings: GitopsSettings) -> r[GitOpsSummary]:
     """Discover and validate GitOps manifests."""
-    k8s_root = settings.root / "k8s"
+    k8s_root = settings.root / str(McbSettings().k8s_dir)
     summary_result = summarize(k8s_root)
     if summary_result.failure:
         logger.error(summary_result.error or "gitops discovery failed")

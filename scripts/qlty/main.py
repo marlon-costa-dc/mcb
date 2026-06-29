@@ -12,6 +12,7 @@ from pathlib import Path
 import typer
 from lib.cli import create_app_with_common_params, register_result_command
 from lib.core import get_logger, r
+from lib.settings import McbSettings
 from pydantic import BaseModel, Field
 
 from qlty.model import SarifIssue, Severity
@@ -25,7 +26,7 @@ logger = get_logger(__name__)
 class QltyParams(BaseModel):
     scan: bool = False
     checks_file: Path | None = None
-    smells_file: Path = Path("qlty.smells.sarif")
+    smells_file: Path = Field(default_factory=lambda: McbSettings().qlty_smells_sarif)
     type: str = "both"
     check: bool = False
     smells: bool = False
@@ -37,7 +38,7 @@ class QltyParams(BaseModel):
     exclude_category: list[str] = Field(default_factory=list)
     exclude_file: list[str] = Field(default_factory=list)
     summary_only: bool = False
-    report_file: Path = Path("QUALITY_REPORT.md")
+    report_file: Path = Field(default_factory=lambda: McbSettings().qlty_report_md)
 
 
 def _load_checks_from_file(checks_file: Path, all_issues: list[SarifIssue]) -> r[None]:
@@ -67,7 +68,7 @@ def _collect_smells_issues(params: QltyParams, all_issues: list[SarifIssue]) -> 
         all_issues.extend(smells)
         logger.info(f"   Found {len(smells)} code smells")
     elif params.scan:
-        smells_result = run_qlty_smells(params.smells_file or Path("qlty.smells.sarif"))
+        smells_result = run_qlty_smells(params.smells_file or McbSettings().qlty_smells_sarif)
         if smells_result.failure:
             return r[None].fail(smells_result.error or "qlty smells failed")
         smells = smells_result.unwrap()
@@ -79,7 +80,7 @@ def _collect_smells_issues(params: QltyParams, all_issues: list[SarifIssue]) -> 
 
 def _collect_checks_issues(params: QltyParams, all_issues: list[SarifIssue]) -> r[None]:
     if params.scan:
-        outfile = params.checks_file if params.checks_file else Path("qlty.check.current.sarif")
+        outfile = params.checks_file if params.checks_file else McbSettings().qlty_check_sarif
         checks_result = run_qlty_check(output_file=outfile)
         if checks_result.failure:
             return r[None].fail(checks_result.error or "qlty check failed")
