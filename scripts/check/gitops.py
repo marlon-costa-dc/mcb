@@ -47,7 +47,11 @@ class GitopsSettings(BaseCommandSettings):
 def run(settings: GitopsSettings) -> r[GitOpsSummary]:
     """Discover and validate GitOps manifests."""
     k8s_root = settings.root / "k8s"
-    summary = summarize(k8s_root)
+    summary_result = summarize(k8s_root)
+    if summary_result.failure:
+        logger.error(summary_result.error or "gitops discovery failed")
+        return summary_result
+    summary = summary_result.unwrap()
     logger.info(f"GITOPS {summary.status}: {summary.message}")
     if summary.report.total_issues:
         logger.info(summary.report.generate_summary())

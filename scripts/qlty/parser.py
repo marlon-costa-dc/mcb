@@ -9,15 +9,26 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from lib.core import get_logger, r
+
 from qlty.model import SarifIssue, Severity
 
+logger = get_logger(__name__)
 
-def parse_sarif_file(path: Path) -> list[SarifIssue]:
+
+def parse_sarif_file(path: Path) -> r[list[SarifIssue]]:
     """Parse SARIF JSON and extract all issues."""
-    with path.open("r", encoding="utf-8") as f:
-        data = json.load(f)
+    try:
+        with path.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+    except FileNotFoundError:
+        return r[list[SarifIssue]].fail(f"SARIF file not found: {path}")
+    except json.JSONDecodeError as exc:
+        return r[list[SarifIssue]].fail(f"invalid SARIF JSON in {path}: {exc}")
+    except OSError as exc:
+        return r[list[SarifIssue]].fail(f"cannot read {path}: {exc}")
 
-    issues = []
+    issues: list[SarifIssue] = []
     for run in data.get("runs", []):
         results = run.get("results", [])
         for result in results:
@@ -61,4 +72,4 @@ def parse_sarif_file(path: Path) -> list[SarifIssue]:
                 )
             )
 
-    return issues
+    return r[list[SarifIssue]].ok(issues)

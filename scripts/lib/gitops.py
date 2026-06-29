@@ -15,6 +15,10 @@ from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
 from ruamel.yaml.error import YAMLError
 
+from lib.core import get_logger, r
+
+logger = get_logger(__name__)
+
 KUSTOMIZE_FILES = frozenset(
     {
         "kustomization.yaml",
@@ -81,34 +85,44 @@ def discover_targets(root: Path) -> list[GitOpsTarget]:
     return unique
 
 
-def summarize(root: Path) -> GitOpsSummary:
+def summarize(root: Path) -> r[GitOpsSummary]:
     """Return a discovery summary for GitOps targets below ``root``."""
 
     targets = discover_targets(root)
-    report = analyze(root)
+    report_result = analyze(root)
+    if report_result.failure:
+        return r[GitOpsSummary].fail(report_result.error or "gitops analysis failed")
+    report = report_result.unwrap()
+
     if report.total_issues:
-        return GitOpsSummary(
-            status="FAIL",
-            message=f"{root}: {report.total_issues} GitOps policy issue(s)",
+        return r[GitOpsSummary].ok(
+            GitOpsSummary(
+                status="FAIL",
+                message=f"{root}: {report.total_issues} GitOps policy issue(s)",
+                targets=targets,
+                report=report,
+            )
+        )
+    if not targets:
+        return r[GitOpsSummary].ok(
+            GitOpsSummary(
+                status="SKIP",
+                message=f"{root}: no Helm or Kustomize targets found",
+                targets=[],
+                report=report,
+            )
+        )
+    return r[GitOpsSummary].ok(
+        GitOpsSummary(
+            status="OK",
+            message=f"{root}: discovered {len(targets)} GitOps target(s)",
             targets=targets,
             report=report,
         )
-    if not targets:
-        return GitOpsSummary(
-            status="SKIP",
-            message=f"{root}: no Helm or Kustomize targets found",
-            targets=[],
-            report=report,
-        )
-    return GitOpsSummary(
-        status="OK",
-        message=f"{root}: discovered {len(targets)} GitOps target(s)",
-        targets=targets,
-        report=report,
     )
 
 
-def analyze(root: Path) -> AnalysisReport:
+def analyze(root: Path) -> r[AnalysisReport]:
     """Analyze GitOps source manifests through the existing qlty report model."""
 
     return analyze_issues(policy_issues(root))

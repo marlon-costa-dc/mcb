@@ -25,8 +25,10 @@ class GitOpsDiscoveryTests(unittest.TestCase):
             (root / "k8s").mkdir()
             (root / "k8s" / "README.md").write_text("# placeholder\n", encoding="utf-8")
 
-            summary = summarize(root / "k8s")
+            summary_result = summarize(root / "k8s")
 
+        self.assertFalse(summary_result.failure, summary_result.error)
+        summary = summary_result.unwrap()
         self.assertEqual(summary.status, "SKIP")
         self.assertEqual(summary.targets, [])
         self.assertIn("no Helm or Kustomize targets", summary.message)
@@ -75,8 +77,10 @@ class GitOpsDiscoveryTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            report = analyze(root / "k8s")
+            report_result = analyze(root / "k8s")
 
+        self.assertFalse(report_result.failure, report_result.error)
+        report = report_result.unwrap()
         self.assertEqual(report.total_issues, 1)
         self.assertEqual(report.issues[0].rule_id, "gitops:no-latest-image")
         self.assertEqual(report.by_category["gitops"], 1)
@@ -107,8 +111,10 @@ class GitOpsDiscoveryTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            report = analyze(root / "k8s")
+            report_result = analyze(root / "k8s")
 
+        self.assertFalse(report_result.failure, report_result.error)
+        report = report_result.unwrap()
         self.assertEqual(report.total_issues, 1)
         self.assertEqual(report.issues[0].start_line, 10)
 

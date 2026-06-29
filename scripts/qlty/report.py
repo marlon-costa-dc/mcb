@@ -9,6 +9,8 @@ from __future__ import annotations
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 
+from lib.core import r
+
 from qlty.model import SarifIssue, Severity
 from qlty.strategies import get_strategy
 
@@ -192,7 +194,7 @@ def _populate_file_counts(report: AnalysisReport, issues: list[SarifIssue]) -> N
         report.by_file[issue.file_path] += 1
 
 
-def analyze_issues(issues: list[SarifIssue]) -> AnalysisReport:
+def analyze_issues(issues: list[SarifIssue]) -> r[AnalysisReport]:
     """Generate statistical analysis of issues."""
     report = AnalysisReport()
     report.total_issues = len(issues)
@@ -205,4 +207,4 @@ def analyze_issues(issues: list[SarifIssue]) -> AnalysisReport:
     report.top_files = report.by_file.most_common(20)
     report.top_rules = report.by_rule.most_common(20)
 
-    return report
+    return r[AnalysisReport].ok(report)

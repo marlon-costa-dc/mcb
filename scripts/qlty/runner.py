@@ -9,7 +9,7 @@ from __future__ import annotations
 import subprocess  # nosec B404
 from pathlib import Path
 
-from lib.core import get_logger
+from lib.core import get_logger, r
 
 from qlty.model import SarifIssue
 from qlty.parser import parse_sarif_file
@@ -19,9 +19,9 @@ logger = get_logger(__name__)
 
 def run_qlty_check(
     output_file: Path = Path("qlty.check.current.sarif"),
-) -> list[SarifIssue]:
+) -> r[list[SarifIssue]]:
     """Run qlty check --all --sarif, save to file, and parse SARIF output."""
-    logger.info("🔄 Running qlty check --all --sarif...")
+    logger.info("Running qlty check --all --sarif...")
 
     try:
         result = subprocess.run(  # nosec B603 B607
@@ -31,31 +31,31 @@ def run_qlty_check(
             timeout=300,
             check=False,
         )
-
-        if not result.stdout.strip():
-            logger.info("   ✅ No issues found (clean)")
-            return []
-
-        output_file.write_text(result.stdout, encoding="utf-8")
-        logger.info(f"   💾 Saved SARIF to {output_file}")
-
-        issues = parse_sarif_file(output_file)
-        logger.info(f"   📊 Found {len(issues)} issues")
-        return issues
-
     except subprocess.TimeoutExpired:
-        logger.error("   ❌ qlty check timed out after 300s")
-        return []
-    except (OSError, subprocess.SubprocessError) as e:
-        logger.error(f"   ❌ Error running qlty: {e}")
-        return []
+        return r[list[SarifIssue]].fail("qlty check timed out after 300s")
+    except (OSError, subprocess.SubprocessError) as exc:
+        return r[list[SarifIssue]].fail(f"error running qlty check: {exc}")
+
+    if not result.stdout.strip():
+        logger.info("No issues found (clean)")
+        return r[list[SarifIssue]].ok([])
+
+    output_file.write_text(result.stdout, encoding="utf-8")
+    logger.info(f"Saved SARIF to {output_file}")
+
+    parsed = parse_sarif_file(output_file)
+    if parsed.failure:
+        return parsed
+    issues = parsed.unwrap()
+    logger.info(f"Found {len(issues)} issues")
+    return r[list[SarifIssue]].ok(issues)
 
 
 def run_qlty_smells(
     output_file: Path = Path("qlty.smells.sarif"),
-) -> list[SarifIssue]:
+) -> r[list[SarifIssue]]:
     """Run qlty smells --all --sarif, save to file, and parse SARIF output."""
-    logger.info("🔄 Running qlty smells --all --sarif...")
+    logger.info("Running qlty smells --all --sarif...")
 
     try:
         result = subprocess.run(  # nosec B603 B607
@@ -65,26 +65,26 @@ def run_qlty_smells(
             timeout=300,
             check=False,
         )
-
-        if not result.stdout.strip():
-            logger.info("   ✅ No smells found (clean)")
-            return []
-
-        output_file.write_text(result.stdout, encoding="utf-8")
-        logger.info(f"   💾 Saved SARIF to {output_file}")
-
-        issues = parse_sarif_file(output_file)
-        # Mark issues as 'smell' category if not present
-        for issue in issues:
-            if not issue.category:
-                issue.category = "smell"
-
-        logger.info(f"   📊 Found {len(issues)} smells")
-        return issues
-
     except subprocess.TimeoutExpired:
-        logger.error("   ❌ qlty smells timed out after 300s")
-        return []
-    except (OSError, subprocess.SubprocessError) as e:
-        logger.error(f"   ❌ Error running qlty smells: {e}")
-        return []
+        return r[list[SarifIssue]].fail("qlty smells timed out after 300s")
+    except (OSError, subprocess.SubprocessError) as exc:
+        return r[list[SarifIssue]].fail(f"error running qlty smells: {exc}")
+
+    if not result.stdout.strip():
+        logger.info("No smells found (clean)")
+        return r[list[SarifIssue]].ok([])
+
+    output_file.write_text(result.stdout, encoding="utf-8")
+    logger.info(f"Saved SARIF to {output_file}")
+
+    parsed = parse_sarif_file(output_file)
+    if parsed.failure:
+        return parsed
+    issues = parsed.unwrap()
+    # Mark issues as 'smell' category if not present
+    for issue in issues:
+        if not issue.category:
+            issue.category = "smell"
+
+    logger.info(f"Found {len(issues)} smells")
+    return r[list[SarifIssue]].ok(issues)

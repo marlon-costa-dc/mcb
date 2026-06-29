@@ -40,44 +40,63 @@ class QltyParams(BaseModel):
     report_file: Path = Path("QUALITY_REPORT.md")
 
 
-def _load_checks_from_file(checks_file: Path, all_issues: list[SarifIssue]) -> bool:
-    if checks_file.exists():
-        logger.info(f"📖 Reading checks from {checks_file}")
-        checks = parse_sarif_file(checks_file)
-        for check in checks:
-            check.category = "check"
-        all_issues.extend(checks)
-        logger.info(f"   Found {len(checks)} check issues")
-        return True
-    return False
+def _load_checks_from_file(checks_file: Path, all_issues: list[SarifIssue]) -> r[None]:
+    if not checks_file.exists():
+        return r[None].ok(None)
+    logger.info(f"📖 Reading checks from {checks_file}")
+    checks_result = parse_sarif_file(checks_file)
+    if checks_result.failure:
+        return r[None].fail(checks_result.error or "failed to parse checks file")
+    checks = checks_result.unwrap()
+    for check in checks:
+        check.category = "check"
+    all_issues.extend(checks)
+    logger.info(f"   Found {len(checks)} check issues")
+    return r[None].ok(None)
 
 
-def _collect_smells_issues(params: QltyParams, all_issues: list[SarifIssue]) -> None:
+def _collect_smells_issues(params: QltyParams, all_issues: list[SarifIssue]) -> r[None]:
     if params.smells_file.exists() and not params.scan:
         logger.info(f"📖 Reading smells from {params.smells_file}")
-        smells = parse_sarif_file(params.smells_file)
+        smells_result = parse_sarif_file(params.smells_file)
+        if smells_result.failure:
+            return r[None].fail(smells_result.error or "failed to parse smells file")
+        smells = smells_result.unwrap()
         for smell in smells:
             smell.category = "smell"
         all_issues.extend(smells)
         logger.info(f"   Found {len(smells)} code smells")
     elif params.scan:
-        smells = run_qlty_smells(params.smells_file or Path("qlty.smells.sarif"))
+        smells_result = run_qlty_smells(params.smells_file or Path("qlty.smells.sarif"))
+        if smells_result.failure:
+            return r[None].fail(smells_result.error or "qlty smells failed")
+        smells = smells_result.unwrap()
         all_issues.extend(smells)
     else:
         logger.error(f"⚠️  Smells file not found: {params.smells_file}")
+    return r[None].ok(None)
 
 
-def _collect_checks_issues(params: QltyParams, all_issues: list[SarifIssue]) -> None:
+def _collect_checks_issues(params: QltyParams, all_issues: list[SarifIssue]) -> r[None]:
     if params.scan:
         outfile = params.checks_file if params.checks_file else Path("qlty.check.current.sarif")
-        checks = run_qlty_check(output_file=outfile)
+        checks_result = run_qlty_check(output_file=outfile)
+        if checks_result.failure:
+            return r[None].fail(checks_result.error or "qlty check failed")
+        checks = checks_result.unwrap()
         for check in checks:
             check.category = "check"
         all_issues.extend(checks)
-    elif params.checks_file and _load_checks_from_file(params.checks_file, all_issues):
-        return
-    elif params.checks_file:
-        logger.error(f"⚠️  Checks file not found: {params.checks_file}")
+        return r[None].ok(None)
+
+    if params.checks_file:
+        loaded = _load_checks_from_file(params.checks_file, all_issues)
+        if loaded.failure:
+            return loaded
+        return r[None].ok(None)
+
+    logger.error("⚠️  No checks file specified and --scan not set")
+    return r[None].ok(None)
 
 
 def _resolve_issue_types(params: QltyParams) -> tuple[bool, bool]:
@@ -101,17 +120,21 @@ def _resolve_issue_types(params: QltyParams) -> tuple[bool, bool]:
     return do_checks, do_smells
 
 
-def _collect_all_issues(params: QltyParams) -> list[SarifIssue]:
+def _collect_all_issues(params: QltyParams) -> r[list[SarifIssue]]:
     all_issues: list[SarifIssue] = []
     do_checks, do_smells = _resolve_issue_types(params)
 
     if do_checks:
-        _collect_checks_issues(params, all_issues)
+        checks_result = _collect_checks_issues(params, all_issues)
+        if checks_result.failure:
+            return r[list[SarifIssue]].fail(checks_result.error or "checks collection failed")
 
     if do_smells:
-        _collect_smells_issues(params, all_issues)
+        smells_result = _collect_smells_issues(params, all_issues)
+        if smells_result.failure:
+            return r[list[SarifIssue]].fail(smells_result.error or "smells collection failed")
 
-    return all_issues
+    return r[list[SarifIssue]].ok(all_issues)
 
 
 def _apply_severity_filter(severity: str | None, filtered: list[SarifIssue]) -> list[SarifIssue]:
@@ -166,7 +189,11 @@ def _apply_exclude_file_filter(exclude_files: list[str], filtered: list[SarifIss
 
 def analyze(params: QltyParams) -> r[AnalysisReport]:
     """Analyze SARIF quality reports."""
-    all_issues = _collect_all_issues(params)
+    issues_result = _collect_all_issues(params)
+    if issues_result.failure:
+        return r[AnalysisReport].fail(issues_result.error or "issue collection failed")
+
+    all_issues = issues_result.unwrap()
 
     if not all_issues:
         logger.info("✅ No issues found to analyze")
