@@ -17,7 +17,6 @@ use tokio_util::sync::CancellationToken;
 
 use crate::McpServer;
 use crate::state::McbState;
-use crate::transport::streamable_http::ExecutionFlowLayer;
 
 /// Public routes — no auth required (static assets + redirect).
 pub fn build_public_routes() -> AxumRouter {
@@ -139,9 +138,7 @@ pub fn build_mcp_service(
 
 /// Build the Axum router that serves the MCP streamable HTTP endpoint.
 pub fn build_mcp_router(mcp_server: Arc<McpServer>) -> AxumRouter {
-    let mcp_service = tower::ServiceBuilder::new()
-        .layer(ExecutionFlowLayer)
-        .service(build_mcp_service(mcp_server));
+    let mcp_service = build_mcp_service(mcp_server);
     AxumRouter::new().nest_service("/mcp", mcp_service)
 }
 
