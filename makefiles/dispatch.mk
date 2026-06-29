@@ -167,13 +167,16 @@ case "$(SCOPE)" in \
   startup)     $(MCB_RUN) cargo test -p mcb --test integration startup_smoke -- --nocapture ;; \
   warmup)      $(MCB_RUN) cargo test -p mcb-server --test integration test_init_app_with_default_config_succeeds -- --nocapture ;; \
   integration) MCB_MODEL_ID=test-model RUST_TEST_THREADS=$$T $(MCB_RUN) cargo test --workspace --test '*integration*' ;; \
+  external)    UV_CACHE_DIR=.cache/uv $(MCB_RUN) uv run --no-sync python scripts/lib/external_services_check.py && \
+                 { MCB_MODEL_ID=test-model RUST_TEST_THREADS=$$T $(MCB_RUN) cargo test --workspace --test '*integration*'; } || \
+                 { echo "⊘ External test group skipped: services unavailable."; exit 0; } ;; \
   changed)     MCB_MODEL_ID=test-model $(MCB_RUN) echo "Running tests for changed crates..."; \
                CRATES="$$(git diff --name-only origin/$$(git rev-parse --abbrev-ref HEAD) -- 'crates/**/*.rs' 'crates/**/*.toml' | sed -n 's|^crates/\\([^/]*\\)/.*|-p \\1|p' | sort -u | tr '\\n' ' ')"; \
                [ -z "$$CRATES" ] && { echo "No changed crates; running full workspace tests."; $(MCB_TEST_ALL); } || { echo "Changed crates: $$CRATES"; $(MCB_RUN) cargo test --all-targets $$CRATES; } ;; \
   e2e)         $(call MCB_E2E) ;; \
   all)         $(MCB_TEST_ALL) && $(call MCB_E2E) ;; \
   '')          $(MCB_TEST_ALL) ;; \
-  *)           printf "ERRO: SCOPE '%s' invalido. Validos: unit doc golden startup warmup integration e2e changed all\n" "$(SCOPE)" >&2; exit 2 ;; \
+  *)           printf "ERRO: SCOPE '%s' invalido. Validos: unit doc golden startup warmup integration external e2e changed all\n" "$(SCOPE)" >&2; exit 2 ;; \
 esac
 endef
 

@@ -76,9 +76,10 @@ class TestResult:
         failed = r[int].fail("boom").flat_map(double)
         tm.fail(failed)
 
-    def test_map_does_not_catch_exceptions(self) -> None:
-        with pytest.raises(ZeroDivisionError):
-            r[int].ok(21).map(lambda _: 1 / 0)
+    def test_map_catches_exceptions_as_failure(self) -> None:
+        result = r[int].ok(21).map(lambda _: 1 / 0)
+        tm.fail(result)
+        assert result.error == "division by zero"
 
     def test_fold(self) -> None:
         ok_result = r[int].ok(21)
