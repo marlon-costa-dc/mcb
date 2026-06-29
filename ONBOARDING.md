@@ -15,8 +15,8 @@ query while working on code.
 | Language | Rust | 1.92+ (edition 2024) |
 | Async runtime | Tokio | 1.x |
 | Web framework | Axum + Tower | 0.8 / 0.5 |
-| App framework | Loco.rs | 0.16.4 (forked in `third-party/`) |
-| ORM / DB | SeaORM + SeaQuery | 2.0.0-rc.38 (forked in `third-party/`) |
+| App framework | Loco.rs | 0.16.4 (forked via git dependency) |
+| ORM / DB | SeaORM + SeaQuery | 2.0.0-rc.38 (forked via git dependency) |
 | Databases | SQLite (default), PostgreSQL (runtime selectable) | via SeaORM |
 | Vector stores | Milvus, EdgeVec, Qdrant, Pinecone, Encrypted | provider model |
 | Embeddings | FastEmbed, Ollama, OpenAI, VoyageAI, Gemini, Anthropic | provider model |
@@ -87,7 +87,7 @@ dependency rules. The 7 first-party crates form inward-only layers:
 | `tests/` | Golden/integration tests, E2E Playwright tests, fixtures |
 | `scripts/` | Build/release helpers, hooks, codegen, docs generation |
 | `makefiles/` | Make dispatch macros (`dispatch.mk`, `ui.mk`) |
-| `third-party/` | Forked dependencies (SeaORM, Loco, EdgeVec, etc.) — **do not edit** |
+| `third-party/` | Removed; forks are now pinned git dependencies in `Cargo.toml` |
 | `book/` / `book.toml` | mdBook documentation site |
 | `k8s/`, `systemd/`, `Dockerfile` | Deployment artifacts |
 | `assets/admin/` | Static admin UI served by Axum |

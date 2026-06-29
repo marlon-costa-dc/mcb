@@ -86,14 +86,7 @@ DRY_RUN_CASES = (
     SurfaceCase("ship push-tags", ("ship", "WHAT=push-tags", "TAG=surface-check-probe"), must_contain=("DRY-RUN",)),
     SurfaceCase("pr merge", ("ship", "WHAT=pr", "ACT=merge", "PR=1"), must_contain=("DRY-RUN",)),
     SurfaceCase("pr rerun", ("ship", "WHAT=pr", "ACT=rerun", "RUN=1"), must_contain=("DRY-RUN",)),
-    SurfaceCase("sub sync", ("ship", "WHAT=sub", "ACT=sync"), must_contain=("DRY-RUN",)),
-    SurfaceCase(
-        "sub commit",
-        ("ship", "WHAT=sub", "ACT=commit", "SUB=edgevec", "MSG=surface-check"),
-        must_contain=("DRY-RUN",),
-    ),
-    SurfaceCase("sub push", ("ship", "WHAT=sub", "ACT=push", "SUB=edgevec"), must_contain=("DRY-RUN",)),
-    SurfaceCase("sub propagate", ("ship", "WHAT=sub", "ACT=propagate", "SUB=edgevec"), must_contain=("DRY-RUN",)),
+
     SurfaceCase("release package", ("ship", "WHAT=release", "ACT=package"), must_contain=("DRY-RUN",)),
     SurfaceCase(
         "release version bump",

@@ -332,7 +332,7 @@ Project memories are stored in `.serena/memories/`:
 
 ### Problem
 
-Each `serena start-mcp-server` instance launches an independent `rust-analyzer` via LSP. The MCB workspace contains 7 first-party crates plus `third-party/` patches (sea-orm, sea-query, loco, etc.), all of which rust-analyzer analyzes. With 2+ concurrent sessions, RAM usage quickly exceeds 50GB + swap.
+Each `serena start-mcp-server` instance launches an independent `rust-analyzer` via LSP. The MCB workspace contains 7 first-party crates plus pinned git-dependency forks (sea-orm, sea-query, loco, etc.) that rust-analyzer also analyzes. With 2+ concurrent sessions, RAM usage quickly exceeds 50GB + swap.
 
 ### Optimizations Applied
 

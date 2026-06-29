@@ -160,8 +160,8 @@ memory, semantic code search, and architecture validation.
 - Source version: `0.3.2` from `Cargo.toml`.
 - Active branch observed during init: `feat/v0.3.2-ci-gates`.
 - Rust toolchain: stable, MSRV `1.92`, edition `2024`.
-- Workspace: 7 first-party crates; `third-party/` is excluded from the
-  workspace and should not be edited unless the user explicitly asks.
+- Workspace: 7 first-party crates; SeaQL/Loco ecosystem forks are consumed as
+  pinned git dependencies (no local `third-party/` submodule copies).
 - Platform state: the v0.3 SeaQL + Loco.rs rebuild is the current baseline.
 - Public MCP surface: 24 tool names registered through `linkme` descriptors,
   grouped into 9 handler families in `docs/MCP_TOOLS.md`.

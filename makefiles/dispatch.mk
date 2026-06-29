@@ -43,7 +43,7 @@ BAD_WHAT = printf "ERRO: WHAT '%s' invalido. Validos: $(1)\n" "$(WHAT)" >&2; exi
 # codegen
 CODEGEN_DB         := /tmp/mcb_codegen.db
 MIGRATION_RS       := crates/mcb-providers/src/database/seaorm/migration/m20260301_000001_initial_schema.rs
-SEA_ORM_CLI        := third-party/sea-orm/sea-orm-cli/target/debug/sea-orm-cli
+SEA_ORM_CLI        := $(shell command -v sea-orm-cli 2>/dev/null || echo "$(HOME)/.cargo/bin/sea-orm-cli")
 ENTITIES_DIR       := crates/mcb-providers/src/database/seaorm/entities
 CONVERSIONS_DIR    := crates/mcb-providers/src/database/seaorm/conversions
 CONVERSIONS_TOML   := config/conversions.toml
@@ -130,7 +130,7 @@ endef
 # codegen (APPLY-gated; phases overwrite generated code). ACT= selects phase.
 define MCB_CODEGEN
 case "$(ACT)" in \
-  cli)         $(call gate,build sea-orm-cli from fork); echo "Building sea-orm-cli from fork..."; $(MCB_RUN) cargo build --manifest-path=third-party/sea-orm/sea-orm-cli/Cargo.toml; echo "✓ $(SEA_ORM_CLI)" ;; \
+  cli)         $(call gate,install sea-orm-cli from fork); echo "Installing sea-orm-cli from fork..."; $(MCB_RUN) cargo install --locked --git https://github.com/marlon-costa-dc/sea-orm.git --rev c1b8409a45c5dc20de91e331ee0cbb86fb9a72d0 sea-orm-cli; echo "✓ $(SEA_ORM_CLI)" ;; \
   db)          $(call gate,regenerate codegen database); rm -f $(CODEGEN_DB); $(MCB_RUN) python3 $(EXTRACT_SCRIPT) $(MIGRATION_RS) | sqlite3 $(CODEGEN_DB); echo "✓ codegen DB at $(CODEGEN_DB)" ;; \
   entities)    $(call gate,regenerate SeaORM entities); $(MAKE) build WHAT=codegen ACT=db APPLY=Y; $(SEA_ORM_CLI) generate entity --database-url "sqlite://$(CODEGEN_DB)?mode=rwc" --output-dir $(ENTITIES_DIR) --with-serde both --ignore-tables seaql_migrations --date-time-crate time; $(MCB_RUN) python3 scripts/codegen-post-process.py $(ENTITIES_DIR)/mod.rs; echo "✓ entities in $(ENTITIES_DIR)/" ;; \
   conversions) $(call gate,regenerate SeaORM conversions); echo "Generating conversions from $(CONVERSIONS_TOML)..."; $(MCB_RUN) python3 $(CONVERSIONS_SCRIPT); echo "✓ conversions in $(CONVERSIONS_DIR)/" ;; \
@@ -333,15 +333,12 @@ esac
 endef
 
 # submodules. ACT= selects action.
+# NOTE: third-party/ submodules were removed. SeaQL/Loco forks are now
+# consumed as git dependencies pinned in Cargo.toml. Only status remains.
 define MCB_SUB
 case "$(ACT)" in \
-  ""|status)  git submodule status ;; \
-  sync)       $(call gate,sync submodules); git submodule sync --recursive; git submodule update --init --recursive ;; \
-  diff)       git submodule foreach --quiet 'D=$$(git diff); [ -n "$$D" ] && { echo "=== $$name ==="; git diff; } || true' ;; \
-  commit)     $(call require_var,SUB); $(call require_var,MSG); $(call gate,commit in submodule $(SUB)); (cd third-party/$(SUB) && git add -A && git commit -m "$(MSG)") ;; \
-  push)       $(call require_var,SUB); $(call gate,push submodule $(SUB)); (cd third-party/$(SUB) && git push) ;; \
-  propagate)  $(call require_var,SUB); $(call gate,stage submodule $(SUB)); git add third-party/$(SUB); echo "staged third-party/$(SUB); commit with: make ship WHAT=commit MSG='chore: update $(SUB)' APPLY=Y" ;; \
-  *)          printf "ERRO: ACT '%s' invalido. Validos: $(ACTS_sub)\n" "$(ACT)" >&2; exit 2 ;; \
+  ""|status)  echo "third-party/ submodules removed; forks are git dependencies in Cargo.toml" ;; \
+  *)          printf "ERRO: ACT '%s' invalido. Submodules removed; use git deps in Cargo.toml instead.\n" "$(ACT)" >&2; exit 2 ;; \
 esac
 endef
 

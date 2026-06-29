@@ -41,8 +41,7 @@ def test_mutating_make_arms_are_apply_gated() -> None:
         "ship stash-pop": "$(call gate,stash pop",
         "ship unstage": "$(call gate,unstage",
         "pr rerun": "$(call gate,rerun",
-        "sub sync": "$(call gate,sync submodules",
-        "sub propagate": "$(call gate,stage submodule",
+
         "release package": "$(call gate,package release",
         "fix fmt": "$(call gate,auto-fix fmt",
         "fix lint": "$(call gate,auto-fix lint",
