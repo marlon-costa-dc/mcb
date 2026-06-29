@@ -40,7 +40,12 @@ LOG_N ?=
 export RUST_2024_LINTS := -D unsafe_op_in_unsafe_fn -D rust_2024_compatibility -W static_mut_refs
 
 # sccache (shared compilation cache) — MANDATORY. Eliminates redundant rebuilds
-# across sessions and projects. Mutually exclusive with incremental compilation.
+# across sessions and projects. The local cache size is bounded in
+# .cargo/config.toml via SCCACHE_CACHE_SIZE. Incremental compilation is kept
+# disabled (CARGO_INCREMENTAL=0) because sccache caches full compilation units;
+# incremental artifacts are not cacheable and would bloat target/ while yielding
+# 0%% sccache hits. Use `make check WHAT=optimize ACT=cache APPLY=Y` to prune
+# stale build artifacts safely.
 export RUSTC_WRAPPER := sccache
 export CARGO_INCREMENTAL := 0
 
@@ -72,6 +77,7 @@ ACTS_pr       := checks view merge rerun
 ACTS_sub      := status sync diff commit push propagate
 ACTS_release  := package version install install-validate
 ACTS_python   := lint lint-staged test test-staged guard all
+ACTS_optimize := cache
 
 # --- verb targets (the ONLY public verbs) ------------------------------------
 .PHONY: help boot build test check ship clean
@@ -98,7 +104,7 @@ help:
 	@printf "    check WHAT=fix     ACT=%s [APPLY=Y]\n" "$(ACTS_fix)"
 	@printf "    check WHAT=dev     ACT=%s [APPLY=Y]\n" "$(ACTS_dev)"
 	@printf "    check WHAT=guard | WHAT=ci\n"
-	@printf "    check WHAT=optimize [APPLY=Y]\n"
+	@printf "    check WHAT=optimize ACT=%s [APPLY=Y]\n" "$(ACTS_optimize)"
 	@printf "    check WHAT=python  ACT=%s [QUICK=1]\n" "$(ACTS_python)"
 	@printf "    ship  WHAT=pr      ACT=%s  PR= RUN=\n" "$(ACTS_pr)"
 	@printf "    ship  WHAT=sub     ACT=%s  SUB= MSG=\n" "$(ACTS_sub)"

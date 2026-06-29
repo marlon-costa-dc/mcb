@@ -68,7 +68,7 @@ NEXT_MAJOR := $(shell echo $(VERSION) | awk -F. '{print ($$1+1)".0.0"}')
 define DISPATCH_BOOT
 @case "$(WHAT)" in \
   hooks)     cp scripts/hooks/pre-commit scripts/hooks/pre-push .git/hooks/; chmod +x .git/hooks/pre-commit .git/hooks/pre-push; echo "✓ pre-commit + pre-push hooks installed" ;; \
-  tools)     $(call MCB_INSTALL_CRATES,cargo-udeps cargo-audit cargo-tarpaulin cargo-nextest typos-cli) 2>/dev/null || true; echo "✓ tools installed" ;; \
+  tools)     $(call MCB_INSTALL_CRATES,cargo-udeps cargo-audit cargo-tarpaulin cargo-nextest typos-cli cargo-sweep) 2>/dev/null || true; echo "✓ tools installed" ;; \
   adr)       ./scripts/setup/install-adr-tools.sh ;; \
   venv)      UV_CACHE_DIR=.cache/uv uv sync --extra dev --extra gitops ;; \
   hook)      $(call MCB_HOOK) ;; \
@@ -217,7 +217,7 @@ define DISPATCH_CHECK
   python)   $(call MCB_PYTHON_CHECK) ;; \
   fix)      $(call MCB_FIX) ;; \
   dev)      $(call MCB_DEV) ;; \
-  optimize) $(MCB_RUN) scripts/dev-env-optimize.sh $(if $(filter Y,$(APPLY)),--apply,) ;; \
+  optimize) $(call MCB_OPTIMIZE) ;; \
   ci|""|all) $(MAKE) check WHAT=python && $(MAKE) check WHAT=gitops && $(MCB_RUN) cargo fmt --all -- --check && $(MCB_RUN) cargo clippy --all-targets -- -D warnings && $(MAKE) test && $(MCB_TOOL) validate $(if $(filter 1,$(QUICK)),quick,full) && $(MCB_TOOL) guard ;; \
   *)        UV_CACHE_DIR=.cache/uv PYTHONPATH=scripts $(MCB_RUN) uv run --no-sync python -m lib.cosmos_command check; code=$$?; if [ "$$code" -eq 2 ]; then $(call BAD_WHAT,$(WHATS_check)); else exit $$code; fi ;; \
 esac
@@ -264,6 +264,19 @@ case "$(ACT)" in \
   docker-logs)  $(call gate,follow Docker logs); $(MCB_RUN) docker-compose -f tests/docker-compose.yml logs -f ;; \
   docker-test)  $(call gate,run Docker test services); $(MCB_RUN) docker-compose -f tests/docker-compose.yml --profile test up --build --abort-on-container-exit test-runner; $(MCB_RUN) docker-compose -f tests/docker-compose.yml --profile test rm -f test-runner ;; \
   *)            printf "ERRO: ACT '%s' invalido. Validos: $(ACTS_dev)\n" "$(ACT)" >&2; exit 2 ;; \
+esac
+endef
+
+# optimization / cache maintenance. ACT= selects phase.
+#   cache)  sccache + target/ cleanup (safe dry-run by default; APPLY=Y to prune)
+#   *)      dev-env process cleanup (duplicate rust-analyzer / Serena / cargo)
+define MCB_OPTIMIZE
+case "$(ACT)" in \
+  cache) \
+    bash $(MCB_ROOT)/scripts/cache-maintenance.sh $(if $(filter Y,$(APPLY)),--apply) ;; \
+  "") \
+    $(MCB_RUN) scripts/dev-env-optimize.sh $(if $(filter Y,$(APPLY)),--apply) ;; \
+  *)          printf "ERRO: ACT '%s' invalido. Validos: cache\n" "$(ACT)" >&2; exit 2 ;; \
 esac
 endef
 

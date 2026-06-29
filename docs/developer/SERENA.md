@@ -390,14 +390,22 @@ export RA_LOG=error            # rust-analyzer log level
 sccache is **mandatory** for all builds (local and CI). It is configured automatically:
 
 - **Local**: `Makefile` sets `RUSTC_WRAPPER=sccache` unconditionally
-- **CI**: `.github/workflows/ci.yml` configures `SCCACHE_GHA_ENABLED=true`
+- **Local bound**: `.cargo/config.toml` sets `SCCACHE_CACHE_SIZE=10G` so the disk cache cannot grow without limit
+- **CI**: `.github/workflows/ci.yml` configures `SCCACHE_GHA_ENABLED=true` and `SCCACHE_CACHE_SIZE=10G`
 
-sccache eliminates redundant rebuilds across sessions and CI runs. It is mutually exclusive with Cargo incremental compilation (`CARGO_INCREMENTAL=0`).
+sccache eliminates redundant rebuilds across sessions and CI runs. It is mutually exclusive with Cargo incremental compilation (`CARGO_INCREMENTAL=0`), so incremental compilation is disabled everywhere to keep cache hits high.
 
 To check sccache status:
 
 ```bash
 sccache --show-stats
+```
+
+To safely prune local build caches (dry-run by default):
+
+```bash
+make check WHAT=optimize ACT=cache
+make check WHAT=optimize ACT=cache APPLY=Y   # actually prune
 ```
 
 To reset local cache:
