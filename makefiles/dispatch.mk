@@ -86,11 +86,14 @@ case "$(ACT)" in \
   pre-commit) \
     T="$(THREADS)"; case "$$T" in ''|*[!0-9]*|0) T=1;; esac; \
     $(MCB_TOOL) guard --staged && \
+    $(MAKE) check WHAT=python ACT=lint && \
+    $(MAKE) check WHAT=python ACT=test && \
     $(MCB_RUN) cargo fmt --all -- --check && \
     $(MCB_RUN) cargo clippy --workspace -- -D warnings && \
     { ! command -v typos >/dev/null 2>&1 || typos; } && \
     $(MCB_TEST_UNIT) ;; \
   pre-push) \
+    $(MAKE) check WHAT=python && \
     $(MCB_RUN) cargo fmt --all -- --check && \
     $(MCB_RUN) cargo clippy --all-targets -- -D warnings && \
     $(MAKE) test && $(MAKE) test SCOPE=doc && \
@@ -206,11 +209,23 @@ define DISPATCH_CHECK
   guard)    $(MCB_TOOL) guard ;; \
   gitops)   UV_CACHE_DIR=.cache/uv $(MCB_RUN) uv run --no-sync python scripts/check/gitops.py ;; \
   surface)  UV_CACHE_DIR=.cache/uv $(MCB_RUN) uv run --no-sync python scripts/check/surface.py ;; \
+  python)   $(call MCB_PYTHON_CHECK) ;; \
   fix)      $(call MCB_FIX) ;; \
   dev)      $(call MCB_DEV) ;; \
   optimize) $(MCB_RUN) scripts/dev-env-optimize.sh $(if $(filter Y,$(APPLY)),--apply,) ;; \
-  ci|""|all) $(MAKE) check WHAT=gitops && $(MCB_RUN) cargo fmt --all -- --check && $(MCB_RUN) cargo clippy --all-targets -- -D warnings && $(MAKE) test && $(MCB_TOOL) validate $(if $(filter 1,$(QUICK)),quick,full) ;; \
+  ci|""|all) $(MAKE) check WHAT=python && $(MAKE) check WHAT=gitops && $(MCB_RUN) cargo fmt --all -- --check && $(MCB_RUN) cargo clippy --all-targets -- -D warnings && $(MAKE) test && $(MCB_TOOL) validate $(if $(filter 1,$(QUICK)),quick,full) ;; \
   *)        $(call BAD_WHAT,$(WHATS_check)) ;; \
+esac
+endef
+
+# Python gates (ruff, mypy, pytest, guard). ACT= selects phase; default runs all.
+define MCB_PYTHON_CHECK
+case "$(ACT)" in \
+  lint)      UV_CACHE_DIR=.cache/uv $(MCB_RUN) uv run --no-sync ruff check scripts/ && UV_CACHE_DIR=.cache/uv $(MCB_RUN) uv run --no-sync mypy scripts/lib ;; \
+  test)      UV_CACHE_DIR=.cache/uv $(MCB_RUN) uv run --no-sync pytest scripts/lib/tests ;; \
+  guard)     $(MCB_TOOL) guard ;; \
+  ""|all)    UV_CACHE_DIR=.cache/uv $(MCB_RUN) uv run --no-sync ruff check scripts/ && UV_CACHE_DIR=.cache/uv $(MCB_RUN) uv run --no-sync mypy scripts/lib && UV_CACHE_DIR=.cache/uv $(MCB_RUN) uv run --no-sync pytest scripts/lib/tests && $(MCB_TOOL) guard ;; \
+  *)         printf "ERRO: ACT '%s' invalido. Validos: $(ACTS_python)\n" "$(ACT)" >&2; exit 2 ;; \
 esac
 endef
 

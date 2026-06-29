@@ -58,7 +58,7 @@ gate = [ "$(APPLY)" = "Y" ] || { printf "DRY-RUN: would %s; set APPLY=Y to execu
 # publish their phase list as ACTS_<namespace>.
 WHATS_boot    := hooks tools adr hook venv all
 WHATS_build   := build debug release prebuild codegen docs
-WHATS_check   := fmt lint validate audit udeps coverage qlty coordination guard fix dev optimize gitops surface ci all
+WHATS_check   := fmt lint validate audit udeps coverage qlty coordination guard fix dev optimize gitops surface python ci all
 WHATS_ship    := status diff log show add commit push pull branch checkout tag tags stash stash-pop stash-list merge rebase unstage push-tags pr sub release
 WHATS_clean   := build codegen all
 
@@ -71,6 +71,7 @@ ACTS_dev      := run docker-up docker-down docker-logs docker-test
 ACTS_pr       := checks view merge rerun
 ACTS_sub      := status sync diff commit push propagate
 ACTS_release  := package version install install-validate
+ACTS_python   := lint test guard all
 
 # --- verb targets (the ONLY public verbs) ------------------------------------
 .PHONY: help boot build test check ship clean
@@ -98,6 +99,7 @@ help:
 	@printf "    check WHAT=dev     ACT=%s [APPLY=Y]\n" "$(ACTS_dev)"
 	@printf "    check WHAT=guard | WHAT=ci\n"
 	@printf "    check WHAT=optimize [APPLY=Y]\n"
+	@printf "    check WHAT=python  ACT=%s [QUICK=1]\n" "$(ACTS_python)"
 	@printf "    ship  WHAT=pr      ACT=%s  PR= RUN=\n" "$(ACTS_pr)"
 	@printf "    ship  WHAT=sub     ACT=%s  SUB= MSG=\n" "$(ACTS_sub)"
 	@printf "    ship  WHAT=release ACT=%s  BUMP=patch|minor|major [APPLY=Y]\n" "$(ACTS_release)"
