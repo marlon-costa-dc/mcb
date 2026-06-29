@@ -23,7 +23,7 @@ def test_help_does_not_imply_apply_for_read_only_checks() -> None:
 
     tm.that("check WHAT=guard | WHAT=ci | WHAT=optimize [APPLY=Y]" not in help_source)
     tm.that("check WHAT=guard | WHAT=ci" in help_source)
-    tm.that("check WHAT=optimize [APPLY=Y]" in help_source)
+    tm.that("check WHAT=optimize ACT=%s [APPLY=Y]" in help_source)
     tm.that("check WHAT=fix     ACT=%s [APPLY=Y]" in help_source)
 
 

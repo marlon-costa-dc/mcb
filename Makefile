@@ -24,6 +24,8 @@ export FIX ?= 0
 export THREADS ?= $(shell nproc 2>/dev/null || echo 1)
 export SCOPE ?=
 WHAT ?=
+# ACT must not leak into sub-makes. Hooks pass ACT on the command line for their
+# own dispatch; normalization below drops leaked values so unrelated verbs don't break.
 ACT ?=
 APPLY ?= N
 BUMP ?=
@@ -78,6 +80,15 @@ ACTS_sub      := status sync diff commit push propagate
 ACTS_release  := package version install install-validate
 ACTS_python   := lint lint-staged test test-staged guard all
 ACTS_optimize := cache
+
+# Normalize ACT: hooks/scripts may leak an ACT value into the environment. If the
+# current ACT is not a recognized phase, drop it so unrelated verbs do not break.
+_ACT_VALID := $(ACTS_hook) $(ACTS_docs) $(ACTS_codegen) $(ACTS_fix) $(ACTS_dev) $(ACTS_pr) $(ACTS_sub) $(ACTS_release) $(ACTS_python) $(ACTS_optimize)
+ifneq ($(ACT),)
+  ifeq ($(filter $(ACT),$(_ACT_VALID)),)
+    ACT :=
+  endif
+endif
 
 # --- verb targets (the ONLY public verbs) ------------------------------------
 .PHONY: help boot build test check ship clean

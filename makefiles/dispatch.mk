@@ -217,7 +217,7 @@ define DISPATCH_CHECK
   python)   $(call MCB_PYTHON_CHECK) ;; \
   fix)      $(call MCB_FIX) ;; \
   dev)      $(call MCB_DEV) ;; \
-  optimize) $(call MCB_OPTIMIZE) ;; \
+  optimize) $(call MCB_OPTIMIZE,$(filter $(ACT),$(ACTS_optimize))) ;; \
   ci|""|all) $(MAKE) check WHAT=python && $(MAKE) check WHAT=gitops && $(MCB_RUN) cargo fmt --all -- --check && $(MCB_RUN) cargo clippy --all-targets -- -D warnings && $(MAKE) test && $(MCB_TOOL) validate $(if $(filter 1,$(QUICK)),quick,full) && $(MCB_TOOL) guard ;; \
   *)        UV_CACHE_DIR=.cache/uv PYTHONPATH=scripts $(MCB_RUN) uv run --no-sync python -m lib.cosmos_command check; code=$$?; if [ "$$code" -eq 2 ]; then $(call BAD_WHAT,$(WHATS_check)); else exit $$code; fi ;; \
 esac
@@ -271,12 +271,12 @@ endef
 #   cache)  sccache + target/ cleanup (safe dry-run by default; APPLY=Y to prune)
 #   *)      dev-env process cleanup (duplicate rust-analyzer / Serena / cargo)
 define MCB_OPTIMIZE
-case "$(ACT)" in \
+case "$(1)" in \
   cache) \
     bash $(MCB_ROOT)/scripts/cache-maintenance.sh $(if $(filter Y,$(APPLY)),--apply) ;; \
   "") \
     $(MCB_RUN) scripts/dev-env-optimize.sh $(if $(filter Y,$(APPLY)),--apply) ;; \
-  *)          printf "ERRO: ACT '%s' invalido. Validos: cache\n" "$(ACT)" >&2; exit 2 ;; \
+  *)          printf "ERRO: ACT '%s' invalido. Validos: cache\n" "$(1)" >&2; exit 2 ;; \
 esac
 endef
 
