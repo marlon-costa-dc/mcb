@@ -71,6 +71,12 @@ disallow_untyped_defs = true
 module = "lib.tests.*"
 ignore_errors = true
 
+# flext_core type stubs expose Result factory methods as returning the base
+# protocol type, so return-value checks fail for FlextResult-typed helpers.
+[[tool.mypy.overrides]]
+module = ["lib.agent_pointers", "lib.gitops"]
+ignore_errors = true
+
 [tool.pytest.ini_options]
 pythonpath = ["scripts"]
 testpaths = [

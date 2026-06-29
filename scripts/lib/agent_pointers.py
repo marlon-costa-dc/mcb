@@ -10,10 +10,10 @@ from pathlib import Path
 from typing import NamedTuple
 
 import typer
+from flext_core import FlextResult
 from pydantic import BaseModel
 
 from lib.cli import create_app_with_common_params, register_result_command
-from lib.core import r
 from lib.logger import get_logger
 
 logger = get_logger(__name__)
@@ -117,7 +117,7 @@ def sync(root: Path, *, check: bool) -> SyncResult:
     return SyncResult(changed_paths)
 
 
-def generate(params: AgentPointerParams) -> r[SyncResult]:
+def generate(params: AgentPointerParams) -> FlextResult[SyncResult]:
     """Generate or check agent pointer files."""
     result = sync(params.root.resolve(), check=params.check)
     if result.changed_paths:
@@ -125,11 +125,11 @@ def generate(params: AgentPointerParams) -> r[SyncResult]:
         for path in result.changed_paths:
             logger.info(f"{action}: {path}")
         if params.check:
-            return r[SyncResult].fail("agent pointers are out of sync")
-        return r[SyncResult].ok(result)
+            return FlextResult[SyncResult].fail("agent pointers are out of sync")
+        return FlextResult[SyncResult].ok(result)
 
     logger.info("agent pointers in sync")
-    return r[SyncResult].ok(result)
+    return FlextResult[SyncResult].ok(result)
 
 
 def main() -> None:

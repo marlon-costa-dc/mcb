@@ -86,8 +86,8 @@ case "$(ACT)" in \
   pre-commit) \
     T="$(THREADS)"; case "$$T" in ''|*[!0-9]*|0) T=1;; esac; \
     $(MCB_TOOL) guard --staged && \
-    $(MAKE) check WHAT=python ACT=lint && \
-    $(MAKE) check WHAT=python ACT=test && \
+    $(MAKE) check WHAT=python ACT=lint-staged && \
+    $(MAKE) check WHAT=python ACT=test-staged && \
     $(MCB_RUN) cargo fmt --all -- --check && \
     $(MCB_RUN) cargo clippy --workspace -- -D warnings && \
     { ! command -v typos >/dev/null 2>&1 || typos; } && \
@@ -219,7 +219,7 @@ define DISPATCH_CHECK
   dev)      $(call MCB_DEV) ;; \
   optimize) $(MCB_RUN) scripts/dev-env-optimize.sh $(if $(filter Y,$(APPLY)),--apply,) ;; \
   ci|""|all) $(MAKE) check WHAT=python && $(MAKE) check WHAT=gitops && $(MCB_RUN) cargo fmt --all -- --check && $(MCB_RUN) cargo clippy --all-targets -- -D warnings && $(MAKE) test && $(MCB_TOOL) validate $(if $(filter 1,$(QUICK)),quick,full) && $(MCB_TOOL) guard ;; \
-  *)        $(call BAD_WHAT,$(WHATS_check)) ;; \
+  *)        UV_CACHE_DIR=.cache/uv PYTHONPATH=scripts $(MCB_RUN) uv run --no-sync python -m lib.cosmos_command check; code=$$?; if [ "$$code" -eq 2 ]; then $(call BAD_WHAT,$(WHATS_check)); else exit $$code; fi ;; \
 esac
 endef
 
@@ -227,7 +227,17 @@ endef
 define MCB_PYTHON_CHECK
 case "$(ACT)" in \
   lint)      UV_CACHE_DIR=.cache/uv $(MCB_RUN) uv run --no-sync ruff check scripts/ && UV_CACHE_DIR=.cache/uv $(MCB_RUN) uv run --no-sync mypy scripts/lib ;; \
+  lint-staged) \
+    STAGED="$$(git diff --cached --name-only --diff-filter=ACM -- '*.py')"; \
+    if [ -z "$$STAGED" ]; then echo "lint-staged: no staged Python files"; exit 0; fi; \
+    echo "lint-staged: $$STAGED"; \
+    UV_CACHE_DIR=.cache/uv $(MCB_RUN) uv run --no-sync ruff check $$STAGED && UV_CACHE_DIR=.cache/uv $(MCB_RUN) uv run --no-sync mypy $$STAGED ;; \
   test)      UV_CACHE_DIR=.cache/uv $(MCB_RUN) uv run --no-sync pytest scripts/lib/tests ;; \
+  test-staged) \
+    STAGED_TESTS="$$(git diff --cached --name-only --diff-filter=ACM -- '*.py' | grep '^scripts/lib/tests/' || true)"; \
+    if [ -z "$$STAGED_TESTS" ]; then echo "test-staged: no staged Python test files"; exit 0; fi; \
+    echo "test-staged: $$STAGED_TESTS"; \
+    UV_CACHE_DIR=.cache/uv $(MCB_RUN) uv run --no-sync pytest $$STAGED_TESTS ;; \
   guard)     $(MCB_TOOL) guard ;; \
   ""|all)    UV_CACHE_DIR=.cache/uv $(MCB_RUN) uv run --no-sync ruff check scripts/ && UV_CACHE_DIR=.cache/uv $(MCB_RUN) uv run --no-sync mypy scripts/lib && UV_CACHE_DIR=.cache/uv $(MCB_RUN) uv run --no-sync pytest scripts/lib/tests && $(MCB_TOOL) guard ;; \
   *)         printf "ERRO: ACT '%s' invalido. Validos: $(ACTS_python)\n" "$(ACT)" >&2; exit 2 ;; \

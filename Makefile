@@ -71,7 +71,7 @@ ACTS_dev      := run docker-up docker-down docker-logs docker-test
 ACTS_pr       := checks view merge rerun
 ACTS_sub      := status sync diff commit push propagate
 ACTS_release  := package version install install-validate
-ACTS_python   := lint test guard all
+ACTS_python   := lint lint-staged test test-staged guard all
 
 # --- verb targets (the ONLY public verbs) ------------------------------------
 .PHONY: help boot build test check ship clean

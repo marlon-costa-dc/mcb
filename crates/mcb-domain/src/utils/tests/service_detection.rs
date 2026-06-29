@@ -124,6 +124,7 @@ pub fn format_service_summary(summary: &[ServiceStatus]) -> String {
 }
 
 /// Print the service availability summary to stdout.
+#[allow(clippy::print_stdout)]
 pub fn print_service_availability_summary() {
     println!(
         "{}",

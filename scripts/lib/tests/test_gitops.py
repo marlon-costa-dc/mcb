@@ -11,7 +11,14 @@ from pathlib import Path
 
 import pytest
 
-from lib.gitops import analyze, discover_targets, summarize
+from lib.gitops import (
+    GitOpsTarget,
+    _cached_render,
+    _render_cache_key,
+    analyze,
+    discover_targets,
+    summarize,
+)
 
 from ._utilities.matchers import tm
 
@@ -146,6 +153,45 @@ spec:
 
     assert result.returncode == 1, result.stdout + result.stderr
     assert "gitops:no-latest-image" in result.stdout
+
+
+def test_render_cache_key_is_stable_for_same_inputs(temp_dir: Path) -> None:
+    _write_k8s_file(temp_dir, "k8s/chart/Chart.yaml", "apiVersion: v2\nname: sample\n")
+    target = GitOpsTarget(kind="helm", path=temp_dir / "k8s" / "chart")
+
+    assert _render_cache_key(target) == _render_cache_key(target)
+
+
+def test_render_cache_key_changes_when_input_changes(temp_dir: Path) -> None:
+    chart_dir = temp_dir / "k8s" / "chart"
+    _write_k8s_file(temp_dir, "k8s/chart/Chart.yaml", "apiVersion: v2\nname: sample\n")
+    target = GitOpsTarget(kind="helm", path=chart_dir)
+    before = _render_cache_key(target)
+    (chart_dir / "values.yaml").write_text("foo: bar\n", encoding="utf-8")
+    after = _render_cache_key(target)
+
+    assert before != after
+
+
+def test_cached_render_writes_and_reuses_cache(temp_dir: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    chart_dir = temp_dir / "k8s" / "chart"
+    _write_k8s_file(temp_dir, "k8s/chart/Chart.yaml", "apiVersion: v2\nname: sample\n")
+    target = GitOpsTarget(kind="helm", path=chart_dir)
+    rendered = "apiVersion: v1\nkind: Pod\nmetadata:\n  name: test\n"
+
+    calls: list[list[str]] = []
+
+    def fake_run(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        calls.append(cmd)
+        return subprocess.CompletedProcess(args=cmd, returncode=0, stdout=rendered, stderr="")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    first = _cached_render(target)
+    second = _cached_render(target)
+
+    assert first == rendered
+    assert second == rendered
+    assert len(calls) == 1, "cache should prevent a second render"
 
 
 if __name__ == "__main__":
