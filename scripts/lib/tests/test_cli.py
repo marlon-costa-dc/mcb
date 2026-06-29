@@ -13,6 +13,7 @@ from typer.testing import CliRunner
 
 from ..cli import create_app_with_common_params, register_result_command
 from ..core import r
+from ._utilities.matchers import tm
 
 
 class _DummyParams(BaseModel):
@@ -61,7 +62,7 @@ def _build_app() -> typer.Typer:
 def test_create_app_returns_typer_app() -> None:
     """create_app_with_common_params returns a Typer application."""
     app = create_app_with_common_params(name="test", help_text="A test app")
-    assert isinstance(app, typer.Typer)
+    tm.that(isinstance(app, typer.Typer), "expected a typer.Typer instance")
 
 
 def test_register_result_command() -> None:
@@ -69,8 +70,8 @@ def test_register_result_command() -> None:
     app = _build_app()
     runner = CliRunner()
     invocation = runner.invoke(app, ["hello", "--name", "Flext"])
-    assert invocation.exit_code == 0
-    assert "Greeting delivered" in invocation.output
+    tm.that(invocation.exit_code == 0, f"unexpected exit: {invocation.output}")
+    tm.that("Greeting delivered" in invocation.output, "expected success message")
 
 
 def test_result_command_failure_exits_non_zero() -> None:
@@ -78,7 +79,7 @@ def test_result_command_failure_exits_non_zero() -> None:
     app = _build_app()
     runner = CliRunner()
     invocation = runner.invoke(app, ["fail"])
-    assert invocation.exit_code == 1
+    tm.that(invocation.exit_code == 1, f"expected failure exit: {invocation.output}")
 
 
 if __name__ == "__main__":

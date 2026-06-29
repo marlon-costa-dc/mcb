@@ -6,13 +6,12 @@ SPDX-License-Identifier: MIT
 
 from __future__ import annotations
 
-from typing import cast
+from typing import Any, cast
 
 import pytest
 from flext_core import FlextModelsPydantic as fmp
 
 from ..core import (
-    BaseMcbSettings,
     McbLogger,
     McbResult,
     McbService,
@@ -21,22 +20,20 @@ from ..core import (
     r,
     s,
 )
+from ._utilities.matchers import tm
 
 
 class TestResult:
     def test_ok_is_ok(self) -> None:
         result: McbResult[int] = r[int].ok(42)
-        assert result.success
-        assert not result.failure
-        assert result.unwrap() == 42
+        tm.ok(result, 42)
         assert result.value == 42
         assert bool(result)
         assert repr(result) == "r[T].ok(42)"
 
     def test_err_is_err(self) -> None:
         result: McbResult[int] = r[int].fail("boom", error_code="E001")
-        assert result.failure
-        assert not result.success
+        tm.fail(result)
         assert not bool(result)
         assert result.error == "boom"
         assert result.error_code == "E001"
@@ -47,18 +44,13 @@ class TestResult:
         with pytest.raises(RuntimeError, match="boom"):
             result.unwrap()
 
-    def test_unwrap_raises_on_failure_without_exception(self) -> None:
-        result: McbResult[int] = r[int].fail("boom")
-        with pytest.raises(RuntimeError, match="boom"):
-            result.unwrap()
-
     def test_or_operator(self) -> None:
         assert (r[int].ok(42) | 0) == 42
         assert (r[int].fail("boom") | 0) == 0
 
     def test_context_manager(self) -> None:
         with r[int].ok(42) as value:
-            assert value.unwrap() == 42
+            tm.ok(value, 42)
 
     def test_unwrap_or(self) -> None:
         assert r[int].ok(42).unwrap_or(0) == 42
@@ -71,7 +63,7 @@ class TestResult:
     def test_map(self) -> None:
         assert r[int].ok(21).map(lambda x: x * 2).unwrap() == 42
         mapped = r[int].fail("boom").map(lambda x: x * 2)
-        assert mapped.failure
+        tm.fail(mapped)
 
     def test_flat_map(self) -> None:
         def double(x: int) -> McbResult[int]:
@@ -79,10 +71,10 @@ class TestResult:
 
         assert r[int].ok(21).flat_map(double).unwrap() == 42
         chained = r[int].ok(21).flat_map(double).flat_map(double)
-        assert chained.unwrap() == 84
+        tm.ok(chained, 84)
 
         failed = r[int].fail("boom").flat_map(double)
-        assert failed.failure
+        tm.fail(failed)
 
     def test_map_does_not_catch_exceptions(self) -> None:
         with pytest.raises(ZeroDivisionError):
@@ -102,12 +94,12 @@ class TestResult:
     def test_lash(self) -> None:
         assert r[int].ok(42).lash(lambda _: r[int].ok(99)).unwrap() == 42
         recovered = r[int].fail("boom").lash(lambda _: r[int].ok(7))
-        assert recovered.unwrap() == 7
+        tm.ok(recovered, 7)
 
     def test_filter(self) -> None:
         assert r[int].ok(42).filter(lambda x: x > 10).unwrap() == 42
         filtered = r[int].ok(5).filter(lambda x: x > 10)
-        assert filtered.failure
+        tm.fail(filtered)
         assert r[int].fail("boom").filter(lambda x: x > 10).failure
 
     def test_flow_through(self) -> None:
@@ -115,18 +107,18 @@ class TestResult:
             return r[int].ok(x + 1)
 
         result = r[int].ok(1).flow_through(add_one, add_one, add_one)
-        assert result.unwrap() == 4
+        tm.ok(result, 4)
 
         def fail(_x: int) -> McbResult[int]:
             return r[int].fail("stop")
 
         halted = r[int].ok(1).flow_through(add_one, fail, add_one)
-        assert halted.failure
+        tm.fail(halted)
 
     def test_tap(self) -> None:
         side_effect: list[int] = []
         result = r[int].ok(42).tap(side_effect.append)
-        assert result.success
+        tm.ok(result, 42)
         assert side_effect == [42]
 
         r[int].fail("boom").tap(side_effect.append)
@@ -135,7 +127,7 @@ class TestResult:
     def test_tap_error(self) -> None:
         side_effect: list[str] = []
         result = r[int].fail("boom").tap_error(side_effect.append)
-        assert result.failure
+        tm.fail(result)
         assert side_effect == ["boom"]
 
         r[int].ok(42).tap_error(side_effect.append)
@@ -146,7 +138,7 @@ class TestResult:
         assert result.error == "BOOM"
 
         unchanged = r[int].ok(42).map_error(lambda e: e.upper())
-        assert unchanged.success
+        tm.ok(unchanged, 42)
 
     def test_map_or(self) -> None:
         assert r[int].ok(42).map_or(0) == 42
@@ -156,12 +148,10 @@ class TestResult:
 
     def test_fail_op(self) -> None:
         result = r[int].fail_op("load")
-        assert result.failure
-        assert "load failed" in (result.error or "")
+        tm.fail(result, "load failed")
 
         with_exception = r[int].fail_op("load", ValueError("missing"))
-        assert with_exception.failure
-        assert "load failed: missing" in (with_exception.error or "")
+        tm.fail(with_exception, "load failed: missing")
         assert isinstance(with_exception.exception, ValueError)
 
     def test_from_validation(self) -> None:
@@ -170,11 +160,11 @@ class TestResult:
             age: int
 
         result = McbResult.from_validation({"name": "Ada", "age": 36}, User)
-        assert result.success
+        tm.ok(result)
         assert result.value.name == "Ada"
 
         invalid = McbResult.from_validation({"name": "Ada"}, User)
-        assert invalid.failure
+        tm.fail(invalid)
 
     def test_accumulate_errors(self) -> None:
         results = [
@@ -183,7 +173,7 @@ class TestResult:
             r[int].ok(3),
         ]
         combined = McbResult.accumulate_errors(*results)
-        assert combined.success
+        tm.ok(combined)
         assert list(combined.value) == [1, 2, 3]
 
         mixed = [
@@ -192,9 +182,8 @@ class TestResult:
             r[int].fail("b"),
         ]
         combined = McbResult.accumulate_errors(*mixed)
-        assert combined.failure
-        assert "a" in (combined.error or "")
-        assert "b" in (combined.error or "")
+        tm.fail(combined, "a")
+        tm.fail(combined, "b")
 
     def test_safe_decorator(self) -> None:
         @McbResult.safe
@@ -208,81 +197,50 @@ class TestResult:
             raise ValueError("boom")
 
         result = explode()
-        assert result.failure
-        assert "boom" in (result.error or "")
+        tm.fail(result, "boom")
 
 
 class TestSettings:
     def test_base_settings_read_env_with_prefix(
         self,
         monkeypatch: pytest.MonkeyPatch,
+        settings_factory: Any,
     ) -> None:
         monkeypatch.setenv("MCB_LOG_LEVEL", "debug")
-        BaseMcbSettings.reset_for_testing()
-
-        class Settings(BaseMcbSettings):
-            log_level: str = "info"
-
-        settings = Settings.fetch_global()
+        settings = settings_factory(log_level="info")
         assert settings.log_level == "debug"
-        BaseMcbSettings.reset_for_testing()
 
     def test_base_settings_ignore_extra_env(
         self,
         monkeypatch: pytest.MonkeyPatch,
+        settings_factory: Any,
     ) -> None:
         monkeypatch.setenv("MCB_UNKNOWN_VAR", "ignored")
-        BaseMcbSettings.reset_for_testing()
-
-        class Settings(BaseMcbSettings):
-            log_level: str = "info"
-
-        settings = Settings.fetch_global()
+        settings = settings_factory(log_level="info")
         assert settings.log_level == "info"
-        BaseMcbSettings.reset_for_testing()
 
-    def test_singleton_fetch_global(self) -> None:
-        BaseMcbSettings.reset_for_testing()
-
-        class Settings(BaseMcbSettings):
-            name: str = "default"
-
-        first = Settings.fetch_global()
-        second = Settings.fetch_global()
+    def test_singleton_fetch_global(self, settings_factory: Any) -> None:
+        settings = settings_factory(name="default")
+        first = settings.fetch_global()
+        second = settings.fetch_global()
         assert first is second
-        BaseMcbSettings.reset_for_testing()
 
-    def test_clone_is_isolated(self) -> None:
-        BaseMcbSettings.reset_for_testing()
-
-        class Settings(BaseMcbSettings):
-            name: str = "default"
-
-        global_settings = Settings.fetch_global()
+    def test_clone_is_isolated(self, settings_factory: Any) -> None:
+        settings = settings_factory(name="default")
+        global_settings = settings.fetch_global()
         clone = global_settings.clone(name="cloned")
         assert clone.name == "cloned"
         assert global_settings.name == "default"
-        BaseMcbSettings.reset_for_testing()
 
-    def test_update_global_propagates(self) -> None:
-        BaseMcbSettings.reset_for_testing()
+    def test_update_global_propagates(self, settings_factory: Any) -> None:
+        settings = settings_factory(name="default")
+        settings.update_global(name="updated")
+        assert settings.fetch_global().name == "updated"
 
-        class Settings(BaseMcbSettings):
-            name: str = "default"
-
-        Settings.update_global(name="updated")
-        assert Settings.fetch_global().name == "updated"
-        BaseMcbSettings.reset_for_testing()
-
-    def test_validate_overrides_rejects_unknown(self) -> None:
-        BaseMcbSettings.reset_for_testing()
-
-        class Settings(BaseMcbSettings):
-            name: str = "default"
-
+    def test_validate_overrides_rejects_unknown(self, settings_factory: Any) -> None:
+        settings = settings_factory(name="default")
         with pytest.raises(ValueError, match="Unknown settings override"):
-            Settings.validate_overrides(unknown="value")
-        BaseMcbSettings.reset_for_testing()
+            settings.validate_overrides(unknown="value")
 
 
 class TestLogging:
@@ -328,18 +286,14 @@ class TestService:
         assert isinstance(SettingsService.fetch_global(), McbService)
         SettingsService.reset_for_testing()
 
-    def test_service_with_settings(self) -> None:
-        BaseMcbSettings.reset_for_testing()
-
-        class Settings(BaseMcbSettings):
-            name: str = "default"
+    def test_service_with_settings(self, settings_factory: Any) -> None:
+        settings = settings_factory(name="default")
 
         class DemoService(McbService):
             pass
 
         DemoService.reset_for_testing()
-        service = DemoService.with_settings(Settings.fetch_global())
-        runtime_settings = cast(Settings, service.runtime_settings)
+        service = DemoService.with_settings(settings.fetch_global())
+        runtime_settings = cast(Any, service.runtime_settings)
         assert runtime_settings.name == "default"
         DemoService.reset_for_testing()
-        BaseMcbSettings.reset_for_testing()
