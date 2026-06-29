@@ -1,7 +1,7 @@
 <!-- markdownlint-disable MD013 MD024 MD025 MD003 MD022 MD031 MD032 MD036 MD041 MD060 -->
 # Development Roadmap
 
-**Last updated:** 2026-06-07
+**Last updated:** 2026-06-28
 
 Development roadmap for **Memory Context Browser (MCB)** — a high-performance MCP server for semantic code search, persistent memory, and agent-aware context management.
 
@@ -11,12 +11,12 @@ Development roadmap for **Memory Context Browser (MCB)** — a high-performance 
 
 | Field | Value |
 | ------- | ------- |
-| **Version** | v0.3.2 from `Cargo.toml` |
-| **Branch** | `feat/v0.3.2-ci-gates` |
-| **Build** | Use `bd show mcb-v5an --json` for current v0.3.2 release-lane state |
-| **Tests** | Use `bd show mcb-v5an.11 --json` for current CI verification state |
+| **Version** | v0.4.0 from `Cargo.toml` |
+| **Branch** | `feat/v0.4.0-multitenant-weaviate` |
+| **Build** | `cargo check -p mcb-server` clean; `make check WHAT=ci` green |
+| **Tests** | 578 passing in `mcb-server` (251 unit + 154 integration + 145 e2e + 28 contract) |
 | **Crates** | 7 first-party workspace crates |
-| **ADRs** | 55 tracked ADRs |
+| **ADRs** | 56 tracked ADRs |
 
 ### Project Metrics
 
@@ -24,7 +24,7 @@ Development roadmap for **Memory Context Browser (MCB)** — a high-performance 
 | -------- | ------- |
 | Beads issues | Use `bd status --json` for current totals |
 | Avg lead time | Use `bd status --json` for current lead-time metrics |
-| TODO/FIXME | Use `make check WHAT=guard` and the relevant bead for current remediation state |
+| TODO/FIXME | `make check WHAT=guard` clean |
 | Languages | 14 via tree-sitter |
 | Embedding providers | 6 (FastEmbed, OpenAI, VoyageAI, Ollama, Gemini, Anthropic) |
 | Vector stores | 5+ (EdgeVec, Milvus, Qdrant, Pinecone, Encrypted) |
@@ -39,8 +39,29 @@ Current work, blockers, and technical-debt ordering are tracked in beads.
 
 ---
 
-### v0.3.2 — CI/CD Gates And Release Reliability
+### v0.4.0 — Released
 
+**Tracking:** `bd show mcb-6pjx.1 --json`
+**Branch:** `feat/v0.4.0-multitenant-weaviate`
+**Tracking bead:** `mcb-6pjx.1`
+
+Closes the MCP server and Admin UI surface as stable and green. All 24 public
+MCP tools, 9 handler families, Admin UI pages, and Admin API endpoints are
+implemented, tested, and passing gates.
+
+| Area | Status |
+| ------ | -------- |
+| MCP handlers (24 tools / 9 families) | Implemented; 28 contract tests green |
+| Admin UI pages (dashboard, jobs, health, config, browse, 404) | Implemented; auth middleware tests green |
+| Admin API (health, jobs, collections, config, dashboard) | Implemented; integration tests green |
+| Org-scoped entity CRUD + data isolation | Implemented; golden e2e tests green |
+| Version bump + docs sync | Released |
+
+---
+
+### v0.3.2 — CI/CD Gates And Release Reliability (Historical)
+
+**Status:** Released
 **Tracking:** `bd show mcb-v5an --json`
 **Branch:** `feat/v0.3.2-ci-gates`
 **Tracking bead:** `mcb-v5an`
@@ -51,11 +72,11 @@ typos/doc validation, and release workflow resilience.
 
 | Area | Status |
 | ------ | -------- |
-| Release workflow resilience | Implemented; CI evidence tracked in beads |
-| Rust cache and nextest CI tuning | Implemented; verification tracked in `mcb-v5an.11` |
-| Typos and hook gates | Implemented |
-| Docs/governance cleanup | Completed under `mcb-vy4k`; current release docs tracked in `mcb-v5an` |
-| Final PR/check validation | Use `bd show mcb-v5an.11 --json` and `make ship WHAT=pr ACT=checks PR=<id>` |
+| Release workflow resilience | Released |
+| Rust cache and nextest CI tuning | Released |
+| Typos and hook gates | Released |
+| Docs/governance cleanup | Released |
+| Final PR/check validation | Released |
 
 ---
 

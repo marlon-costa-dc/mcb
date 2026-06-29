@@ -1,8 +1,8 @@
 <!-- markdownlint-disable MD013 MD024 MD025 MD003 MD022 MD031 MD032 MD036 MD041 MD060 MD024 -->
 # MCP Tools Schema Documentation
 
-**Version**: 0.3.2
-**Last Updated**: 2026-06-04
+**Version**: 0.4.0
+**Last Updated**: 2026-06-28
 
 MCB exposes 24 public tool names through the MCP protocol. `tools/list` returns
 the single-purpose names below; implementation routes them through 9 handler

@@ -4,7 +4,7 @@
 
 One-pager for daily MCB development.
 
-**Version:** `0.3.2` | **Rust:** `1.92+` | **Edition:** `2024`
+**Version:** `0.4.0` | **Rust:** `1.92+` | **Edition:** `2024`
 
 ## Make verbs (90% of daily use)
 

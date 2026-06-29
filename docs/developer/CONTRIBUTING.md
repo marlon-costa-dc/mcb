@@ -3,7 +3,7 @@
 
 Thank you for your interest in contributing! This guide covers everything you need for MCB development.
 
-**Last updated:** 2026-06-28 | **Version:** v0.3.2
+**Last updated:** 2026-06-28 | **Version:** v0.4.0
 
 ## 🚀 Getting Started
 
@@ -64,7 +64,7 @@ crates/mcb-{name}/
     └── utils/      ← Shared test helpers
 ```
 
-### Code Structure (v0.3.2 Clean Architecture)
+### Code Structure (v0.4.0 Clean Architecture)
 
 ```text
 crates/

@@ -2,7 +2,7 @@
 # Memory Context Browser - Documentation
 
 [![Documentation Status](https://img.shields.io/badge/docs-automated-green)](https://github.com/marlonsc/mcb/actions)
-[![Version](https://img.shields.io/badge/version-0.3.2-blue)](https://github.com/marlonsc/mcb/releases)
+[![Version](https://img.shields.io/badge/version-0.4.0-blue)](https://github.com/marlonsc/mcb/releases)
 [![Architecture](https://img.shields.io/badge/architecture-C4--model-blue)](architecture/ARCHITECTURE.md)
 [![ADRs](https://img.shields.io/badge/ADRs-52-blue)](adr/README.md)
 

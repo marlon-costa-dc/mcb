@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mcb-scripts"
-version = "0.3.2"
+version = "0.4.0"
 description = "Repository-local automation helpers for MCB"
 requires-python = ">=3.13,<3.14"
 dependencies = [

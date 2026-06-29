@@ -2,7 +2,7 @@
 # Technical Patterns Reference
 
 **Last updated:** 2026-06-28
-**Source:** Codebase analysis across 7 crates (v0.3.2)
+**Source:** Codebase analysis across 7 crates (v0.4.0)
 
 This document captures the recurring implementation patterns used throughout MCB. For the full architecture overview, see [ARCHITECTURE.md](./ARCHITECTURE.md). For boundary rules, see [ARCHITECTURE_BOUNDARIES.md](./ARCHITECTURE_BOUNDARIES.md).
 
