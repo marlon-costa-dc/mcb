@@ -26,6 +26,7 @@ Central index for the MCB (Memory Context Browser) Rust workspace. Use this skil
 | Import rules | `mcb-import-rules` | Import order, visibility, re-exports |
 | Testing | `mcb-testing-patterns` | TDD, test layout, rstest/mockall/insta |
 | Quality gates | `mcb-quality-gates` | Validation sequence before commit |
+| Python tooling | `mcb-python-patterns` | Python scripts under `scripts/` |
 
 ## Architecture in 30s
 
