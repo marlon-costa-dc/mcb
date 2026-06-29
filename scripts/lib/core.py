@@ -21,9 +21,10 @@ from .constants import McbConstants, c
 from .logger import McbLogger, configure_logging, get_logger
 from .result import McbResult, r
 from .service import McbScriptsService, McbService, s
-from .settings import BaseMcbSettings
+from .settings import BaseCommandSettings, BaseMcbSettings
 
 __all__ = [
+    "BaseCommandSettings",
     "BaseMcbSettings",
     "McbConstants",
     "McbLogger",

@@ -53,4 +53,18 @@ class BaseMcbSettings(FlextSettingsBase):
         return c.ENV_FILE_DEFAULT
 
 
-__all__ = ["BaseMcbSettings"]
+class BaseCommandSettings(BaseMcbSettings):
+    """Base settings for cosmos-command scripts using unprefixed env vars.
+
+    The cosmos-command dispatcher exposes ``WHAT``, ``ACT``, ``APPLY`` and
+    other parameters without a prefix, so this base disables the default
+    ``MCB_`` prefix while keeping the rest of the FLEXT settings lifecycle.
+    """
+
+    model_config: ClassVar[SettingsConfigDict] = (
+        BaseMcbSettings.model_config.copy()
+    )
+    model_config["env_prefix"] = ""
+
+
+__all__ = ["BaseMcbSettings", "BaseCommandSettings"]

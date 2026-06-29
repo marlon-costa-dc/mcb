@@ -21,12 +21,11 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
-SCRIPTS_DIR = ROOT / "scripts"
-if str(SCRIPTS_DIR) not in sys.path:
-    sys.path.insert(0, str(SCRIPTS_DIR))
+SCRIPTS = Path(__file__).resolve().parents[1]
+if str(SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS))
 
-from lib.core import get_logger  # noqa: E402
+from lib.core import BaseCommandSettings, get_logger, r  # noqa: E402
 
 logger = get_logger(__name__)
 
@@ -130,7 +129,15 @@ INVALID_CASES = (
 )
 
 
-def run_case(case: SurfaceCase) -> str | None:
+class SurfaceSettings(BaseCommandSettings):
+    """Settings for the surface check command.
+
+    cosmos-command exposes parameters unprefixed, so this base disables the
+    default ``MCB_`` prefix while keeping the FLEXT settings lifecycle.
+    """
+
+
+def _run_case(case: SurfaceCase) -> str | None:
     env = os.environ.copy()
     env["APPLY"] = "N"
     env["QUICK"] = "1"
@@ -154,11 +161,12 @@ def run_case(case: SurfaceCase) -> str | None:
     return None
 
 
-def main() -> int:
-    failures = []
+def run(_settings: SurfaceSettings) -> r[int]:
+    """Validate the public make command surface."""
+    failures: list[str] = []
     cases = (*READ_ONLY_CASES, *DRY_RUN_CASES, *INVALID_CASES)
     for case in cases:
-        failure = run_case(case)
+        failure = _run_case(case)
         if failure:
             failures.append(failure)
 
@@ -166,10 +174,19 @@ def main() -> int:
         logger.info("SURFACE FAIL")
         for failure in failures:
             logger.info(f"\n--- {failure}")
-        return 1
+        return r[int].fail("surface validation failed")
 
     logger.info(f"SURFACE OK: {len(cases)} command cases validated")
     logger.info("External/long-running operations are represented by APPLY-gated dry-runs.")
+    return r[int].ok(len(cases))
+
+
+def main() -> int:
+    """Entrypoint used by the cosmos-command dispatcher."""
+    result = run(SurfaceSettings())
+    if result.failure:
+        logger.error(result.error or "surface validation failed")
+        return 1
     return 0
 
 

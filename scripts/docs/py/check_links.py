@@ -7,19 +7,36 @@ SPDX-License-Identifier: MIT
 
 from __future__ import annotations
 
-import argparse
 import os
 import sys
+from pathlib import Path
 
-from lib.core import get_logger
+SCRIPTS = Path(__file__).resolve().parents[2]
+if str(SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS))
 
-from scripts.docs.py import utils
+from lib.cli import create_app_with_common_params, register_result_command  # noqa: E402
+from lib.core import BaseMcbSettings, get_logger, r  # noqa: E402
+from pydantic import Field  # noqa: E402
+
+from docs.py import utils  # noqa: E402
 
 logger = get_logger(__name__)
 
 
-def _process_links(links, filepath, rel_filepath, project_root):
-    broken_in_file = []
+class CheckLinksSettings(BaseMcbSettings):
+    """Settings for the broken-link documentation check."""
+
+    root: Path = Field(default=Path("."), description="Project root directory")
+
+
+def _process_links(
+    links: list[tuple[str, str]],
+    filepath: str,
+    rel_filepath: str,
+    project_root: str,
+) -> tuple[list[tuple[str, str, str, str]], int]:
+    broken_in_file: list[tuple[str, str, str, str]] = []
     checked_in_file = 0
 
     for text, link in links:
@@ -27,12 +44,9 @@ def _process_links(links, filepath, rel_filepath, project_root):
         if link.startswith(("http", "mailto:", "ftp:")):
             continue
 
-        # Resolve target path
         if link.startswith("/"):
-            # Absolute from project root
             target = os.path.join(project_root, link.lstrip("/"))
         else:
-            # Relative to current file
             target = os.path.normpath(os.path.join(os.path.dirname(filepath), link))
 
         if not os.path.exists(target):
@@ -41,8 +55,8 @@ def _process_links(links, filepath, rel_filepath, project_root):
     return broken_in_file, checked_in_file
 
 
-def _check_files(docs_dir, project_root):
-    broken = []
+def _check_files(docs_dir: str, project_root: str) -> tuple[list[tuple[str, str, str, str]], int, int]:
+    broken: list[tuple[str, str, str, str]] = []
     checked_files = 0
     checked_links = 0
 
@@ -55,7 +69,7 @@ def _check_files(docs_dir, project_root):
         try:
             with open(filepath, encoding="utf-8") as fh:
                 content = fh.read()
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(f"Error reading {rel_filepath}: {e}")
             continue
 
@@ -68,22 +82,16 @@ def _check_files(docs_dir, project_root):
     return broken, checked_files, checked_links
 
 
-def main():
-    """Main entry point for checking broken internal links in documentation."""
-    parser = argparse.ArgumentParser(description="Check broken internal links in docs.")
-    parser.add_argument("--root", default=".", help="Project root directory")
-    args = parser.parse_args()
-
-    # Use project root from args if provided, otherwise detect
-    project_root = os.path.abspath(args.root)
-    if args.root == ".":
+def run(settings: CheckLinksSettings) -> r[int]:
+    """Check broken internal links in documentation."""
+    project_root = os.path.abspath(settings.root)
+    if settings.root == Path("."):
         project_root = utils.get_project_root()
 
     docs_dir = os.path.join(project_root, "docs")
 
     if not os.path.exists(docs_dir):
-        logger.error(f"Error: docs directory not found at {docs_dir}")
-        sys.exit(1)
+        return r[int].fail(f"docs directory not found at {docs_dir}")
 
     broken, checked_files, checked_links = _check_files(docs_dir, project_root)
 
@@ -93,10 +101,22 @@ def main():
         logger.info(f"Found {len(broken)} broken internal links:")
         for fp, text, link, target in sorted(broken):
             logger.info(f"  {fp}: [{text}]({link}) -> {target} (missing)")
-        sys.exit(1)
-    else:
-        logger.info("No broken internal links found.")
-        sys.exit(0)
+        return r[int].fail(f"{len(broken)} broken internal link(s) found")
+
+    logger.info("No broken internal links found.")
+    return r[int].ok(checked_links)
+
+
+def main() -> None:
+    app = create_app_with_common_params(name="check-links", help_text="Check broken internal links in docs.")
+    register_result_command(
+        app,
+        name="run",
+        help_text="Check broken internal links in documentation.",
+        model_cls=CheckLinksSettings,
+        handler=run,
+    )
+    app()
 
 
 if __name__ == "__main__":

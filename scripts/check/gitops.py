@@ -18,27 +18,35 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-import typer
-from pydantic import BaseModel
-
 SCRIPTS = Path(__file__).resolve().parents[1]
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
 from lib.cli import create_app_with_common_params, register_result_command  # noqa: E402
-from lib.core import get_logger, r  # noqa: E402
+from lib.core import BaseCommandSettings, get_logger, r  # noqa: E402
 from lib.gitops import GitOpsSummary, summarize  # noqa: E402
+from pydantic import Field  # noqa: E402
 
 logger = get_logger(__name__)
 
 
-class GitopsParams(BaseModel):
-    root: Path = Path(__file__).resolve().parents[2]
+class GitopsSettings(BaseCommandSettings):
+    """Settings for the GitOps validation command.
+
+    cosmos-command exposes parameters unprefixed, so this base disables the
+    default ``MCB_`` prefix while keeping the FLEXT settings lifecycle. The
+    ``root`` option is also exposed as ``--root`` for direct CLI usage.
+    """
+
+    root: Path = Field(
+        default=Path(__file__).resolve().parents[2],
+        description="Project root directory",
+    )
 
 
-def run(params: GitopsParams) -> r[GitOpsSummary]:
+def run(settings: GitopsSettings) -> r[GitOpsSummary]:
     """Discover and validate GitOps manifests."""
-    k8s_root = params.root / "k8s"
+    k8s_root = settings.root / "k8s"
     summary = summarize(k8s_root)
     logger.info(f"GITOPS {summary.status}: {summary.message}")
     if summary.report.total_issues:
@@ -51,6 +59,7 @@ def run(params: GitopsParams) -> r[GitOpsSummary]:
 
 
 def main() -> None:
+    """Entrypoint used by the cosmos-command dispatcher and direct CLI runs."""
     app = create_app_with_common_params(
         name="check-gitops",
         help_text="Run MCB GitOps validation discovery.",
@@ -59,10 +68,10 @@ def main() -> None:
         app,
         name="run",
         help_text="Discover and validate GitOps manifests.",
-        model_cls=GitopsParams,
+        model_cls=GitopsSettings,
         handler=run,
     )
-    typer.main.get_command(app)()
+    app()
 
 
 if __name__ == "__main__":
