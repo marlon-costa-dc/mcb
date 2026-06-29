@@ -93,11 +93,11 @@ case "$(ACT)" in \
     { ! command -v typos >/dev/null 2>&1 || typos; } && \
     $(MCB_TEST_UNIT) ;; \
   pre-push) \
-    $(MAKE) check WHAT=python && \
-    $(MAKE) check WHAT=gitops && \
+    $(MAKE) check WHAT=python ACT= && \
+    $(MAKE) check WHAT=gitops ACT= && \
     $(MCB_RUN) cargo fmt --all -- --check && \
     $(MCB_RUN) cargo clippy --all-targets -- -D warnings && \
-    $(MAKE) test && $(MAKE) test SCOPE=doc && \
+    $(MAKE) test ACT= && $(MAKE) test SCOPE=doc ACT= && \
     $(MCB_TOOL) validate quick && \
     $(MCB_TOOL) guard ;; \
   *)          printf "ERRO: ACT '%s' invalido. Validos: $(ACTS_hook)\n" "$(ACT)" >&2; exit 2 ;; \
