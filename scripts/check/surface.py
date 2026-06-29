@@ -20,12 +20,13 @@ import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
+from typing import cast
 
 SCRIPTS = Path(__file__).resolve().parents[1]
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-from lib.core import BaseCommandSettings, get_logger, r  # noqa: E402
+from lib.core import BaseCommandSettings, McbResult, get_logger  # noqa: E402
 
 logger = get_logger(__name__)
 
@@ -144,7 +145,7 @@ def _run_case(case: SurfaceCase) -> str | None:
     env["TERM"] = "dumb"
 
     result = subprocess.run(
-        ("make", *case.args),
+        ("make", "APPLY=N", *case.args),
         cwd=ROOT,
         env=env,
         check=False,
@@ -161,7 +162,7 @@ def _run_case(case: SurfaceCase) -> str | None:
     return None
 
 
-def run(_settings: SurfaceSettings) -> r[int]:
+def run(_settings: SurfaceSettings) -> McbResult[int]:
     """Validate the public make command surface."""
     failures: list[str] = []
     cases = (*READ_ONLY_CASES, *DRY_RUN_CASES, *INVALID_CASES)
@@ -174,11 +175,11 @@ def run(_settings: SurfaceSettings) -> r[int]:
         logger.info("SURFACE FAIL")
         for failure in failures:
             logger.info(f"\n--- {failure}")
-        return r[int].fail("surface validation failed")
+        return cast(McbResult[int], McbResult[int].fail("surface validation failed"))
 
     logger.info(f"SURFACE OK: {len(cases)} command cases validated")
     logger.info("External/long-running operations are represented by APPLY-gated dry-runs.")
-    return r[int].ok(len(cases))
+    return cast(McbResult[int], McbResult[int].ok(len(cases)))
 
 
 def main() -> int:

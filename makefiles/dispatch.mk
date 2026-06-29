@@ -9,6 +9,9 @@
 # --- verb-local variables (single home) --------------------------------------
 MDBOOK         := $(shell command -v mdbook 2>/dev/null || echo "$(HOME)/.cargo/bin/mdbook")
 MCB_TEST_PORT  ?= 18080
+# Cap pre-push test parallelism to avoid overwhelming the host when nproc is high.
+# Honor user-supplied THREADS if it is already <= 4; otherwise clamp to 4.
+MCB_PUSH_THREADS := $(or $(filter 1 2 3 4,$(THREADS)),4)
 
 # Test runner: prefer cargo-nextest (faster, parallel, better output) when installed;
 # fall back to `cargo test`. Doctests always use `cargo test --doc` (nextest can't
@@ -97,7 +100,7 @@ case "$(ACT)" in \
     $(MAKE) check WHAT=gitops ACT= && \
     $(MCB_RUN) cargo fmt --all -- --check && \
     $(MCB_RUN) cargo clippy --all-targets -- -D warnings && \
-    $(MAKE) test ACT= && $(MAKE) test SCOPE=doc ACT= && \
+    $(MAKE) test ACT= THREADS=$(MCB_PUSH_THREADS) && $(MAKE) test SCOPE=doc ACT= THREADS=$(MCB_PUSH_THREADS) && \
     $(MCB_TOOL) validate quick && \
     $(MCB_TOOL) guard ;; \
   *)          printf "ERRO: ACT '%s' invalido. Validos: $(ACTS_hook)\n" "$(ACT)" >&2; exit 2 ;; \
