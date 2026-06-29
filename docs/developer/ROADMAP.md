@@ -59,6 +59,28 @@ implemented, tested, and passing gates.
 
 ---
 
+### v0.4.1 — AuthZ Hardening + AgentSession Schema + Webhook / OTEL
+
+**Status:** In planning  
+**Tracking:** `bd show mcb-9cft --json`  
+**Branch:** `feat/v0.4.0-multitenant-weaviate` (continues v0.4.0 branch)  
+**Tracking bead:** `mcb-9cft`
+
+Work discovered during v0.4.0 closure that was not in the released scope:
+per-request authenticated principal (RequestPrincipal), Keycloak OIDC JWT
+validation, scope enforcement, AgentSession conformance to
+`agent-session.schema.json`, webhook ingress for session creation, and OTEL
+spans for the session lifecycle.
+
+| Area | Status |
+| ------ | -------- |
+| RequestPrincipal + Keycloak JWT + scope enforcement | Open; bead `mcb-6pjx.1.2` |
+| AgentSession schema conformance + migration | Open; bead `mcb-6pjx.1.5` |
+| Webhook ingress (cosmos-hook) → AgentSession | Open; bead `mcb-6pjx.1.7` |
+| OTEL spans for session lifecycle | Open; bead `mcb-6pjx.1.6` |
+
+---
+
 ### v0.3.2 — CI/CD Gates And Release Reliability (Historical)
 
 **Status:** Released
