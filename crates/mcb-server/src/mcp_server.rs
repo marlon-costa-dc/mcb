@@ -30,8 +30,6 @@ use rmcp::model::{
     ServerCapabilities, ServerInfo,
 };
 
-use mcb_utils::constants::protocol::HTTP_HEADER_EXECUTION_FLOW;
-
 use crate::handlers::{
     AgentHandler, EntityHandler, IndexHandler, IssueEntityHandler, MemoryHandler, OrgEntityHandler,
     PlanEntityHandler, ProjectHandler, SearchHandler, SessionHandler, ValidateHandler,
@@ -256,16 +254,14 @@ tools:
         merge_meta_overrides(Some(&context.meta), &mut overrides);
         merge_meta_overrides(request.meta.as_ref(), &mut overrides);
 
-        // HTTP transport injects the raw request parts as an extension; use any
-        // execution-flow header sent by HTTP clients as an override so the
-        // operation-mode matrix is evaluated for the caller's flow.
-        if let Some(parts) = context.extensions.get::<axum::http::request::Parts>()
-            && let Some(flow) = parts
-                .headers
-                .get(HTTP_HEADER_EXECUTION_FLOW)
-                .and_then(|value| value.to_str().ok())
-        {
-            overrides.insert("execution_flow".to_owned(), flow.to_owned());
+        // HTTP transport injects any execution-flow header as a typed override so
+        // the operation-mode matrix is evaluated for the caller's flow without
+        // leaking Axum request types into the MCP core.
+        if let Some(override_flow) = context
+            .extensions
+            .get::<crate::transport::streamable_http::ExecutionFlowOverride>(
+        ) {
+            overrides.insert("execution_flow".to_owned(), override_flow.0.clone());
         }
 
         let mut execution_context =

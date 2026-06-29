@@ -13,6 +13,7 @@ use rmcp::model::CallToolResult;
 use super::common::build_memory_filter;
 use crate::args::MemoryArgs;
 use crate::formatter::ResponseFormatter;
+use crate::utils::args::resolve_limit;
 use crate::utils::mcp::{resolve_org_id, tool_error};
 use mcb_utils::constants::limits::{
     CHARS_PER_TOKEN_ESTIMATE, DEFAULT_MAX_CONTEXT_TOKENS, DEFAULT_MEMORY_LIST_LIMIT,
@@ -58,7 +59,7 @@ pub async fn inject_context(
 ) -> Result<CallToolResult, McpError> {
     let filter = build_memory_filter(args, None, None);
     let org_id = resolve_org_id(args.org_id.as_deref());
-    let limit = args.limit.unwrap_or(DEFAULT_MEMORY_LIST_LIMIT as u32) as usize;
+    let limit = resolve_limit(args.limit, DEFAULT_MEMORY_LIST_LIMIT as u32);
     let max_tokens = args.inject.max_tokens.unwrap_or(DEFAULT_MAX_CONTEXT_TOKENS);
     let vcs_context = capture_vcs_context();
     match memory_service

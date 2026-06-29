@@ -12,6 +12,7 @@ use super::common::build_memory_filter;
 use crate::args::MemoryArgs;
 use crate::error_mapping::{to_contextual_tool_error, to_opaque_mcp_error};
 use crate::formatter::ResponseFormatter;
+use crate::utils::args::resolve_limit;
 use crate::utils::mcp::{resolve_org_id, tool_error};
 use mcb_utils::constants::keys::{FIELD_OBSERVATION_ID, FIELD_OBSERVATION_TYPE};
 use mcb_utils::constants::limits::{DEFAULT_MEMORY_LIST_LIMIT, DEFAULT_TIMELINE_DEPTH};
@@ -24,7 +25,7 @@ pub async fn list_observations(
 ) -> Result<CallToolResult, McpError> {
     let filter = build_memory_filter(args, None, args.tags.clone());
     let org_id = resolve_org_id(args.org_id.as_deref());
-    let limit = args.limit.unwrap_or(DEFAULT_MEMORY_LIST_LIMIT as u32) as usize;
+    let limit = resolve_limit(args.limit, DEFAULT_MEMORY_LIST_LIMIT as u32);
     // INTENTIONAL: Optional query parameter; empty string means no filter
     let query = args.query.clone().unwrap_or_default();
     match memory_service
