@@ -13,20 +13,29 @@ MCB_TEST_PORT  ?= 18080
 # Honor user-supplied THREADS if it is already <= 4; otherwise clamp to 4.
 MCB_PUSH_THREADS := $(or $(filter 1 2 3 4,$(THREADS)),4)
 
+# Detect cargo-nextest robustly (the binary is installed as `cargo-nextest`,
+# but `cargo nextest --version` is the portable check).
+MCB_NEXTEST := $(shell cargo nextest --version >/dev/null 2>&1 && echo 1)
+
+# Choose nextest profile: CI/pre-push uses the `ci` profile unless overridden.
+MCB_NEXTEST_PROFILE := $(or $(NEXTEST_PROFILE),$(if $(filter true 1,$(CI)),ci,default))
+
 # Test runner: prefer cargo-nextest (faster, parallel, better output) when installed;
 # fall back to `cargo test`. Doctests always use `cargo test --doc` (nextest can't
 # run them) — semantics preserved since `cargo test --all-targets` also skips doctests.
-MCB_NEXTEST := $(shell command -v cargo-nextest >/dev/null 2>&1 && echo 1)
 ifeq ($(MCB_NEXTEST),1)
-  MCB_TEST_UNIT := MCB_MODEL_ID=test-model RUST_TEST_THREADS=$$T $(MCB_RUN) cargo nextest run --workspace --test unit --test-threads=$$T
-  MCB_TEST_ALL  := MCB_MODEL_ID=test-model RUST_TEST_THREADS=$$T $(MCB_RUN) cargo nextest run --workspace --test-threads=$$T
+  MCB_TEST_UNIT := MCB_MODEL_ID=test-model NEXTEST_TEST_THREADS=$$T $(MCB_RUN) cargo nextest run --profile $(MCB_NEXTEST_PROFILE) --workspace --test unit
+  MCB_TEST_ALL  := MCB_MODEL_ID=test-model NEXTEST_TEST_THREADS=$$T $(MCB_RUN) cargo nextest run --profile $(MCB_NEXTEST_PROFILE) --workspace
   # Run only crates that contain changed .rs files vs origin/$(BRANCH).
-  MCB_TEST_CHANGED := MCB_MODEL_ID=test-model $(MCB_RUN) cargo nextest run --test-threads=$$T $$(git diff --name-only origin/$$(git rev-parse --abbrev-ref HEAD) -- 'crates/**/*.rs' 'crates/**/*.toml' | sed -n 's|^crates/\([^/]*\)/.*|\\-p \1|p' | sort -u | tr '\\n' ' ')
 else
-  MCB_TEST_UNIT := MCB_MODEL_ID=test-model RUST_TEST_THREADS=$$T $(MCB_RUN) cargo test --workspace --test unit
-  MCB_TEST_ALL  := MCB_MODEL_ID=test-model RUST_TEST_THREADS=$$T $(MCB_RUN) cargo test --workspace --all-targets
-  MCB_TEST_CHANGED := MCB_MODEL_ID=test-model $(MCB_RUN) cargo test $$(git diff --name-only origin/$$(git rev-parse --abbrev-ref HEAD) -- 'crates/**/*.rs' 'crates/**/*.toml' | sed -n 's|^crates/\([^/]*\)/.*|-p \1|p' | sort -u | tr '\\n' ' ')
+  MCB_TEST_UNIT := MCB_MODEL_ID=test-model RUST_TEST_THREADS=$$T $(MCB_RUN) cargo test --workspace --test unit --test-threads=$$T
+  MCB_TEST_ALL  := MCB_MODEL_ID=test-model RUST_TEST_THREADS=$$T $(MCB_RUN) cargo test --workspace --all-targets --test-threads=$$T
 endif
+
+# Helper to test a specific set of crates (shell $$CRATES must be set).
+define MCB_TEST_CRATES
+if [ "$(MCB_NEXTEST)" = "1" ]; then MCB_MODEL_ID=test-model NEXTEST_TEST_THREADS=$$T $(MCB_RUN) cargo nextest run --profile $(MCB_NEXTEST_PROFILE) $$CRATES; else MCB_MODEL_ID=test-model RUST_TEST_THREADS=$$T $(MCB_RUN) cargo test --all-targets --test-threads=$$T $$CRATES; fi
+endef
 
 # Install Rust tooling: prefer cargo-binstall when available, else cargo install.
 # This is an optimization, not a workaround; environments without binstall keep working.
@@ -175,7 +184,7 @@ case "$(SCOPE)" in \
                  { echo "⊘ External test group skipped: services unavailable."; exit 0; } ;; \
   changed)     MCB_MODEL_ID=test-model $(MCB_RUN) echo "Running tests for changed crates..."; \
                CRATES="$$(git diff --name-only origin/$$(git rev-parse --abbrev-ref HEAD) -- 'crates/**/*.rs' 'crates/**/*.toml' | sed -n 's|^crates/\\([^/]*\\)/.*|-p \\1|p' | sort -u | tr '\\n' ' ')"; \
-               [ -z "$$CRATES" ] && { echo "No changed crates; running full workspace tests."; $(MCB_TEST_ALL); } || { echo "Changed crates: $$CRATES"; $(MCB_RUN) cargo test --all-targets $$CRATES; } ;; \
+               [ -z "$$CRATES" ] && { echo "No changed crates; running full workspace tests."; $(MCB_TEST_ALL); } || { echo "Changed crates: $$CRATES"; $(call MCB_TEST_CRATES); } ;; \
   e2e)         $(call MCB_E2E) ;; \
   all)         $(MCB_TEST_ALL) && $(call MCB_E2E) ;; \
   '')          $(MCB_TEST_ALL) ;; \
