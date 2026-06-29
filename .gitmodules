@@ -13,9 +13,6 @@
 [submodule "vendor/sea-schema"]
 	path = third-party/sea-schema
 	url = https://github.com/marlon-costa-dc/sea-schema.git
-[submodule "vendor/sea-streamer"]
-	path = third-party/sea-streamer
-	url = https://github.com/marlon-costa-dc/sea-streamer.git
 [submodule "vendor/sea-orm-pro"]
 	path = third-party/sea-orm-pro
 	url = https://github.com/marlon-costa-dc/sea-orm-pro.git
