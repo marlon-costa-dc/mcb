@@ -61,7 +61,7 @@ gate = [ "$(APPLY)" = "Y" ] || { printf "DRY-RUN: would %s; set APPLY=Y to execu
 # --- WHATS_<verb> phase SSOT (drives sub-help + error arms) -------------------
 # WHAT= values for each canonical verb. Nested namespaces select with ACT= and
 # publish their phase list as ACTS_<namespace>.
-WHATS_boot    := hooks tools adr hook venv all
+WHATS_boot    := hooks hook tools adr venv all
 WHATS_build   := build debug release prebuild codegen docs
 WHATS_check   := fmt lint validate audit udeps coverage qlty coordination guard fix dev optimize gitops surface python ci all
 WHATS_ship    := status diff log show add commit push pull branch checkout tag tags stash stash-pop stash-list merge rebase unstage push-tags pr sub release
