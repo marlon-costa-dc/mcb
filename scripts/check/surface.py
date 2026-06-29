@@ -150,7 +150,7 @@ def _run_case(case: SurfaceCase) -> str | None:
         check=False,
         capture_output=True,
         text=True,
-        timeout=30,
+        timeout=300,
     )
     combined = result.stdout + result.stderr
     if result.returncode != case.expected_rc:

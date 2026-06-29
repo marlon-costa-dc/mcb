@@ -78,8 +78,8 @@ esac
 endef
 
 # tiered native git-hook gates; SSOT for pre-commit/pre-push, selected by ACT=.
-# pre-commit (fast): guard + fmt + clippy(workspace) + typos + unit tests.
-# pre-push (full): clippy --all-targets + full suite + doctests + validate.
+# pre-commit (fast): guard --staged + python lint/test + fmt + clippy(workspace) + typos + unit tests.
+# pre-push (full): python gates + gitops + fmt + clippy --all-targets + full suite + doctests + validate + guard.
 # Same gates the CI runs, one definition. No bypass (AGENTS.md §3).
 define MCB_HOOK
 case "$(ACT)" in \
@@ -94,10 +94,12 @@ case "$(ACT)" in \
     $(MCB_TEST_UNIT) ;; \
   pre-push) \
     $(MAKE) check WHAT=python && \
+    $(MAKE) check WHAT=gitops && \
     $(MCB_RUN) cargo fmt --all -- --check && \
     $(MCB_RUN) cargo clippy --all-targets -- -D warnings && \
     $(MAKE) test && $(MAKE) test SCOPE=doc && \
-    $(MCB_TOOL) validate quick ;; \
+    $(MCB_TOOL) validate quick && \
+    $(MCB_TOOL) guard ;; \
   *)          printf "ERRO: ACT '%s' invalido. Validos: $(ACTS_hook)\n" "$(ACT)" >&2; exit 2 ;; \
 esac
 endef
@@ -213,7 +215,7 @@ define DISPATCH_CHECK
   fix)      $(call MCB_FIX) ;; \
   dev)      $(call MCB_DEV) ;; \
   optimize) $(MCB_RUN) scripts/dev-env-optimize.sh $(if $(filter Y,$(APPLY)),--apply,) ;; \
-  ci|""|all) $(MAKE) check WHAT=python && $(MAKE) check WHAT=gitops && $(MCB_RUN) cargo fmt --all -- --check && $(MCB_RUN) cargo clippy --all-targets -- -D warnings && $(MAKE) test && $(MCB_TOOL) validate $(if $(filter 1,$(QUICK)),quick,full) ;; \
+  ci|""|all) $(MAKE) check WHAT=python && $(MAKE) check WHAT=gitops && $(MCB_RUN) cargo fmt --all -- --check && $(MCB_RUN) cargo clippy --all-targets -- -D warnings && $(MAKE) test && $(MCB_TOOL) validate $(if $(filter 1,$(QUICK)),quick,full) && $(MCB_TOOL) guard ;; \
   *)        $(call BAD_WHAT,$(WHATS_check)) ;; \
 esac
 endef
