@@ -68,7 +68,7 @@ def register_result_command[P: BaseModel, T](
             typer.echo(success_message)
 
     command.__signature__ = inspect.Signature(parameters)  # type: ignore[attr-defined]
-    command.__annotations__ = annotations  # type: ignore[attr-defined]
+    command.__annotations__ = annotations
     app.command(name=name, help=help_text)(command)
 
 
