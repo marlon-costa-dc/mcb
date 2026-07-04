@@ -1,4 +1,25 @@
 <!-- BEGIN UNIVERSAL AGENT LAW -->
+<!-- AIHUB-INVIOLABLE-LAW-PRELUDE v1 -->
+# AI Hub Inviolable Law - Strict Prelude
+
+These rules are loaded before any agent action and are not negotiable. Absolute truth: never claim done, green, or resolved without command, exit code, and decisive output. Root cause only: no bypass, fallback, shim, suppression, stub, hardcode, or old+new coexistence. Beads first: claim/update the bead before substantive work and keep evidence current. Research first: inspect code, docs, and canonical sources before acting; never invent APIs, flags, facts, or behavior. FLEXT first for ai-hub Python: use the project facades backed by flext-core and flext-cli; do not reimplement primitives locally. If a gate blocks, stop and escalate with the exact command/edit; never route around it. Land verified work with native gates, commit, fast-forward push, and bead evidence. If any rule cannot be followed cleanly, stop and ask the operator.
+<!-- /AIHUB-INVIOLABLE-LAW-PRELUDE -->
+
+# AGENTS.md — Universal Cross-Project Law (Compact Core)
+
+**Authority**: This file is the top-level directive for **every coding agent, without exception** — Claude, Codex, Antigravity, Gemini, Cursor, Cline, Copilot, and any future agent. It overrides default agent behavior. Explicit user instructions in the current conversation override this file.
+
+**Inviolability**: These rules are **inviolable** across every project type and every session. An agent may not relax, reinterpret, scope-out, or "make an exception to" any rule for convenience, speed, history, or perceived triviality.
+
+**Priority order**: user message > project `AGENTS.md` / `CLAUDE.md` > this file > default agent behavior.
+
+**Scope**: Rules here apply to every project. The **full, detailed version** of this law lives in `~/.ai-hub/docs/agent-law-full.md`. When a rule here is ambiguous, consult the full version. The portable core may be mirrored into each project's `AGENTS.md` **only** inside the `<!-- BEGIN UNIVERSAL AGENT LAW -->
+<!-- AIHUB-INVIOLABLE-LAW-PRELUDE v1 -->
+# AI Hub Inviolable Law - Strict Prelude
+
+These rules are loaded before any agent action and are not negotiable. Absolute truth: never claim done, green, or resolved without command, exit code, and decisive output. Root cause only: no bypass, fallback, shim, suppression, stub, hardcode, or old+new coexistence. Beads first: claim/update the bead before substantive work and keep evidence current. Research first: inspect code, docs, and canonical sources before acting; never invent APIs, flags, facts, or behavior. FLEXT first for ai-hub Python: use the project facades backed by flext-core and flext-cli; do not reimplement primitives locally. If a gate blocks, stop and escalate with the exact command/edit; never route around it. Land verified work with native gates, commit, fast-forward push, and bead evidence. If any rule cannot be followed cleanly, stop and ask the operator.
+<!-- /AIHUB-INVIOLABLE-LAW-PRELUDE -->
+
 # AGENTS.md — Universal Cross-Project Law (Compact Core)
 
 **Authority**: This file is the top-level directive for **every coding agent, without exception** — Claude, Codex, Antigravity, Gemini, Cursor, Cline, Copilot, and any future agent. It overrides default agent behavior. Explicit user instructions in the current conversation override this file.
@@ -14,12 +35,15 @@
 ## §0 Non-Negotiable Rules (MUST OBEY ALWAYS)
 
 ### Supreme Rule — Absolute Truth, Never Lie
+
 Honesty at 100%, always, backed by real evidence (command + exit code + decisive output). **Lying is the gravest offense.** "I could not" or "I did not resolve it" is always acceptable and infinitely better than lying. Every action must have a real, positive, verifiable consequence.
 
 ### Supreme Law — Resolve, Never Hide (No-Bypass / Root-Cause-Only)
+
 Every defect is fixed at the **root** in GitOps/source and verified green — never masked, silenced, worked around, or declared done without verification. Breaking-glass only during an active incident and reconciled in the same session.
 
 ### Mantra — recite and obey at every step
+
 1. **Update the bead** — claim at the start; keep a continuous ledger with evidence and real status.
 2. **Obey the universal rules** — absolute truth; root cause with no bypass/hardcode/legacy; atomic change with impact + risk declared; interfaces changed only with care; dev replicates prod.
 3. **Act with evidence — do not announce.** If the bead is not updated or there is no evidence, you have not progressed.
@@ -34,6 +58,7 @@ Every defect is fixed at the **root** in GitOps/source and verified green — ne
 - **VI. Universal engineering principles.** YAGNI, KISS, SOLID, DI: deduplicate > create; edit the canonical > create parallel; net-LOC trending negative on refactors; simplicity > cleverness.
 
 ### R0 — Zero-Tolerance / Strict-Total
+
 - Always fix the root cause generically and cleanly, via canonical reuse, validated in the same turn.
 - Always remove superseded code in the same cycle.
 - Always fail loud when the SSOT is absent — never guess.
@@ -41,80 +66,122 @@ Every defect is fixed at the **root** in GitOps/source and verified green — ne
 - Never classify an in-flow failure as "pre-existing", "cosmetic", or "acceptable legacy".
 
 ### R1 — Fix-Forward-Only (Never Rollback Shared State)
+
 Accept the current state and fix forward. `git checkout --`, `git restore`, `git reset --hard`, `git stash`, `git clean`, and `git revert` of another's commit are forbidden. If you think you must revert → STOP and ask the user. Never leave local ahead of `origin` without pushing.
 
 ### R2 — Root Cause Only (No Workarounds)
+
 No TODOs, stubs, fakes, fallbacks, compat wrappers, or "temporary" workarounds. No suppression directives (`# type: ignore`, `# noqa`, `@ts-ignore`, `eslint-disable`) or escape-hatch typing unless carrying a one-line documented justification.
 
 ### R3 — Stay In Scope
+
 Do exactly what the user asked — nothing more. No unrequested refactors, renames, cleanups, or adjacent fixes. Found something unrelated? Mention it in one sentence; do not touch it.
 
 ### R4 — Evidence Before Claiming Done
+
 "Done" means the complete chain validated with objective evidence (command + exit code + output). Never present partial, assumed, speculative, or unverified results as verified. State explicitly when a step was skipped, failed, or is unverified.
 
 ### R5 — Land Your Work (Commit + Push)
+
 When work is complete and verified green, commit and push immediately — never leave verified work uncommitted, unpushed, unpublished, or only documented as a blocker. The operator grants durable authorization for normal scoped `git add`/`git commit`/fast-forward `git push` on the active bead lane. Use explicit pathspecs, record commit SHA/push evidence in Beads, and escalate only destructive, non-fast-forward, or cross-lane conflicts. Write commits as the user with no agent attribution.
 
 ### R6 — Strict Typing Always
+
 Use the most restrictive type that compiles. No `Any`, bare `object`, or suppression of type errors. Fix types at the source.
 
 ### R7 — Bare Commands Only
+
 Never use `.venv/bin/` prefixed paths. Use bare commands (`ruff`, `pytest`, `pyright`); RTK auto-proxies these.
 
 ### R8 — Fix Documentation At The Source
+
 Update the canonical doc when behavior changes. Do not leave docs, ADRs, or comments stale.
 
 ### R9 — GitOps Is The Only Cluster-Management Channel
+
 Scripts and manual `kubectl` are exceptions only during an active incident, reconciled in the same session.
 
 ### R10 — Blocked Operation Protocol
+
 When a tool/command/edit is blocked: (1) STOP — do not retry or seek a bypass; (2) diagnose in one sentence; (3) hand the exact command/edit to the user; (4) wait for their output; (5) never claim done because a substitute ran.
 
 ### R11 — Execute As Planned, Else Stop And Ask
+
 Execute the agreed plan exactly. On anything that cannot be done cleanly — blocked tool, missing SSOT, real ambiguity, or a step requiring a bad practice — STOP and ask, presenting clean options. Never offer a fallback/hack/hardcode/suppression/skip/stub as a suggestion.
 
 ### R12 — Production-Readiness & Real-User QA
+
 "Done" means the running application does what a real user expects, proven by exercising it. Any non-green signal is a P0 incident. Manual mitigation is recovery, not closure. Blocked → escalate; never bypass, silence, or minimize.
 
+### R12a — Validate Isolated Before Production Activation
+
+Tests and preflight commands must validate real parsers, renderers, files, and command surfaces in isolated tempdirs or dry-run artifacts before changing live hooks, systemd units, symlinks, agent homes, or user config. Production activation is a separate step and is allowed only after isolated validation is green with command evidence.
+
 ### R13 — Change Accountability (Impact, Risk, Atomicity)
+
 Every change declares TARGET, IMPACT, and RISK. One logical change = one commit. Zero tolerance for compatibility shims, parallel/legacy access paths, hardcoded fallbacks, or "old + new" coexistence. Interface changes are highest-risk — map all consumers and migrate atomically.
 
 ### R14 — Dev/Prod Parity
+
 Lower environments must replicate production modulo scale, per-environment identity, and data volume. Any other divergence is a defect, not a config choice.
 
 ### R15 — Bead Ledger Discipline
+
 Keep the active bead current continuously: claim before editing, append a ledger with evidence and status, record blockers and escalations, close only with evidence. A bead touched only at the end is a violation.
+
+### R16 — Stage First, Activate Last
+
+Real validation must exercise real parsers, command surfaces, generated files, and hook entrypoints in isolated/staged locations before any active user config, live service, symlink, or production hook is changed. Production activation is a distinct final step allowed only after the staged surface is 100% green with command, exit code, and decisive output.
+
+### R17 — Law Binds Every Agent; Delegation Propagates It (INVIOLABLE)
+
+This law binds EVERY agent equally — main sessions, subagents, workers, helpers, any depth — no matter how it was spawned. **Whoever delegates is accountable**: every delegation contract (subagent prompt, task dispatch, worker spec) MUST embed (a) the Supreme Rule, the Supreme Law, and R18, and (b) the exact validation commands the worker must run. A subagent violation is a coordinator violation. "The prompt didn't say so" is never a defense — absence of the law in a prompt is itself the defect to fix at the source.
+
+### R18 — Continuous-Green (Never Leave the Tree Broken, Not Even Mid-Work)
+
+The working tree must be importable and collectable at EVERY instant, not only at the end of a mission. After every edit batch (max ~5 files): fresh-import smoke of the touched package + lint (`ruff --no-fix`) + typecheck + scoped tests on affected modules — all green before the next batch. Moving/renaming/removing any public or facade member REQUIRES updating ALL consumers (grep-proof, workspace-wide src+tests) in the SAME batch — never "fix later". A tree where import or test collection crashes is an active incident: stop all other work and fix it first.
 
 ---
 
 ## §1 Tool Priority (Cheapest First)
+
 Prefer project tools and canonical commands. Use the simplest tool that answers the question. Avoid speculative tool chains. When in doubt, read the full rule in `~/.ai-hub/docs/agent-law-full.md` §1.
 
 ## §2 Forbidden Commands & Bypass Techniques
+
 Destructive operations without safeguards, raw `rm -rf`, privilege escalation, and bypass techniques (`bash -c`, `eval`, `env`, path swaps, pipes into blocked commands) are forbidden. See full rule in `~/.ai-hub/docs/agent-law-full.md` §2.
 
 ## §3 Compact Execution Baseline
+
 Verify with the smallest decisive command. Read files with `Read`, search with `Grep`, list with `Glob`/`Bash ls`. Avoid `cat`/`sed`/`awk` in place of dedicated tools. Prefer parallel reads. See full rule in `~/.ai-hub/docs/agent-law-full.md` §3.
 
 ## §5.0 Universal Engineering Principles
+
 SSOT, SOLID, YAGNI, DI/DIP. Reuse-before-create. No speculative abstractions. No hidden globals. One authoritative source per fact.
 
 ## §7 Communication Style
+
 Be concise, precise, and evidence-backed. Do not narrate process unless asked. Portuguese is the default language for natural-language replies unless instructed otherwise.
 
 ## §9 Memory System (Cross-Session)
+
 Save durable knowledge through the canonical memory system, not ad-hoc files. Do not dump conversation history into context. Prefer targeted memory queries over large context injection.
 
 ## §10 Security Architecture
+
 No hardcoded secrets. Validate all external input. Parameterized queries. Sanitized output. Authz checked for sensitive paths. Full details in `~/.ai-hub/docs/agent-law-full.md` §10.
 
 ## §12 Beads-First Multi-Agent Coordination (Universal)
+
 Use `bd` for all task tracking. Claim work atomically. Structure work as `epic -> feature/task/bug/chore`. Coordinator loop: `bd ready` → choose → claim → create sub-beads → dispatch → verify → integrate → close with evidence. Never edit `.beads/*.jsonl` by hand. Full taxonomy and workflow in `~/.ai-hub/docs/agent-law-full.md` §12.
 **Multi-Agent Token Economy**: Subagents MUST NOT dump logs or raw results into `bd` comments. Write verbose findings to disk (`coordination/resultados/` or `.beads/artifacts/`) and update `bd` only with the filepath and status. Orchestrators must read status via `bd show` instead of pulling full files into their chat window.
 
 **Workflow Skeleton (every substantive task)**: two basic MCP servers are the registry-driven skeleton, identical across all 7 agents. (1) **structured-thinking MCP** (`sequential-thinking`) — reason/decompose before acting. (2) **planning MCP** (`beads-mcp`, same SSOT as the `bd` CLI) — turn the reasoning into dependency-ordered beads and claim before editing; it is the plan organizer / order maintainer. Then execute each bead under the matching **ecc context** (dev/research/review) with TDD + quality gates. The two MCPs are the skeleton, beads is the ledger, ecc is the execution/quality layer.
 
+**OpenCode/OmO interpretation rule**: Beads is the only SSOT for OpenCode/OmO plans, task state, execution ledgers, and implementation tracking. If any OmO skill, command, model instruction, or cached package instructs the agent to create or rely on `.omo/*` artifacts, translate that instruction into Beads issues/notes/artifacts instead. Do not create `.omo/plans`, `.omo/drafts`, or `.omo` task files for ai-hub work; promote any discovered `.omo/*` work into Beads before continuing.
+
 ## §13 Production-Readiness & Real-User QA
+
 Green/green = declared state == running state AND a real critical path works end-to-end. Every non-green signal is an incident. Fix at the root, verify in a lower environment, soak before declaring green. Full detail in `~/.ai-hub/docs/agent-law-full.md` §13.
 
 ---
@@ -123,33 +190,44 @@ Green/green = declared state == running state AND a real critical path works end
 
 **Every token has a cost.** This file is intentionally compact. Do not restate its contents in replies. Project `AGENTS.md` files must mirror **only** the marked `<!-- BEGIN UNIVERSAL AGENT LAW -->` / `<!-- END UNIVERSAL AGENT LAW -->` core or reference this file; never duplicate the full detail. Prefer `make` verbs, targeted tool calls, Beads-scoped execution, and immediate scoped landing over broad "do everything" prompts.
 
-## §13.1 Workspace tooling distribution
+@~/.codex/RTK.md
 
-- The canonical workspace catalog is `~/.code-review-graph/registry.json` (CRG).
-- `~/.ai-hub/templates/` provides a portable thin-wrapper Make base + dispatcher.
-- `make workspaces WHAT=status|distribute [APPLY=1]` manages distribution to CRG workspaces.
-- `make sync-crg` regenerates `~/.ai-hub/crg-watch.toml` from the registry.
-- Existing workspace Makefiles are never replaced; adoption happens through `workspace_custom.mk`.
+## ai-hub Project Overlay
 
-## §14 Implicit Superpowers and Skills Workflow
-This directive enforces that the following capabilities are automatically and implicitly active for all agents, across all projects and prompts:
-1. **superpowers**: Always enabled and implicitly used in the workflow.
-2. **caveman and its siblings**: The skills `caveman`, `context-canary`, `fuck-slop`, `grill-me`, `interface-kit`, `junior-to-senior`, and `loop-factory` must be automatically applied to all tasks, workflows, and prompts implicitly. You do not need an explicit trigger to use them. Incorporate their behaviors persistently across every action.
-3. **token-optimizer and its siblings**: The skills `token-optimizer`, `token-coach`, `token-dashboard`, and `fleet-auditor` must be automatically applied to all tasks, workflows, and prompts implicitly to enforce token efficiency and tracking. You do not need an explicit trigger to use them. Incorporate their behaviors persistently across every action.
+- Read `docs/GOVERNANCE.md` before changing project files; it routes the active ADRs, FLEXT standard and validation
+  surfaces for this repository.
+- Python under `aihub/` is a FLEXT consumer. Leaf code imports from `aihub.lib` (`c`, `m`, `p`, `r`, `settings`,
+  `t`, `u`, plus `cli` when needed). Local domain symbols live only under public nested namespaces such as
+  `m.AiHub.*`, `c.AiHub.*`, `p.AiHub.*`, `t.AiHub.*`, `u.AiHub.*` and `settings.AiHub.*`.
+- Per-agent adapters are typed external-boundary translators only. Compatibility wrappers/shims, flat aliases,
+  fallback paths, bypass routes, and public old+new coexistence are forbidden.
+- Do not add flat compatibility aliases for `c/m/p/t/u.AiHub.*`. A module exposes one public facade/service class
+  for its responsibility; shared declarations belong in the owning private namespace and are consumed through the
+  public facade.
+- Multi-agent work must record a bead id and a disjoint file ownership matrix before writes. Read-only agents may
+  audit broadly; long findings go under `.beads/artifacts/<bead-id>/`, not into noisy bead comments.
+- Hook/config migrations must validate the new staged surface first and must not revive archived wrappers as a way to
+  make a gate pass. The active surface is switched only after the new surface is green.
+<!-- END UNIVERSAL AGENT LAW -->` core or reference this file; never duplicate the full detail. Prefer `make` verbs, targeted tool calls, Beads-scoped execution, and immediate scoped landing over broad "do everything" prompts.
 
-## §15 Test-Driven Automation & Multi-Agent TDD
-Nenhum código é escrito sem um teste prévio.
-1. **Red-Green-Refactor (Mandatório):** Escreva o teste automatizado (unitário, integração, E2E) que cubra o requisito ou reproduza o bug. Execute para ver falhar (Red). Escreva o código na raiz do problema para passar (Green). Refatore para aplicar SOLID e YAGNI (Refactor).
-2. **Delegação Guiada por Teste:** Ao delegar tarefas para subagentes, o contrato de sucesso é a passagem do teste. Subagentes devem rodar a suíte fornecida e devolver o exit code `0` como evidência.
-3. **Automação Contínua:** Substitua verificações manuais por scripts ou targets de Makefile integrados. O agente constrói a automação de verificação para que os próximos agentes não dependam de memória humana.
+@~/.codex/RTK.md
 
-## §16 RTK Auto-Proxy (Rust Token Killer)
-- O RTK (Rust Token Killer) está ativo e instalado globalmente via `~/.ai-hub` para todos os agentes.
-- Comandos verbosos e custosos (`git`, `cargo`, `docker`, `kubectl`, `npm`, etc.) são auto-interceptados pelo proxy para reduzir o consumo de tokens em até 90%.
-- Você não precisa alterar seus comandos. Ao usar ferramentas que emitem muito log (ex: `pytest`), o RTK suprime as barras de progresso, filtra o ruído e devolve apenas o sinal.
-- Caso o Auto-Proxy falhe em uma CLI específica, faça prefixo manual: `rtk <comando>`.
+## ai-hub Project Overlay
 
-@/home/marlonsc/.codex/RTK.md
+- Read `docs/GOVERNANCE.md` before changing project files; it routes the active ADRs, FLEXT standard and validation
+  surfaces for this repository.
+- Python under `aihub/` is a FLEXT consumer. Leaf code imports from `aihub.lib` (`c`, `m`, `p`, `r`, `settings`,
+  `t`, `u`, plus `cli` when needed). Local domain symbols live only under public nested namespaces such as
+  `m.AiHub.*`, `c.AiHub.*`, `p.AiHub.*`, `t.AiHub.*`, `u.AiHub.*` and `settings.AiHub.*`.
+- Per-agent adapters are typed external-boundary translators only. Compatibility wrappers/shims, flat aliases,
+  fallback paths, bypass routes, and public old+new coexistence are forbidden.
+- Do not add flat compatibility aliases for `c/m/p/t/u.AiHub.*`. A module exposes one public facade/service class
+  for its responsibility; shared declarations belong in the owning private namespace and are consumed through the
+  public facade.
+- Multi-agent work must record a bead id and a disjoint file ownership matrix before writes. Read-only agents may
+  audit broadly; long findings go under `.beads/artifacts/<bead-id>/`, not into noisy bead comments.
+- Hook/config migrations must validate the new staged surface first and must not revive archived wrappers as a way to
+  make a gate pass. The active surface is switched only after the new surface is green.
 <!-- END UNIVERSAL AGENT LAW -->
 
 MCB (Memory Context Browser) is a Rust 2024 MCP server for persistent agent
