@@ -1,4 +1,6 @@
 # BEGIN AI-HUB CRG GLOBAL POLICY
+build/**
+.claude/worktrees/**
 .worktrees/**
 worktrees/**
 .agents/worktrees/**

@@ -40,12 +40,6 @@ package = false
 [tool.ruff]
 line-length = 88
 target-version = "py313"
-extend-exclude = [
-    # xtask-bound migration lane (mcb-rt1j); do not Pythonize in this workstream.
-    "scripts/codegen-conversions.py",
-    "scripts/codegen-post-process.py",
-    "scripts/extract-migration-sql.py",
-]
 
 [tool.ruff.lint]
 select = ["B", "C4", "E", "F", "I", "SIM", "UP", "W"]
@@ -160,4 +154,9 @@ pythonpath = ["scripts"]
 testpaths = [
     "scripts/lib/tests",
     "scripts/qlty/tests",
+]
+
+[dependency-groups]
+dev = [
+    "code-review-graph[all]==2.3.6",
 ]

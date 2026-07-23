@@ -23,7 +23,3 @@ done-check: ## Real-user/green-green check, scoped to committed changes vs upstr
 .PHONY: gen-agent-pointers
 gen-agent-pointers: ## Synchronize generated agent pointer files from AGENTS.md
 	@PYTHONPATH=scripts $(MCB_RUN) python scripts/lib/agent_pointers.py $(if $(filter 1,$(CHECK)),--check,)
-
-# ~/.ai-hub workspace tooling thin-wrapper
-$(HOME)/.ai-hub/templates/workspace-wrapper.mk: ;
-include $(HOME)/.ai-hub/templates/workspace-wrapper.mk
