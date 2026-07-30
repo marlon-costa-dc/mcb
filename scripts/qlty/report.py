@@ -9,6 +9,7 @@ from __future__ import annotations
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 
+from flext_core import p
 from lib.core import r
 
 from qlty.model import SarifIssue, Severity
@@ -194,7 +195,7 @@ def _populate_file_counts(report: AnalysisReport, issues: list[SarifIssue]) -> N
         report.by_file[issue.file_path] += 1
 
 
-def analyze_issues(issues: list[SarifIssue]) -> r[AnalysisReport]:
+def analyze_issues(issues: list[SarifIssue]) -> p.Result[AnalysisReport]:
     """Generate statistical analysis of issues."""
     report = AnalysisReport()
     report.total_issues = len(issues)

@@ -153,8 +153,12 @@ wheels = [
 
 [[package]]
 name = "beartype"
-version = "0.23.0"
-source = { git = "https://github.com/beartype/beartype.git?rev=ee481e0c6da5c0cf8a6b27a53a10354e9df4ac71#ee481e0c6da5c0cf8a6b27a53a10354e9df4ac71" }
+version = "0.22.9"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/c7/94/1009e248bbfbab11397abca7193bea6626806be9a327d399810d523a07cb/beartype-0.22.9.tar.gz", hash = "sha256:8f82b54aa723a2848a56008d18875f91c1db02c32ef6a62319a002e3e25a975f", size = 1608866, upload-time = "2025-12-13T06:50:30.72Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/71/cc/18245721fa7747065ab478316c7fea7c74777d07f37ae60db2e84f8172e8/beartype-0.22.9-py3-none-any.whl", hash = "sha256:d16c9bbc61ea14637596c5f6fbff2ee99cbe3573e46a716401734ef50c3060c2", size = 1333658, upload-time = "2025-12-13T06:50:28.266Z" },
+]
 
 [[package]]
 name = "cachetools"
@@ -386,43 +390,43 @@ wheels = [
 
 [package.optional-dependencies]
 cublas = [
-    { name = "nvidia-cublas", marker = "(platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine == 'AMD64' and sys_platform == 'win32')" },
-    { name = "nvidia-cuda-nvrtc", marker = "(platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine == 'AMD64' and sys_platform == 'win32')" },
+    { name = "nvidia-cublas", marker = "platform_machine == 'aarch64' or platform_machine == 'x86_64'" },
+    { name = "nvidia-cuda-nvrtc", marker = "platform_machine == 'aarch64' or platform_machine == 'x86_64'" },
 ]
 cudart = [
-    { name = "nvidia-cuda-runtime", marker = "(platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine == 'AMD64' and sys_platform == 'win32')" },
+    { name = "nvidia-cuda-runtime", marker = "platform_machine == 'aarch64' or platform_machine == 'x86_64'" },
 ]
 cufft = [
-    { name = "nvidia-cufft", marker = "(platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine == 'AMD64' and sys_platform == 'win32')" },
-    { name = "nvidia-nvjitlink", marker = "(platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine == 'AMD64' and sys_platform == 'win32')" },
+    { name = "nvidia-cufft", marker = "platform_machine == 'aarch64' or platform_machine == 'x86_64'" },
+    { name = "nvidia-nvjitlink", marker = "platform_machine == 'aarch64' or platform_machine == 'x86_64'" },
 ]
 cufile = [
-    { name = "nvidia-cufile", marker = "(platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux')" },
+    { name = "nvidia-cufile", marker = "platform_machine == 'aarch64' or platform_machine == 'x86_64'" },
 ]
 cupti = [
-    { name = "nvidia-cuda-cupti", marker = "(platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine == 'AMD64' and sys_platform == 'win32')" },
+    { name = "nvidia-cuda-cupti", marker = "platform_machine == 'aarch64' or platform_machine == 'x86_64'" },
 ]
 curand = [
-    { name = "nvidia-curand", marker = "(platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine == 'AMD64' and sys_platform == 'win32')" },
+    { name = "nvidia-curand", marker = "platform_machine == 'aarch64' or platform_machine == 'x86_64'" },
 ]
 cusolver = [
-    { name = "nvidia-cublas", marker = "(platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine == 'AMD64' and sys_platform == 'win32')" },
-    { name = "nvidia-cusolver", marker = "(platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine == 'AMD64' and sys_platform == 'win32')" },
-    { name = "nvidia-cusparse", marker = "(platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine == 'AMD64' and sys_platform == 'win32')" },
-    { name = "nvidia-nvjitlink", marker = "(platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine == 'AMD64' and sys_platform == 'win32')" },
+    { name = "nvidia-cublas", marker = "platform_machine == 'aarch64' or platform_machine == 'x86_64'" },
+    { name = "nvidia-cusolver", marker = "platform_machine == 'aarch64' or platform_machine == 'x86_64'" },
+    { name = "nvidia-cusparse", marker = "platform_machine == 'aarch64' or platform_machine == 'x86_64'" },
+    { name = "nvidia-nvjitlink", marker = "platform_machine == 'aarch64' or platform_machine == 'x86_64'" },
 ]
 cusparse = [
-    { name = "nvidia-cusparse", marker = "(platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine == 'AMD64' and sys_platform == 'win32')" },
-    { name = "nvidia-nvjitlink", marker = "(platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine == 'AMD64' and sys_platform == 'win32')" },
+    { name = "nvidia-cusparse", marker = "platform_machine == 'aarch64' or platform_machine == 'x86_64'" },
+    { name = "nvidia-nvjitlink", marker = "platform_machine == 'aarch64' or platform_machine == 'x86_64'" },
 ]
 nvjitlink = [
-    { name = "nvidia-nvjitlink", marker = "(platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine == 'AMD64' and sys_platform == 'win32')" },
+    { name = "nvidia-nvjitlink", marker = "platform_machine == 'aarch64' or platform_machine == 'x86_64'" },
 ]
 nvrtc = [
-    { name = "nvidia-cuda-nvrtc", marker = "(platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine == 'AMD64' and sys_platform == 'win32')" },
+    { name = "nvidia-cuda-nvrtc", marker = "platform_machine == 'aarch64' or platform_machine == 'x86_64'" },
 ]
 nvtx = [
-    { name = "nvidia-nvtx", marker = "(platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux') or (platform_machine == 'AMD64' and sys_platform == 'win32')" },
+    { name = "nvidia-nvtx", marker = "platform_machine == 'aarch64' or platform_machine == 'x86_64'" },
 ]
 
 [[package]]
@@ -447,6 +451,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/d9/53/977540be379b0c82550df872912446def343ab0dfa138b8726120427f83d/cyclopts-4.21.0.tar.gz", hash = "sha256:477c18c791c924cca4836f79fce000a7bae45f551e340d9e1654e102c6d9ab9d", size = 190914, upload-time = "2026-07-09T19:07:07.154Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b4/f6/1c671874560a70d902dd57028a75411c176910de2df3d6a6a533de424131/cyclopts-4.21.0-py3-none-any.whl", hash = "sha256:ded3ddb15b0c815f44d245011fc4cdd5a4809a3bb8202869e9e02195a87c0e18", size = 230066, upload-time = "2026-07-09T19:07:05.326Z" },
+]
+
+[[package]]
+name = "defusedxml"
+version = "0.7.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/0f/d5/c66da9b79e5bdb124974bfe172b4daf3c984ebd9c2a06e2b8a4dc7331c72/defusedxml-0.7.1.tar.gz", hash = "sha256:1bb3032db185915b62d7c6209c5a8792be6a32ab2fedacc84e01b52c51aa3e69", size = 75520, upload-time = "2021-03-08T10:59:26.269Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/07/6c/aa3f2f849e01cb6a001cd8554a88d4c77c5c1a31c95bdf1cf9301e6d9ef4/defusedxml-0.7.1-py2.py3-none-any.whl", hash = "sha256:a352e7e428770286cc899e2542b6cdaedb2b4953ff269a210103ec58f6198a61", size = 25604, upload-time = "2021-03-08T10:59:24.45Z" },
 ]
 
 [[package]]
@@ -528,6 +541,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/f5/22/900cb125c76b7aaa450ce02fd727f452243f2e91a61af068b40adba60ea9/email_validator-2.3.0.tar.gz", hash = "sha256:9fc05c37f2f6cf439ff414f8fc46d917929974a82244c20eb10231ba60c54426", size = 51238, upload-time = "2025-08-26T13:09:06.831Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/de/15/545e2b6cf2e3be84bc1ed85613edd75b8aea69807a71c26f4ca6a9258e82/email_validator-2.3.0-py3-none-any.whl", hash = "sha256:80f13f623413e6b197ae73bb10bf4eb0908faf509ad8362c5edeb0be7fd450b4", size = 35604, upload-time = "2025-08-26T13:09:05.858Z" },
+]
+
+[[package]]
+name = "et-xmlfile"
+version = "2.0.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/d3/38/af70d7ab1ae9d4da450eeec1fa3918940a5fafb9055e934af8d6eb0c2313/et_xmlfile-2.0.0.tar.gz", hash = "sha256:dab3f4764309081ce75662649be815c4c9081e88f0837825f90fd28317d4da54", size = 17234, upload-time = "2024-10-25T17:25:40.039Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c1/8b/5fe2cc11fee489817272089c4203e679c63b570a5aaeb18d852ae3cbba6a/et_xmlfile-2.0.0-py3-none-any.whl", hash = "sha256:7a91720bc756843502c3b7504c77b8fe44217c85c537d85037f0f536151b2caa", size = 18059, upload-time = "2024-10-25T17:25:39.051Z" },
 ]
 
 [[package]]
@@ -613,19 +635,23 @@ wheels = [
 
 [[package]]
 name = "flext-cli"
-version = "0.12.0.dev0"
-source = { directory = "../flext/flext-cli" }
+version = "0.12.0rc0"
+source = { git = "https://github.com/flext-sh/flext-cli.git?rev=0.12.0-dev#9c834db4c25755f6b17281f08fc734af849af7fa" }
 dependencies = [
     { name = "cachetools" },
     { name = "click" },
+    { name = "defusedxml" },
     { name = "flext-core" },
     { name = "jinja2" },
     { name = "jsonschema" },
+    { name = "openpyxl" },
     { name = "pluggy" },
     { name = "prompt-toolkit" },
     { name = "pydantic" },
     { name = "pydantic-core" },
     { name = "pydantic-settings" },
+    { name = "python-docx" },
+    { name = "python-pptx" },
     { name = "pyyaml" },
     { name = "rich" },
     { name = "ruamel-yaml" },
@@ -634,104 +660,10 @@ dependencies = [
     { name = "typer" },
 ]
 
-[package.metadata]
-requires-dist = [
-    { name = "autoflake", marker = "extra == 'dev'", specifier = ">=2.3.1" },
-    { name = "bandit", marker = "extra == 'dev'", specifier = ">=1.8" },
-    { name = "black", marker = "extra == 'dev'", specifier = ">=25.1" },
-    { name = "blacken-docs", marker = "extra == 'dev'", specifier = ">=1.19" },
-    { name = "cachetools", specifier = ">=6.2,<7.0" },
-    { name = "click", specifier = ">=8.3.3" },
-    { name = "codespell", marker = "extra == 'dev'", specifier = ">=2.3" },
-    { name = "deptry", marker = "extra == 'dev'", specifier = ">=0.23" },
-    { name = "django-stubs", marker = "extra == 'dev'", specifier = ">=5.2.2" },
-    { name = "factory-boy", marker = "extra == 'dev'", specifier = ">=3.3.1" },
-    { name = "faker", marker = "extra == 'dev'", specifier = ">=37.4" },
-    { name = "flext-core", editable = "../flext/flext-core" },
-    { name = "hypothesis", marker = "extra == 'dev'", specifier = ">=6.125" },
-    { name = "isort", marker = "extra == 'dev'", specifier = ">=6.0.1" },
-    { name = "jinja2", specifier = ">=3.1.6" },
-    { name = "jsonschema", specifier = ">=4.26.0" },
-    { name = "matplotlib-stubs", marker = "extra == 'dev'", specifier = ">=0.3" },
-    { name = "mkdocs", marker = "extra == 'dev'", specifier = ">=1.6" },
-    { name = "mkdocs-awesome-pages-plugin", marker = "extra == 'dev'", specifier = ">=2.9" },
-    { name = "mkdocs-encryptcontent-plugin", marker = "extra == 'dev'", specifier = ">=2" },
-    { name = "mkdocs-exclude", marker = "extra == 'dev'", specifier = ">=1.0.2" },
-    { name = "mkdocs-get-deps", marker = "extra == 'dev'", specifier = ">=0.2" },
-    { name = "mkdocs-git-revision-date-localized-plugin", marker = "extra == 'dev'", specifier = ">=1.2" },
-    { name = "mkdocs-literate-nav", marker = "extra == 'dev'", specifier = ">=0.6" },
-    { name = "mkdocs-macros-plugin", marker = "extra == 'dev'", specifier = ">=1" },
-    { name = "mkdocs-material", marker = "extra == 'dev'", specifier = ">=9.5" },
-    { name = "mkdocs-material-extensions", marker = "extra == 'dev'", specifier = ">=1.3.1" },
-    { name = "mkdocs-mermaid2-plugin", marker = "extra == 'dev'", specifier = ">=1.1" },
-    { name = "mkdocs-minify-plugin", marker = "extra == 'dev'", specifier = ">=0.7" },
-    { name = "mkdocs-print-site-plugin", marker = "extra == 'dev'", specifier = ">=0.8" },
-    { name = "mkdocs-redirects", marker = "extra == 'dev'", specifier = ">=1.2" },
-    { name = "mkdocs-section-index", marker = "extra == 'dev'", specifier = ">=0.3.12" },
-    { name = "mkdocs-versioning", marker = "extra == 'dev'", specifier = ">=0.2" },
-    { name = "mkdocstrings", marker = "extra == 'dev'", specifier = ">=0.24" },
-    { name = "mkdocstrings-python", marker = "extra == 'dev'", specifier = ">=1.7" },
-    { name = "pip-audit", marker = "extra == 'dev'", specifier = ">=2.7.3" },
-    { name = "pluggy", specifier = ">=1.6.0" },
-    { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=4.6.0" },
-    { name = "prompt-toolkit", specifier = ">=3.0.52" },
-    { name = "psutil", marker = "extra == 'dev'", specifier = ">=7.2.2" },
-    { name = "pydantic", specifier = ">=2.13.3" },
-    { name = "pydantic-core", specifier = ">=2.46.3" },
-    { name = "pydantic-settings", specifier = ">=2.14.0" },
-    { name = "pylint", marker = "extra == 'dev'", specifier = ">=3.3" },
-    { name = "pyrefly", marker = "extra == 'dev'", specifier = ">=1.1.1,<1.2.0" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.4" },
-    { name = "pytest-benchmark", marker = "extra == 'dev'", specifier = ">=5.1" },
-    { name = "pytest-clarity", marker = "extra == 'dev'", specifier = ">=1.0.1" },
-    { name = "pytest-codeblocks", marker = "extra == 'dev'", specifier = ">=0.17.0" },
-    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=6.2" },
-    { name = "pytest-deadfixtures", marker = "extra == 'dev'", specifier = ">=2.2.1" },
-    { name = "pytest-env", marker = "extra == 'dev'", specifier = ">=1.1.5" },
-    { name = "pytest-markdown-docs", marker = "extra == 'dev'", specifier = ">=0.9.2" },
-    { name = "pytest-mock", marker = "extra == 'dev'", specifier = ">=3.14" },
-    { name = "pytest-randomly", marker = "extra == 'dev'", specifier = ">=3.16" },
-    { name = "pytest-sugar", marker = "extra == 'dev'", specifier = ">=1" },
-    { name = "pytest-timeout", marker = "extra == 'dev'", specifier = ">=2.4" },
-    { name = "pytest-xdist", marker = "extra == 'dev'", specifier = ">=3.8" },
-    { name = "pyupgrade", marker = "extra == 'dev'", specifier = ">=3.19" },
-    { name = "pyyaml", specifier = ">=6.0.3" },
-    { name = "radon", marker = "extra == 'dev'", specifier = ">=6.0.1" },
-    { name = "rich", specifier = ">=14,<15" },
-    { name = "ruamel-yaml", specifier = ">=0.18.16" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.12.3" },
-    { name = "tabulate", specifier = ">=0.10.0" },
-    { name = "tomlkit", specifier = ">=0.14.0" },
-    { name = "typer", specifier = ">=0.25.1" },
-    { name = "types-cachetools", marker = "extra == 'dev'", specifier = ">=6.2" },
-    { name = "types-cffi", marker = "extra == 'dev'", specifier = ">=2.0" },
-    { name = "types-click", marker = "extra == 'dev'", specifier = ">=7.1" },
-    { name = "types-defusedxml", marker = "extra == 'dev'", specifier = ">=0.7" },
-    { name = "types-docker", marker = "extra == 'dev'", specifier = ">=7.1" },
-    { name = "types-flask", marker = "extra == 'dev'", specifier = ">=1.1.6" },
-    { name = "types-jsonschema", marker = "extra == 'dev'", specifier = ">=4.26" },
-    { name = "types-ldap3", marker = "extra == 'dev'", specifier = ">=2.9.13.20250622" },
-    { name = "types-paramiko", marker = "extra == 'dev'", specifier = ">=4.0" },
-    { name = "types-protobuf", marker = "extra == 'dev'", specifier = ">=6.30.2.20250703" },
-    { name = "types-psutil", marker = "extra == 'dev'", specifier = ">=7" },
-    { name = "types-psycopg2", marker = "extra == 'dev'", specifier = ">=2.9.21.20250718" },
-    { name = "types-pyasn1", marker = "extra == 'dev'", specifier = ">=0.6" },
-    { name = "types-pyopenssl", marker = "extra == 'dev'", specifier = ">=24.1" },
-    { name = "types-python-dateutil", marker = "extra == 'dev'", specifier = ">=2.9" },
-    { name = "types-pyyaml", marker = "extra == 'dev'", specifier = ">=6.0.12.20260518" },
-    { name = "types-redis", marker = "extra == 'dev'", specifier = ">=4.6" },
-    { name = "types-requests", marker = "extra == 'dev'", specifier = ">=2.32.4" },
-    { name = "types-setuptools", marker = "extra == 'dev'", specifier = ">=80.9" },
-    { name = "types-tabulate", marker = "extra == 'dev'", specifier = ">=0.10" },
-    { name = "types-toml", marker = "extra == 'dev'", specifier = ">=0.10.8.20240310" },
-    { name = "vulture", marker = "extra == 'dev'", specifier = ">=2.13" },
-]
-provides-extras = ["dev"]
-
 [[package]]
 name = "flext-core"
-version = "0.12.0.dev0"
-source = { editable = "../flext/flext-core" }
+version = "0.12.0rc0"
+source = { git = "https://github.com/flext-sh/flext-core.git?rev=0.12.0-dev#acae76c72cc7396efc681d54cde9222f4292c5bb" }
 dependencies = [
     { name = "beartype" },
     { name = "cachetools" },
@@ -739,6 +671,7 @@ dependencies = [
     { name = "docker" },
     { name = "limits" },
     { name = "orjson" },
+    { name = "packaging" },
     { name = "pybreaker" },
     { name = "pydantic" },
     { name = "pydantic-core" },
@@ -752,116 +685,6 @@ dependencies = [
     { name = "structlog" },
     { name = "tomlkit" },
     { name = "wrapt" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "autoflake", marker = "extra == 'dev'", specifier = ">=2.3.1" },
-    { name = "bandit", marker = "extra == 'dev'", specifier = ">=1.8" },
-    { name = "beartype", git = "https://github.com/beartype/beartype.git?rev=ee481e0c6da5c0cf8a6b27a53a10354e9df4ac71" },
-    { name = "black", marker = "extra == 'dev'", specifier = ">=25.1" },
-    { name = "blacken-docs", marker = "extra == 'dev'", specifier = ">=1.19" },
-    { name = "cachetools", specifier = ">=6.2,<7.0" },
-    { name = "codespell", marker = "extra == 'dev'", specifier = ">=2.3" },
-    { name = "dependency-injector", specifier = ">=4.49.0" },
-    { name = "deptry", marker = "extra == 'dev'", specifier = ">=0.23" },
-    { name = "detect-secrets", marker = "extra == 'dev'", specifier = ">=1.5.0" },
-    { name = "django-stubs", marker = "extra == 'dev'", specifier = ">=5.2.2" },
-    { name = "docker", specifier = ">=7.1.0" },
-    { name = "factory-boy", marker = "extra == 'dev'", specifier = ">=3.3.1" },
-    { name = "faker", marker = "extra == 'dev'", specifier = ">=37.4" },
-    { name = "flext-cli", marker = "extra == 'dev'", editable = "../flext/flext-cli" },
-    { name = "flext-infra", marker = "extra == 'dev'", editable = "../flext/flext-infra" },
-    { name = "flext-tests", marker = "extra == 'dev'", editable = "../flext/flext-tests" },
-    { name = "hypothesis", marker = "extra == 'dev'", specifier = ">=6.125" },
-    { name = "interrogate", marker = "extra == 'dev'", specifier = ">=1.7.0" },
-    { name = "isort", marker = "extra == 'dev'", specifier = ">=6.0.1" },
-    { name = "libcst", marker = "extra == 'dev'", specifier = ">=1.8.6" },
-    { name = "limits", specifier = ">=5.8.0" },
-    { name = "matplotlib-stubs", marker = "extra == 'dev'", specifier = ">=0.3" },
-    { name = "mkdocs", marker = "extra == 'dev'", specifier = ">=1.6" },
-    { name = "mkdocs-awesome-pages-plugin", marker = "extra == 'dev'", specifier = ">=2.9" },
-    { name = "mkdocs-encryptcontent-plugin", marker = "extra == 'dev'", specifier = ">=2" },
-    { name = "mkdocs-exclude", marker = "extra == 'dev'", specifier = ">=1.0.2" },
-    { name = "mkdocs-get-deps", marker = "extra == 'dev'", specifier = ">=0.2" },
-    { name = "mkdocs-git-revision-date-localized-plugin", marker = "extra == 'dev'", specifier = ">=1.2" },
-    { name = "mkdocs-literate-nav", marker = "extra == 'dev'", specifier = ">=0.6" },
-    { name = "mkdocs-macros-plugin", marker = "extra == 'dev'", specifier = ">=1" },
-    { name = "mkdocs-material", marker = "extra == 'dev'", specifier = ">=9.5" },
-    { name = "mkdocs-material-extensions", marker = "extra == 'dev'", specifier = ">=1.3.1" },
-    { name = "mkdocs-mermaid2-plugin", marker = "extra == 'dev'", specifier = ">=1.1" },
-    { name = "mkdocs-minify-plugin", marker = "extra == 'dev'", specifier = ">=0.7" },
-    { name = "mkdocs-print-site-plugin", marker = "extra == 'dev'", specifier = ">=0.8" },
-    { name = "mkdocs-redirects", marker = "extra == 'dev'", specifier = ">=1.2" },
-    { name = "mkdocs-section-index", marker = "extra == 'dev'", specifier = ">=0.3.12" },
-    { name = "mkdocs-versioning", marker = "extra == 'dev'", specifier = ">=0.2" },
-    { name = "mkdocstrings", marker = "extra == 'dev'", specifier = ">=0.24" },
-    { name = "mkdocstrings-python", marker = "extra == 'dev'", specifier = ">=1.7" },
-    { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.20.2" },
-    { name = "orjson", specifier = ">=3.11.8" },
-    { name = "pip-audit", marker = "extra == 'dev'", specifier = ">=2.7.3" },
-    { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=4.6.0" },
-    { name = "pybreaker", specifier = ">=1.4.1" },
-    { name = "pydantic", specifier = ">=2.13.3" },
-    { name = "pydantic-core", specifier = ">=2.46.3" },
-    { name = "pydantic-extra-types", extras = ["semver"], specifier = ">=2.11.1" },
-    { name = "pydantic-settings", specifier = ">=2.14.0" },
-    { name = "pylint", marker = "extra == 'dev'", specifier = ">=3.3" },
-    { name = "pyrefly", marker = "extra == 'dev'", specifier = ">=1.1.1,<1.2.0" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.4" },
-    { name = "pytest-benchmark", marker = "extra == 'dev'", specifier = ">=5.1" },
-    { name = "pytest-clarity", marker = "extra == 'dev'", specifier = ">=1.0.1" },
-    { name = "pytest-codeblocks", marker = "extra == 'dev'", specifier = ">=0.17.0" },
-    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=6.2" },
-    { name = "pytest-deadfixtures", marker = "extra == 'dev'", specifier = ">=2.2.1" },
-    { name = "pytest-env", marker = "extra == 'dev'", specifier = ">=1.1.5" },
-    { name = "pytest-markdown-docs", marker = "extra == 'dev'", specifier = ">=0.9.2" },
-    { name = "pytest-mock", marker = "extra == 'dev'", specifier = ">=3.14" },
-    { name = "pytest-randomly", marker = "extra == 'dev'", specifier = ">=3.16" },
-    { name = "pytest-sugar", marker = "extra == 'dev'", specifier = ">=1" },
-    { name = "pytest-timeout", marker = "extra == 'dev'", specifier = ">=2.4" },
-    { name = "pytest-xdist", marker = "extra == 'dev'", specifier = ">=3.8" },
-    { name = "python-dotenv", specifier = ">=1.2.2" },
-    { name = "python-on-whales", specifier = ">=0.81.0" },
-    { name = "pyupgrade", marker = "extra == 'dev'", specifier = ">=3.19" },
-    { name = "pyyaml", specifier = ">=6.0.3" },
-    { name = "radon", marker = "extra == 'dev'", specifier = ">=6.0.1" },
-    { name = "returns", specifier = ">=0.27.0" },
-    { name = "rope", specifier = ">=1.14.0" },
-    { name = "rope", marker = "extra == 'dev'", specifier = ">=1.14.0" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.12.3" },
-    { name = "structlog", specifier = ">=25.5.0" },
-    { name = "tomlkit", specifier = ">=0.14.0" },
-    { name = "types-cachetools", marker = "extra == 'dev'", specifier = ">=6.2" },
-    { name = "types-cffi", marker = "extra == 'dev'", specifier = ">=2.0" },
-    { name = "types-click", marker = "extra == 'dev'", specifier = ">=7.1" },
-    { name = "types-defusedxml", marker = "extra == 'dev'", specifier = ">=0.7" },
-    { name = "types-docker", marker = "extra == 'dev'", specifier = ">=7.1" },
-    { name = "types-flask", marker = "extra == 'dev'", specifier = ">=1.1.6" },
-    { name = "types-ldap3", marker = "extra == 'dev'", specifier = ">=2.9.13.20250622" },
-    { name = "types-paramiko", marker = "extra == 'dev'", specifier = ">=4.0" },
-    { name = "types-protobuf", marker = "extra == 'dev'", specifier = ">=6.30.2.20250703" },
-    { name = "types-psutil", marker = "extra == 'dev'", specifier = ">=7" },
-    { name = "types-psycopg2", marker = "extra == 'dev'", specifier = ">=2.9.21.20250718" },
-    { name = "types-pyasn1", marker = "extra == 'dev'", specifier = ">=0.6" },
-    { name = "types-pyopenssl", marker = "extra == 'dev'", specifier = ">=24.1" },
-    { name = "types-python-dateutil", marker = "extra == 'dev'", specifier = ">=2.9" },
-    { name = "types-pyyaml", marker = "extra == 'dev'", specifier = ">=6.0.12.20260518" },
-    { name = "types-redis", marker = "extra == 'dev'", specifier = ">=4.6" },
-    { name = "types-requests", marker = "extra == 'dev'", specifier = ">=2.32.4" },
-    { name = "types-setuptools", marker = "extra == 'dev'", specifier = ">=80.9" },
-    { name = "types-tabulate", marker = "extra == 'dev'", specifier = ">=0.10" },
-    { name = "types-toml", marker = "extra == 'dev'", specifier = ">=0.10.8.20240310" },
-    { name = "uv", marker = "extra == 'dev'", specifier = ">=0.11.8" },
-    { name = "vulture", marker = "extra == 'dev'", specifier = ">=2.13" },
-    { name = "wrapt", specifier = ">=2.1.2" },
-]
-provides-extras = ["dev"]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "types-defusedxml", specifier = ">=0.7.0.20260408" },
-    { name = "vulture", specifier = ">=2.16" },
 ]
 
 [[package]]
@@ -1354,6 +1177,32 @@ wheels = [
 ]
 
 [[package]]
+name = "lxml"
+version = "6.1.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/05/3b/aab6728cae887456f409b4d75e8a01856e4f04bd510de38052a47768b680/lxml-6.1.1.tar.gz", hash = "sha256:ba96ae44888e0185281e937633a743ea90d5a196c6000f82565ebb0580012d40", size = 4197430, upload-time = "2026-05-18T19:19:06.424Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a5/eb/7e6f37c5584ccbb2ff267f56fd0339016938c1c8684cfefab9b33ffc2f36/lxml-6.1.1-cp313-cp313-macosx_10_13_universal2.whl", hash = "sha256:68a9198d0fc122d14bb76837de9aa80cf84caed990b5b237f532ed87d3706736", size = 8559780, upload-time = "2026-05-18T19:17:57.661Z" },
+    { url = "https://files.pythonhosted.org/packages/a1/36/587c2521cf23a2cd6c9c22108aa7528f683a1f195ed7ccd23a4b1786ad36/lxml-6.1.1-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:7d47866cb32fb503450b6edc9df355d10dc49836af2e89901bd6ac6b0896d9d9", size = 4618006, upload-time = "2026-05-18T19:18:04.452Z" },
+    { url = "https://files.pythonhosted.org/packages/6e/ca/ab7bfe2bf4c972af5e7878262845ead3a24a929a9b04bc11c7c1ece6c82a/lxml-6.1.1-cp313-cp313-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:eb7c9811bfaa8b1ed5ed319f5d370dfbcaa59d52ea64be2a5a85e18195930354", size = 4924139, upload-time = "2026-05-18T19:19:04.873Z" },
+    { url = "https://files.pythonhosted.org/packages/6b/55/a0c72851dfee5ecc689f949723a73dea457758912542cb955b108eaf0d8f/lxml-6.1.1-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:762ff394d5bd56da0cf034a23dcce4e13923f15321a2adfa2ac00201dc6d3fca", size = 5082329, upload-time = "2026-05-18T19:19:09.728Z" },
+    { url = "https://files.pythonhosted.org/packages/f0/b6/0608f7d61a3b96cc67e5648a3d906e31a5082093e10e7be65b3886289938/lxml-6.1.1-cp313-cp313-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:a088f287f7d8275a33c07f2cac6c50b9319309a0200a39e7e75d80c707723099", size = 4993564, upload-time = "2026-05-18T19:19:13.608Z" },
+    { url = "https://files.pythonhosted.org/packages/4c/66/ae227524b066d29d55bf0b453d93d2d793c40218657d643dcbbca13b8faf/lxml-6.1.1-cp313-cp313-manylinux_2_26_ppc64le.manylinux_2_28_ppc64le.whl", hash = "sha256:e902da4b04e6b52e5893900d4b8ab46068f75f3561f01bf1080957f9fd932ed6", size = 5613467, upload-time = "2026-05-18T19:19:16.228Z" },
+    { url = "https://files.pythonhosted.org/packages/a6/76/dbe4a00b50385e40194231dcfe5a12c059de7cf90e89c83407d2b085b719/lxml-6.1.1-cp313-cp313-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:1d4962d4c66bf830a7e59ed6cfc17d148149898a3aefa8ec6e59763e6e3ed085", size = 5228304, upload-time = "2026-05-18T19:19:19.354Z" },
+    { url = "https://files.pythonhosted.org/packages/1c/01/00b1b8442ed2041793336868ba0b9ea4b13d7da7c085c6404c207a63bf79/lxml-6.1.1-cp313-cp313-manylinux_2_28_i686.whl", hash = "sha256:581d4c8ae690a6609e64862dd6b7c2489635c2d13907fc2b20f2bc200ff1d21e", size = 5341607, upload-time = "2026-05-18T19:19:22.297Z" },
+    { url = "https://files.pythonhosted.org/packages/63/36/1ad29931e9a4638bb707869f01d423a6c815f82152138d1a40dfcfde2b95/lxml-6.1.1-cp313-cp313-manylinux_2_31_armv7l.whl", hash = "sha256:876e1ff5930ed8bf295ec5ef9a8155e9b6b1876bbf1deed8b3a8069311875a8f", size = 4700168, upload-time = "2026-05-18T19:19:25.133Z" },
+    { url = "https://files.pythonhosted.org/packages/3c/d1/a9536cecf9be18a0dc72d32bead283a2332d1ffebd2dd3ac70ce444686e5/lxml-6.1.1-cp313-cp313-manylinux_2_38_riscv64.manylinux_2_39_riscv64.whl", hash = "sha256:9eb9b5a968f6e0f6d640092a567e14529ff8cea2e29d00da6f78a79fa49f013c", size = 5232487, upload-time = "2026-05-18T19:19:28.603Z" },
+    { url = "https://files.pythonhosted.org/packages/0e/77/b4fb1e03bf5d130e879214d3100092e386418807fb74dd0adc4b0a48f351/lxml-6.1.1-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:aa49e06d94aba782c6a02eecb7e507969e7e7a41b267f1b359bb35585f295d5b", size = 5044231, upload-time = "2026-05-18T19:18:42.246Z" },
+    { url = "https://files.pythonhosted.org/packages/26/4c/d00daeeb0a5530c4028a9232aa1b93db3ef4ed2158c116ea73c79a9765b3/lxml-6.1.1-cp313-cp313-musllinux_1_2_armv7l.whl", hash = "sha256:70cdfd80589d59e43e18005dd7244e8895e93db8ab6a620b7e23df5445a4e3d2", size = 4769450, upload-time = "2026-05-18T19:18:48.013Z" },
+    { url = "https://files.pythonhosted.org/packages/ed/6a/715a3a8d156ce42f29cf014706f5410c2ff3b02267774110fc23266409fe/lxml-6.1.1-cp313-cp313-musllinux_1_2_ppc64le.whl", hash = "sha256:aad9aa39483ed8ec44d6d2e59e5b98a0d80676ef0d92f44bfc374836111f62f5", size = 5635874, upload-time = "2026-05-18T19:18:51.914Z" },
+    { url = "https://files.pythonhosted.org/packages/45/37/0544bc21dde2a88f3a17b504e6fc79c0e01d25a33c2f6079724e9e72b9c7/lxml-6.1.1-cp313-cp313-musllinux_1_2_riscv64.whl", hash = "sha256:d49514be2f28d895c38cf9d2b72d7b9a07d00314519f456c0b50b53cfcf4c785", size = 5223987, upload-time = "2026-05-18T19:18:59.715Z" },
+    { url = "https://files.pythonhosted.org/packages/4d/f8/f6a5e8185bcb28c2befae3d31f8e3df3b811cb0f47746517a81279fcafe1/lxml-6.1.1-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:47402e62c52ff5988c1e8c6c63177f5708bccf48e366dea4e3dcf1e645e04947", size = 5250276, upload-time = "2026-05-18T19:19:03.834Z" },
+    { url = "https://files.pythonhosted.org/packages/c7/f2/1a2b9f1b7a49d45495369be7ef9ad05b262930f2eab3e3145706fca8083f/lxml-6.1.1-cp313-cp313-win32.whl", hash = "sha256:3483644525531e1d5762b0c44a8e18b6efba321b6dcf8a8952de10b037618bca", size = 3596903, upload-time = "2026-05-18T19:17:29.863Z" },
+    { url = "https://files.pythonhosted.org/packages/e6/99/f4ffb024f238eec2131aaa09f3278fb6129cf892741bf68e1fc1afb8c100/lxml-6.1.1-cp313-cp313-win_amd64.whl", hash = "sha256:a10bd2fd62e8ce916ececb342f348f190724a098c1faa056fdfb2a22ad5e8660", size = 3995869, upload-time = "2026-05-18T19:18:02.596Z" },
+    { url = "https://files.pythonhosted.org/packages/d1/53/70eb8c5c6037f27448f1e3c54ebede9545a801ae63f0a7254afca4fe8e45/lxml-6.1.1-cp313-cp313-win_arm64.whl", hash = "sha256:424aa57aca0897eb922aef34395bd1289b3b6f04e6bae20ea123c0c7e333cffc", size = 3658490, upload-time = "2026-05-19T19:22:53.846Z" },
+]
+
+[[package]]
 name = "markdown-it-py"
 version = "4.2.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1463,8 +1312,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "flext-cli", directory = "../flext/flext-cli" },
-    { name = "flext-core", directory = "../flext/flext-core" },
+    { name = "flext-cli", git = "https://github.com/flext-sh/flext-cli.git?rev=0.12.0-dev" },
+    { name = "flext-core", git = "https://github.com/flext-sh/flext-core.git?rev=0.12.0-dev" },
     { name = "hvac", marker = "extra == 'gitops'" },
     { name = "kubernetes", marker = "extra == 'gitops'" },
     { name = "kubernetes-validate", marker = "extra == 'gitops'" },
@@ -1843,6 +1692,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/02/2e/58d83848dd1a79cb92ed8e63f6ba901ca282c5f09d04af9423ec26c56fd7/openapi_pydantic-0.5.1.tar.gz", hash = "sha256:ff6835af6bde7a459fb93eb93bb92b8749b754fc6e51b2f1590a19dc3005ee0d", size = 60892, upload-time = "2025-01-08T19:29:27.083Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/12/cf/03675d8bd8ecbf4445504d8071adab19f5f993676795708e36402ab38263/openapi_pydantic-0.5.1-py3-none-any.whl", hash = "sha256:a3a09ef4586f5bd760a8df7f43028b60cafb6d9f61de2acba9574766255ab146", size = 96381, upload-time = "2025-01-08T19:29:25.275Z" },
+]
+
+[[package]]
+name = "openpyxl"
+version = "3.1.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "et-xmlfile" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/3d/f9/88d94a75de065ea32619465d2f77b29a0469500e99012523b91cc4141cd1/openpyxl-3.1.5.tar.gz", hash = "sha256:cf0e3cf56142039133628b5acffe8ef0c12bc902d2aadd3e0fe5878dc08d1050", size = 186464, upload-time = "2024-06-28T14:03:44.161Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c0/da/977ded879c29cbd04de313843e76868e6e13408a94ed6b987245dc7c8506/openpyxl-3.1.5-py2.py3-none-any.whl", hash = "sha256:5282c12b107bffeef825f4617dc029afaf41d0ea60823bbb665ef3079dc79de2", size = 250910, upload-time = "2024-06-28T14:03:41.161Z" },
 ]
 
 [[package]]
@@ -2232,6 +2093,19 @@ wheels = [
 ]
 
 [[package]]
+name = "python-docx"
+version = "1.2.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "lxml" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/a9/f7/eddfe33871520adab45aaa1a71f0402a2252050c14c7e3009446c8f4701c/python_docx-1.2.0.tar.gz", hash = "sha256:7bc9d7b7d8a69c9c02ca09216118c86552704edc23bac179283f2e38f86220ce", size = 5723256, upload-time = "2025-06-16T20:46:27.921Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d0/00/1e03a4989fa5795da308cd774f05b704ace555a70f9bf9d3be057b680bcf/python_docx-1.2.0-py3-none-any.whl", hash = "sha256:3fd478f3250fbbbfd3b94fe1e985955737c145627498896a8a6bf81f4baf66c7", size = 252987, upload-time = "2025-06-16T20:46:22.506Z" },
+]
+
+[[package]]
 name = "python-dotenv"
 version = "1.2.2"
 source = { registry = "https://pypi.org/simple" }
@@ -2260,6 +2134,21 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/e9/81/4b545de811e41ff90762a1c7045fcae215f20f4114eebddedab8eab6f63e/python_on_whales-0.81.0.tar.gz", hash = "sha256:bb6172014e3fe949f908092748bddf34df758cb92c2c3d0536b75bf236abce1b", size = 115066, upload-time = "2026-03-09T14:17:43.534Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a9/cb/5049e041a1d0e6f6cb6ac8737a8215fb4e67cb147f140ef31e67361dc61a/python_on_whales-0.81.0-py3-none-any.whl", hash = "sha256:6d5f81f56d0f95fd311a7cce29a01a1a60841074e4936000dc5f2dc9a7ffafac", size = 119240, upload-time = "2026-03-09T14:17:42.195Z" },
+]
+
+[[package]]
+name = "python-pptx"
+version = "1.0.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "lxml" },
+    { name = "pillow" },
+    { name = "typing-extensions" },
+    { name = "xlsxwriter" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/52/a9/0c0db8d37b2b8a645666f7fd8accea4c6224e013c42b1d5c17c93590cd06/python_pptx-1.0.2.tar.gz", hash = "sha256:479a8af0eaf0f0d76b6f00b0887732874ad2e3188230315290cd1f9dd9cc7095", size = 10109297, upload-time = "2024-08-07T17:33:37.772Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d9/4f/00be2196329ebbff56ce564aa94efb0fbc828d00de250b1980de1a34ab49/python_pptx-1.0.2-py3-none-any.whl", hash = "sha256:160838e0b8565a8b1f67947675886e9fea18aa5e795db7ae531606d68e785cba", size = 472788, upload-time = "2024-08-07T17:33:28.192Z" },
 ]
 
 [[package]]
@@ -3108,6 +2997,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/d1/6f/9fa5d59fb06d890defb5a8f727ce6a14d2932c8760153f96956628559fee/wrapt-2.2.2-cp313-cp313t-win_amd64.whl", hash = "sha256:305d4c247d61c4115794a169141823c62f719525ddb90b23aa332741c77d2c28", size = 82005, upload-time = "2026-06-20T23:48:46.391Z" },
     { url = "https://files.pythonhosted.org/packages/15/80/4c7bd9873d1f9f7d138d93556b500469dbe24f42710b877519c2b9eb380d/wrapt-2.2.2-cp313-cp313t-win_arm64.whl", hash = "sha256:c20279cd1a29800815d7b2d6338b60a6c6e78263f9d6e62e0eda251ba9cae2d0", size = 80762, upload-time = "2026-06-20T23:48:47.964Z" },
     { url = "https://files.pythonhosted.org/packages/6e/d2/6317eb6d4554855bbf12d61857774af34747bf88a42c19bf306de67e2fa3/wrapt-2.2.2-py3-none-any.whl", hash = "sha256:5bad217350f19ce99ca5b5e71d406765ea86fe541628426772b657375ee1c048", size = 61460, upload-time = "2026-06-20T23:49:42.966Z" },
+]
+
+[[package]]
+name = "xlsxwriter"
+version = "3.2.9"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/46/2c/c06ef49dc36e7954e55b802a8b231770d286a9758b3d936bd1e04ce5ba88/xlsxwriter-3.2.9.tar.gz", hash = "sha256:254b1c37a368c444eac6e2f867405cc9e461b0ed97a3233b2ac1e574efb4140c", size = 215940, upload-time = "2025-09-16T00:16:21.63Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/3a/0c/3662f4a66880196a590b202f0db82d919dd2f89e99a27fadef91c4a33d41/xlsxwriter-3.2.9-py3-none-any.whl", hash = "sha256:9a5db42bc5dff014806c58a20b9eae7322a134abb6fce3c92c181bfb275ec5b3", size = 175315, upload-time = "2025-09-16T00:16:20.108Z" },
 ]
 
 [[package]]

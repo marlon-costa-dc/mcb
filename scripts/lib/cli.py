@@ -11,9 +11,8 @@ from collections.abc import Callable
 from typing import Any
 
 import typer
+from flext_core import p
 from pydantic import BaseModel
-
-from .result import McbResult
 
 
 def create_app_with_common_params(
@@ -32,10 +31,10 @@ def register_result_command[P: BaseModel, T](
     name: str,
     help_text: str,
     model_cls: type[P],
-    handler: Callable[[P], McbResult[T]],
+    handler: Callable[[P], p.Result[T]],
     success_message: str | None = None,
 ) -> None:
-    """Register a model-backed command that returns an ``McbResult[T]``."""
+    """Register a model-backed command that returns a ``p.Result[T]``."""
     parameters: list[inspect.Parameter] = []
     annotations: dict[str, type[Any]] = {"return": type(None)}
 

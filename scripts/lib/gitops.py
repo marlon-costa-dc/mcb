@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import cast
 
-from flext_core import FlextResult
+from flext_core import FlextResult, p
 from kubernetes_validate import validate_resource
 from qlty.model import SarifIssue, Severity
 from qlty.report import AnalysisReport, analyze_issues
@@ -20,7 +20,7 @@ from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
 from ruamel.yaml.error import YAMLError
 
-from lib.core import get_logger, r
+from lib.core import get_logger
 
 logger = get_logger(__name__)
 
@@ -92,7 +92,7 @@ def discover_targets(root: Path) -> list[GitOpsTarget]:
     return unique
 
 
-def summarize(root: Path) -> FlextResult[GitOpsSummary]:
+def summarize(root: Path) -> p.Result[GitOpsSummary]:
     """Return a discovery summary for GitOps targets below ``root``."""
 
     targets = discover_targets(root)
@@ -129,7 +129,7 @@ def summarize(root: Path) -> FlextResult[GitOpsSummary]:
     )
 
 
-def analyze(root: Path) -> r[AnalysisReport]:
+def analyze(root: Path) -> p.Result[AnalysisReport]:
     """Analyze GitOps source manifests through the existing qlty report model."""
 
     issues = policy_issues(root) + rendered_issues(root)

@@ -10,6 +10,7 @@ import fnmatch
 from pathlib import Path
 
 import typer
+from flext_core import p
 from lib.cli import create_app_with_common_params, register_result_command
 from lib.core import get_logger, r
 from lib.settings import McbSettings
@@ -188,7 +189,7 @@ def _apply_exclude_file_filter(exclude_files: list[str], filtered: list[SarifIss
     return filtered
 
 
-def analyze(params: QltyParams) -> r[AnalysisReport]:
+def analyze(params: QltyParams) -> p.Result[AnalysisReport]:
     """Analyze SARIF quality reports."""
     issues_result = _collect_all_issues(params)
     if issues_result.failure:
