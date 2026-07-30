@@ -134,11 +134,11 @@ project-excludes = [
 ]
 python-version = "3.13"
 search-path = ["scripts"]
-skip-interpreter-query = true
+skip-interpreter-query = false
 use-ignore-files = false
 
 [tool.pyrefly.errors]
-annotation-mismatch = "error"
+invalid-annotation = "error"
 bad-argument-type = "error"
 bad-assignment = "error"
 bad-return = "error"

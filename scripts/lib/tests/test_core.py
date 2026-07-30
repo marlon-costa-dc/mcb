@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import Any, cast
 
 import pytest
-from flext_core import FlextModelsPydantic as fmp
+from flext_core import m
 
 from ..core import (
     McbLogger,
@@ -156,7 +156,7 @@ class TestResult:
         assert isinstance(with_exception.exception, ValueError)
 
     def test_from_validation(self) -> None:
-        class User(fmp.BaseModel):
+        class User(m.BaseModel):
             name: str
             age: int
 
@@ -241,7 +241,7 @@ class TestSettings:
     def test_validate_overrides_rejects_unknown(self, settings_factory: Any) -> None:
         settings = settings_factory(name="default")
         with pytest.raises(ValueError, match="Unknown settings override"):
-            settings.validate_overrides(unknown="value")
+            settings.clone(unknown="value")
 
 
 class TestLogging:
