@@ -241,6 +241,7 @@ __pyrefly_virtual__/
 .benchmarks/
 .bkp/
 .cache/
+.gitops-cache/
 .codegraph/
 .dolt_dropped_databases/
 .doltcfg/
