@@ -133,7 +133,11 @@ def analyze(root: Path) -> p.Result[AnalysisReport]:
     """Analyze GitOps source manifests through the existing qlty report model."""
 
     issues = policy_issues(root) + rendered_issues(root)
-    return analyze_issues(issues)
+    analyzed: p.Result[AnalysisReport] = cast(
+        p.Result[AnalysisReport],
+        analyze_issues(issues),
+    )
+    return analyzed
 
 
 def policy_issues(root: Path) -> list[SarifIssue]:
