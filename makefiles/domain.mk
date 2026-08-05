@@ -1,10 +1,80 @@
 # =============================================================================
-# makefiles/dispatch.mk — one DISPATCH_<verb> macro per canonical verb.
-# Canonical public verbs: help boot build check ship clean (+ test).
-# Each macro case-dispatches on WHAT=; phases run inline or delegate to mcb.sh.
-# Destructive phases are gated by $(call gate,<action>) (APPLY=Y required).
-# Unknown WHAT prints the WHATS_<verb> SSOT list and exits 2.
+# makefiles/domain.mk — MCB domain dispatch (private; invoked via custom.mk).
+# Former boot/build/test/check/ship/clean WHAT=/ACT=/SCOPE= phases.
 # =============================================================================
+
+MCB_ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST)))/..)
+MCB_SH := $(MCB_ROOT)/scripts/lib/mcb.sh
+MCB_AUDIT_IGNORES := $(shell bash $(MCB_SH) ignores)
+MCB_TOOL := bash $(MCB_SH)
+MCB_RUN := bash $(MCB_SH) run
+
+ESC := $(shell printf '\033')
+RESET := $(ESC)[0m
+BOLD := $(ESC)[1m
+RED := $(ESC)[0;31m
+ECHO_ERROR = printf "$(RED)%s$(RESET)\n" "$(1)"
+require_var = [ -n "$($(1))" ] || { $(ECHO_ERROR) "$(1) is required. Example: make $(1)=<value>"; exit 2; }
+gate = [ "$(APPLY)" = "Y" ] || { printf "DRY-RUN: would %s; set APPLY=Y to execute\n" "$(1)" >&2; exit 0; }
+
+export RELEASE ?= 1
+export QUICK ?= 0
+export FIX ?= 0
+export THREADS ?= $(shell nproc 2>/dev/null || echo 1)
+export SCOPE ?=
+WHAT ?=
+ACT ?=
+APPLY ?= N
+BUMP ?=
+FILES ?=
+MSG ?=
+REF ?=
+TAG ?=
+BASE ?= main
+BRANCH ?= $(shell git rev-parse --abbrev-ref HEAD 2>/dev/null)
+PR ?=
+RUN ?=
+SUB ?=
+LOG_N ?=
+export RUST_2024_LINTS := -D unsafe_op_in_unsafe_fn -D rust_2024_compatibility -W static_mut_refs
+export RUSTC_WRAPPER := sccache
+export CARGO_INCREMENTAL := 0
+
+ifeq ($(shell command -v sccache 2>/dev/null),)
+$(warning sccache not found in PATH. Attempting install...)
+$(shell cargo install sccache --locked 2>/dev/null || true)
+endif
+
+WHATS_boot    := hooks hook tools adr venv all
+WHATS_build   := build debug release prebuild codegen docs
+WHATS_check   := fmt lint validate audit udeps coverage qlty coordination guard fix dev optimize gitops surface python ci all
+WHATS_ship    := status diff log show add commit push pull branch checkout tag tags stash stash-pop stash-list merge rebase unstage push-tags pr sub release
+WHATS_clean   := build codegen all
+ACTS_hook     := pre-commit pre-push
+ACTS_docs     := build serve lint validate sync rust check setup adr adr-new diagrams
+ACTS_codegen  := all cli db entities conversions clean
+ACTS_fix      := fmt lint docs all
+ACTS_dev      := run docker-up docker-down docker-logs docker-test
+ACTS_pr       := checks view merge rerun
+ACTS_sub      := status sync diff commit push propagate
+ACTS_release  := package version install install-validate
+ACTS_python   := lint lint-staged test test-staged guard all
+ACTS_optimize := cache
+
+_ACT_VALID := $(ACTS_hook) $(ACTS_docs) $(ACTS_codegen) $(ACTS_fix) $(ACTS_dev) $(ACTS_pr) $(ACTS_sub) $(ACTS_release) $(ACTS_python) $(ACTS_optimize)
+ifneq ($(ACT),)
+  ifeq ($(filter $(ACT),$(_ACT_VALID)),)
+    ACT :=
+  endif
+endif
+
+.PHONY: _mcb_internal_boot _mcb_internal_build _mcb_internal_test _mcb_internal_check _mcb_internal_ship _mcb_internal_clean
+_mcb_internal_boot:   ; $(call DISPATCH_BOOT)
+_mcb_internal_build:  ; $(call DISPATCH_BUILD)
+_mcb_internal_test:   ; $(call DISPATCH_TEST)
+_mcb_internal_check:  ; $(call DISPATCH_CHECK)
+_mcb_internal_ship:   ; $(call DISPATCH_SHIP)
+_mcb_internal_clean:  ; $(call DISPATCH_CLEAN)
 
 # --- verb-local variables (single home) --------------------------------------
 MDBOOK         := $(shell command -v mdbook 2>/dev/null || echo "$(HOME)/.cargo/bin/mdbook")
@@ -25,10 +95,13 @@ MCB_NEXTEST_PROFILE := $(or $(NEXTEST_PROFILE),$(if $(filter true 1,$(CI)),ci,de
 # run them) — semantics preserved since `cargo test --all-targets` also skips doctests.
 ifeq ($(MCB_NEXTEST),1)
   MCB_TEST_UNIT := MCB_MODEL_ID=test-model NEXTEST_TEST_THREADS=$$T $(MCB_RUN) cargo nextest run --profile $(MCB_NEXTEST_PROFILE) --workspace --test unit
+  # Pre-commit tier: skip live-workspace quality scans that exceed the hook budget.
+  MCB_TEST_UNIT_PRECOMMIT := MCB_MODEL_ID=test-model NEXTEST_TEST_THREADS=$$T $(MCB_RUN) cargo nextest run --profile $(MCB_NEXTEST_PROFILE) --workspace --test unit -E 'not test(/test_validate_(with_specific_validator|mcb_workspace_quality)/)'
   MCB_TEST_ALL  := MCB_MODEL_ID=test-model NEXTEST_TEST_THREADS=$$T $(MCB_RUN) cargo nextest run --profile $(MCB_NEXTEST_PROFILE) --workspace
   # Run only crates that contain changed .rs files vs origin/$(BRANCH).
 else
   MCB_TEST_UNIT := MCB_MODEL_ID=test-model RUST_TEST_THREADS=$$T $(MCB_RUN) cargo test --workspace --test unit --test-threads=$$T
+  MCB_TEST_UNIT_PRECOMMIT := MCB_MODEL_ID=test-model RUST_TEST_THREADS=$$T $(MCB_RUN) cargo test --workspace --test unit --test-threads=$$T -- --skip test_validate_with_specific_validator --skip test_validate_with_specific_validator_filters_correctly --skip test_validate_with_specific_validator_does_not_fail_on_unrelated_validators --skip test_validate_mcb_workspace_quality_only
   MCB_TEST_ALL  := MCB_MODEL_ID=test-model RUST_TEST_THREADS=$$T $(MCB_RUN) cargo test --workspace --all-targets --test-threads=$$T
 endif
 
@@ -102,8 +175,8 @@ case "$(ACT)" in \
     $(MAKE) check WHAT=python ACT=test-staged && \
     $(MCB_RUN) cargo fmt --all -- --check && \
     $(MCB_RUN) cargo clippy --workspace -- -D warnings && \
-    { ! command -v typos >/dev/null 2>&1 || typos; } && \
-    $(MCB_TEST_UNIT) ;; \
+    { ! command -v typos >/dev/null 2>&1 || typos crates/ scripts/ docs/ config/ AGENTS.md; } && \
+    $(MCB_TEST_UNIT_PRECOMMIT) ;; \
   pre-push) \
     $(MAKE) check WHAT=python ACT= && \
     $(MAKE) check WHAT=gitops ACT= && \
@@ -249,7 +322,7 @@ case "$(ACT)" in \
     STAGED_TESTS="$$(git diff --cached --name-only --diff-filter=ACM -- '*.py' | grep '^scripts/lib/tests/' || true)"; \
     if [ -z "$$STAGED_TESTS" ]; then echo "test-staged: no staged Python test files"; exit 0; fi; \
     echo "test-staged: $$STAGED_TESTS"; \
-    UV_CACHE_DIR=.cache/uv $(MCB_RUN) uv run --no-sync pytest $$STAGED_TESTS ;; \
+    UV_CACHE_DIR=.cache/uv $(MCB_RUN) uv run --no-sync pytest -m "not slow" $$STAGED_TESTS ;; \
   guard)     $(MCB_TOOL) guard ;; \
   ""|all)    UV_CACHE_DIR=.cache/uv $(MCB_RUN) uv run --no-sync ruff check scripts/ && UV_CACHE_DIR=.cache/uv $(MCB_RUN) uv run --no-sync mypy scripts/lib && UV_CACHE_DIR=.cache/uv $(MCB_RUN) uv run --no-sync pytest scripts/lib/tests && $(MCB_TOOL) guard ;; \
   *)         printf "ERRO: ACT '%s' invalido. Validos: $(ACTS_python)\n" "$(ACT)" >&2; exit 2 ;; \

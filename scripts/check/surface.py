@@ -4,6 +4,7 @@
 Copyright (c) 2025 MCB Contributors. All rights reserved.
 SPDX-License-Identifier: MIT
 """
+
 # /// cosmos-command
 # verb = "check"
 # what = "surface"
@@ -18,6 +19,7 @@ from __future__ import annotations
 import os
 import subprocess
 import sys
+import shutil
 from dataclasses import dataclass
 from pathlib import Path
 from typing import cast
@@ -26,7 +28,7 @@ SCRIPTS = Path(__file__).resolve().parents[1]
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-from lib.core import BaseCommandSettings, McbResult, get_logger  # noqa: E402
+from lib.core import BaseCommandSettings, McbResult, get_logger  # ruff: ignore[module-import-not-at-top-of-file]
 
 logger = get_logger(__name__)
 
@@ -35,6 +37,8 @@ ROOT = Path(__file__).resolve().parents[2]
 
 @dataclass(frozen=True, slots=True)
 class SurfaceCase:
+    """One public make invocation to validate."""
+
     name: str
     args: tuple[str, ...]
     expected_rc: int = 0
@@ -42,83 +46,191 @@ class SurfaceCase:
 
 
 READ_ONLY_CASES = (
-    SurfaceCase("help", ("help",), must_contain=("MCB", "make <verb>")),
-    SurfaceCase("ship status", ("ship", "WHAT=status")),
-    SurfaceCase("ship tags", ("ship", "WHAT=tags")),
-    SurfaceCase("ship branch list", ("ship", "WHAT=branch")),
-    SurfaceCase("ship sub status", ("ship", "WHAT=sub", "ACT=status")),
-    SurfaceCase("ship release version list", ("ship", "WHAT=release", "ACT=version"), must_contain=("Current:",)),
-    SurfaceCase("docs check", ("build", "WHAT=docs", "ACT=check")),
-    SurfaceCase("docs adr list", ("build", "WHAT=docs", "ACT=adr"), must_contain=("Architecture Decision Records",)),
+    SurfaceCase("help", ("help",), must_contain=("mcb-scripts", "setup", "work")),
+    SurfaceCase("status git", ("status", "WHAT=git")),
+    SurfaceCase("work tags", ("work", "WHAT=tags")),
+    SurfaceCase("work branch list", ("work", "WHAT=branch")),
+    SurfaceCase("work sub status", ("work", "WHAT=sub-status")),
+    SurfaceCase(
+        "release version list", ("release", "WHAT=version"), must_contain=("Current:",)
+    ),
+    SurfaceCase("docs check", ("build", "WHAT=docs-check")),
+    SurfaceCase(
+        "docs adr list",
+        ("build", "WHAT=docs-adr"),
+        must_contain=("Architecture Decision Records",),
+    ),
     SurfaceCase("gitops check", ("check", "WHAT=gitops"), must_contain=("GITOPS",)),
-    SurfaceCase("optimize dry-run script", ("check", "WHAT=optimize"), must_contain=("DRY-RUN",)),
+    SurfaceCase(
+        "optimize cache dry-run",
+        ("check", "WHAT=optimize-cache"),
+        must_contain=("DRY-RUN",),
+    ),
 )
 
 DRY_RUN_CASES = (
-    SurfaceCase("codegen all", ("build", "WHAT=codegen", "ACT=all"), must_contain=("DRY-RUN",)),
-    SurfaceCase("docs build", ("build", "WHAT=docs", "ACT=build"), must_contain=("DRY-RUN",)),
-    SurfaceCase("docs serve", ("build", "WHAT=docs", "ACT=serve"), must_contain=("DRY-RUN",)),
-    SurfaceCase("docs sync", ("build", "WHAT=docs", "ACT=sync"), must_contain=("DRY-RUN",)),
-    SurfaceCase("docs setup", ("build", "WHAT=docs", "ACT=setup"), must_contain=("DRY-RUN",)),
-    SurfaceCase("docs adr-new", ("build", "WHAT=docs", "ACT=adr-new"), must_contain=("DRY-RUN",)),
-    SurfaceCase("docs diagrams", ("build", "WHAT=docs", "ACT=diagrams"), must_contain=("DRY-RUN",)),
-    SurfaceCase("docs lint fix", ("build", "WHAT=docs", "ACT=lint", "FIX=1"), must_contain=("DRY-RUN",)),
-    SurfaceCase("test e2e", ("test", "SCOPE=e2e"), must_contain=("DRY-RUN",)),
-    SurfaceCase("check fix", ("check", "WHAT=fix", "ACT=all"), must_contain=("DRY-RUN",)),
-    SurfaceCase("check dev", ("check", "WHAT=dev", "ACT=run"), must_contain=("DRY-RUN",)),
-    SurfaceCase("clean all", ("clean", "WHAT=all"), must_contain=("DRY-RUN",)),
-    SurfaceCase("ship add", ("ship", "WHAT=add", "FILES=Makefile"), must_contain=("DRY-RUN",)),
-    SurfaceCase("ship commit", ("ship", "WHAT=commit", "MSG=surface-check"), must_contain=("DRY-RUN",)),
-    SurfaceCase("ship push", ("ship", "WHAT=push"), must_contain=("DRY-RUN",)),
-    SurfaceCase("ship pull", ("ship", "WHAT=pull"), must_contain=("DRY-RUN",)),
     SurfaceCase(
-        "ship branch create",
-        ("ship", "WHAT=branch", "REF=surface-check-probe", "BASE=HEAD"),
+        "codegen all", ("build", "WHAT=codegen-all"), must_contain=("DRY-RUN",)
+    ),
+    SurfaceCase("docs build", ("build", "WHAT=docs-build"), must_contain=("DRY-RUN",)),
+    SurfaceCase("docs serve", ("build", "WHAT=docs-serve"), must_contain=("DRY-RUN",)),
+    SurfaceCase("docs sync", ("build", "WHAT=docs-sync"), must_contain=("DRY-RUN",)),
+    SurfaceCase("docs setup", ("build", "WHAT=docs-setup"), must_contain=("DRY-RUN",)),
+    SurfaceCase(
+        "docs adr-new", ("build", "WHAT=docs-adr-new"), must_contain=("DRY-RUN",)
+    ),
+    SurfaceCase(
+        "docs diagrams", ("build", "WHAT=docs-diagrams"), must_contain=("DRY-RUN",)
+    ),
+    SurfaceCase(
+        "docs lint fix", ("build", "WHAT=docs-lint", "FIX=1"), must_contain=("DRY-RUN",)
+    ),
+    SurfaceCase("test e2e", ("test", "WHAT=e2e"), must_contain=("DRY-RUN",)),
+    SurfaceCase("check fix", ("check", "WHAT=fix-all"), must_contain=("DRY-RUN",)),
+    SurfaceCase("run dev", ("run", "WHAT=dev-run"), must_contain=("DRY-RUN",)),
+    SurfaceCase("clean all", ("clean", "WHAT=all"), must_contain=("DRY-RUN",)),
+    SurfaceCase(
+        "work add", ("work", "WHAT=add", "FILES=Makefile"), must_contain=("DRY-RUN",)
+    ),
+    SurfaceCase(
+        "work commit",
+        ("work", "WHAT=commit", "MSG=surface-check"),
         must_contain=("DRY-RUN",),
     ),
-    SurfaceCase("ship checkout", ("ship", "WHAT=checkout", "REF=HEAD"), must_contain=("DRY-RUN",)),
-    SurfaceCase("ship tag", ("ship", "WHAT=tag", "TAG=surface-check-probe"), must_contain=("DRY-RUN",)),
-    SurfaceCase("ship stash", ("ship", "WHAT=stash"), must_contain=("DRY-RUN",)),
-    SurfaceCase("ship stash-pop", ("ship", "WHAT=stash-pop"), must_contain=("DRY-RUN",)),
-    SurfaceCase("ship merge", ("ship", "WHAT=merge", "REF=HEAD"), must_contain=("DRY-RUN",)),
-    SurfaceCase("ship rebase", ("ship", "WHAT=rebase", "BASE=HEAD"), must_contain=("DRY-RUN",)),
-    SurfaceCase("ship unstage", ("ship", "WHAT=unstage", "FILES=Makefile"), must_contain=("DRY-RUN",)),
-    SurfaceCase("ship push-tags", ("ship", "WHAT=push-tags", "TAG=surface-check-probe"), must_contain=("DRY-RUN",)),
-    SurfaceCase("pr merge", ("ship", "WHAT=pr", "ACT=merge", "PR=1"), must_contain=("DRY-RUN",)),
-    SurfaceCase("pr rerun", ("ship", "WHAT=pr", "ACT=rerun", "RUN=1"), must_contain=("DRY-RUN",)),
-
-    SurfaceCase("release package", ("ship", "WHAT=release", "ACT=package"), must_contain=("DRY-RUN",)),
+    SurfaceCase("work push", ("work", "WHAT=push"), must_contain=("DRY-RUN",)),
+    SurfaceCase("work pull", ("work", "WHAT=pull"), must_contain=("DRY-RUN",)),
+    SurfaceCase(
+        "work branch create",
+        ("work", "WHAT=branch", "REF=surface-check-probe", "BASE=HEAD"),
+        must_contain=("DRY-RUN",),
+    ),
+    SurfaceCase(
+        "work checkout",
+        ("work", "WHAT=checkout", "REF=HEAD"),
+        must_contain=("DRY-RUN",),
+    ),
+    SurfaceCase(
+        "work tag",
+        ("work", "WHAT=tag", "TAG=surface-check-probe"),
+        must_contain=("DRY-RUN",),
+    ),
+    SurfaceCase("work stash", ("work", "WHAT=stash"), must_contain=("DRY-RUN",)),
+    SurfaceCase(
+        "work stash-pop", ("work", "WHAT=stash-pop"), must_contain=("DRY-RUN",)
+    ),
+    SurfaceCase(
+        "work merge", ("work", "WHAT=merge", "REF=HEAD"), must_contain=("DRY-RUN",)
+    ),
+    SurfaceCase(
+        "work rebase", ("work", "WHAT=rebase", "BASE=HEAD"), must_contain=("DRY-RUN",)
+    ),
+    SurfaceCase(
+        "work unstage",
+        ("work", "WHAT=unstage", "FILES=Makefile"),
+        must_contain=("DRY-RUN",),
+    ),
+    SurfaceCase(
+        "work push-tags",
+        ("work", "WHAT=push-tags", "TAG=surface-check-probe"),
+        must_contain=("DRY-RUN",),
+    ),
+    SurfaceCase(
+        "pr merge", ("work", "WHAT=pr-merge", "PR=1"), must_contain=("DRY-RUN",)
+    ),
+    SurfaceCase(
+        "pr rerun", ("work", "WHAT=pr-rerun", "RUN=1"), must_contain=("DRY-RUN",)
+    ),
+    SurfaceCase(
+        "release package", ("release", "WHAT=package"), must_contain=("DRY-RUN",)
+    ),
     SurfaceCase(
         "release version bump",
-        ("ship", "WHAT=release", "ACT=version", "BUMP=patch"),
+        ("release", "WHAT=version", "BUMP=patch"),
         must_contain=("DRY-RUN",),
     ),
-    SurfaceCase("release install", ("ship", "WHAT=release", "ACT=install"), must_contain=("DRY-RUN",)),
+    SurfaceCase(
+        "release install", ("release", "WHAT=install"), must_contain=("DRY-RUN",)
+    ),
 )
 
 INVALID_CASES = (
-    SurfaceCase("boot invalid", ("boot", "WHAT=__invalid__"), expected_rc=2, must_contain=("ERRO:",)),
-    SurfaceCase("build invalid", ("build", "WHAT=__invalid__"), expected_rc=2, must_contain=("ERRO:",)),
-    SurfaceCase("test invalid", ("test", "SCOPE=__invalid__"), expected_rc=2, must_contain=("ERRO:",)),
-    SurfaceCase("check invalid", ("check", "WHAT=__invalid__"), expected_rc=2, must_contain=("ERRO:",)),
-    SurfaceCase("ship invalid", ("ship", "WHAT=__invalid__"), expected_rc=2, must_contain=("ERRO:",)),
-    SurfaceCase("clean invalid", ("clean", "WHAT=__invalid__"), expected_rc=2, must_contain=("ERRO:",)),
+    SurfaceCase(
+        "run invalid",
+        ("run", "WHAT=__invalid__"),
+        expected_rc=2,
+        must_contain=("ERROR:",),
+    ),
+    SurfaceCase(
+        "build invalid",
+        ("build", "WHAT=__invalid__"),
+        expected_rc=2,
+        must_contain=("ERROR:",),
+    ),
+    SurfaceCase(
+        "test invalid",
+        ("test", "WHAT=__invalid__"),
+        expected_rc=2,
+        must_contain=("unsupported test WHAT=",),
+    ),
+    SurfaceCase(
+        "check invalid",
+        ("check", "WHAT=__invalid__"),
+        expected_rc=2,
+        must_contain=("unsupported check WHAT=",),
+    ),
+    SurfaceCase(
+        "work invalid",
+        ("work", "WHAT=__invalid__"),
+        expected_rc=2,
+        must_contain=("unsupported work WHAT=",),
+    ),
+    SurfaceCase(
+        "clean invalid",
+        ("clean", "WHAT=__invalid__"),
+        expected_rc=2,
+        must_contain=("unsupported clean WHAT=",),
+    ),
     SurfaceCase(
         "codegen invalid",
-        ("build", "WHAT=codegen", "ACT=__invalid__"),
+        ("build", "WHAT=codegen-__invalid__"),
         expected_rc=2,
-        must_contain=("ERRO:",),
+        must_contain=("ERROR:",),
     ),
-    SurfaceCase("docs invalid", ("build", "WHAT=docs", "ACT=__invalid__"), expected_rc=2, must_contain=("ERRO:",)),
-    SurfaceCase("fix invalid", ("check", "WHAT=fix", "ACT=__invalid__"), expected_rc=2, must_contain=("ERRO:",)),
-    SurfaceCase("dev invalid", ("check", "WHAT=dev", "ACT=__invalid__"), expected_rc=2, must_contain=("ERRO:",)),
-    SurfaceCase("pr invalid", ("ship", "WHAT=pr", "ACT=__invalid__"), expected_rc=2, must_contain=("ERRO:",)),
-    SurfaceCase("sub invalid", ("ship", "WHAT=sub", "ACT=__invalid__"), expected_rc=2, must_contain=("ERRO:",)),
+    SurfaceCase(
+        "docs invalid",
+        ("build", "WHAT=docs-__invalid__"),
+        expected_rc=2,
+        must_contain=("ERROR:",),
+    ),
+    SurfaceCase(
+        "fix invalid",
+        ("check", "WHAT=fix-__invalid__"),
+        expected_rc=2,
+        must_contain=("unsupported check WHAT=",),
+    ),
+    SurfaceCase(
+        "dev invalid",
+        ("check", "WHAT=dev-__invalid__"),
+        expected_rc=2,
+        must_contain=("unsupported check WHAT=",),
+    ),
+    SurfaceCase(
+        "pr invalid",
+        ("work", "WHAT=pr-__invalid__"),
+        expected_rc=2,
+        must_contain=("unsupported work WHAT=",),
+    ),
+    SurfaceCase(
+        "sub invalid",
+        ("work", "WHAT=sub-__invalid__"),
+        expected_rc=2,
+        must_contain=("unsupported work WHAT=",),
+    ),
     SurfaceCase(
         "release invalid",
-        ("ship", "WHAT=release", "ACT=__invalid__"),
+        ("release", "WHAT=__invalid__"),
         expected_rc=2,
-        must_contain=("ERRO:",),
+        must_contain=("ERROR:",),
     ),
 )
 
@@ -137,8 +249,9 @@ def _run_case(case: SurfaceCase) -> str | None:
     env["QUICK"] = "1"
     env["TERM"] = "dumb"
 
+    make_bin = shutil.which("make") or "make"
     result = subprocess.run(
-        ("make", "APPLY=N", *case.args),
+        (make_bin, "APPLY=N", *case.args),
         cwd=ROOT,
         env=env,
         check=False,
@@ -168,11 +281,13 @@ def run(_settings: SurfaceSettings) -> McbResult[int]:
         logger.info("SURFACE FAIL")
         for failure in failures:
             logger.info(f"\n--- {failure}")
-        return cast(McbResult[int], McbResult[int].fail("surface validation failed"))
+        return cast("McbResult[int]", McbResult[int].fail("surface validation failed"))
 
     logger.info(f"SURFACE OK: {len(cases)} command cases validated")
-    logger.info("External/long-running operations are represented by APPLY-gated dry-runs.")
-    return cast(McbResult[int], McbResult[int].ok(len(cases)))
+    logger.info(
+        "External/long-running operations are represented by APPLY-gated dry-runs."
+    )
+    return cast("McbResult[int]", McbResult[int].ok(len(cases)))
 
 
 def main() -> int:
