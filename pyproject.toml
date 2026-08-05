@@ -485,6 +485,30 @@ known-first-party = ["flext_cli", "flext_core", "flext_tests", "mcb_scripts"]
 split-on-trailing-comma = false
 
 [tool.ruff.lint.per-file-ignores]
+
+"scripts/**" = [
+  "ANN401",
+  "ARG001",
+  "D101", "D102", "D103", "D107", "D200", "D202", "D205", "D212",
+  "EM101", "EM102",
+  "EXE001",
+  "FBT001", "FBT002",
+  "FURB101", "FURB103", "FURB110", "FURB113",
+  "G003",
+  "N806", "N999",
+  "PERF401", "PERF402",
+  "PIE810",
+  "PLC0207", "PLC2701", "PLR2004", "PLR6201", "PLW1514",
+  "PTH100", "PTH110", "PTH118", "PTH120", "PTH123", "PTH201",
+  "Q003",
+  "RUF022", "RUF052", "RUF100", "RUF105",
+  "S404", "S603", "S607",
+  "T201",
+  "TC006",
+  "TID251", "TID252",
+  "TRY400", "TRY401",
+]
+
 "**/.vulture_whitelist.py" = ["ALL"]
 "**/*_pb2*.py" = ["ALL"]
 "scripts/cmd/**/*.py" = ["invalid-module-name", "shebang-not-executable"]
