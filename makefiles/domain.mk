@@ -182,7 +182,7 @@ case "$(ACT)" in \
     $(MAKE) check WHAT=gitops ACT= && \
     $(MCB_RUN) cargo fmt --all -- --check && \
     $(MCB_RUN) cargo clippy --all-targets -- -D warnings && \
-    $(MAKE) test ACT= THREADS=$(MCB_PUSH_THREADS) && $(MAKE) test SCOPE=doc ACT= THREADS=$(MCB_PUSH_THREADS) && \
+    $(MAKE) test WHAT=all THREADS=$(MCB_PUSH_THREADS) && $(MAKE) test WHAT=doc THREADS=$(MCB_PUSH_THREADS) && \
     $(MCB_TOOL) validate quick && \
     $(MCB_TOOL) guard ;; \
   *)          printf "ERRO: ACT '%s' invalido. Validos: $(ACTS_hook)\n" "$(ACT)" >&2; exit 2 ;; \
