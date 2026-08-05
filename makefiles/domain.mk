@@ -324,7 +324,7 @@ case "$(ACT)" in \
     echo "test-staged: $$STAGED_TESTS"; \
     UV_CACHE_DIR=.cache/uv $(MCB_RUN) uv run --no-sync pytest -m "not slow" $$STAGED_TESTS ;; \
   guard)     $(MCB_TOOL) guard ;; \
-  ""|all)    UV_CACHE_DIR=.cache/uv $(MCB_RUN) uv run --no-sync ruff check scripts/ && UV_CACHE_DIR=.cache/uv $(MCB_RUN) uv run --no-sync mypy scripts/lib && UV_CACHE_DIR=.cache/uv $(MCB_RUN) uv run --no-sync pytest scripts/lib/tests && $(MCB_TOOL) guard ;; \
+  ""|all)    UV_CACHE_DIR=.cache/uv $(MCB_RUN) uv run --no-sync ruff check scripts/ && UV_CACHE_DIR=.cache/uv $(MCB_RUN) uv run --no-sync mypy scripts/lib && UV_CACHE_DIR=.cache/uv $(MCB_RUN) uv run --no-sync pytest -m "not slow" scripts/lib/tests && $(MCB_TOOL) guard ;; \
   *)         printf "ERRO: ACT '%s' invalido. Validos: $(ACTS_python)\n" "$(ACT)" >&2; exit 2 ;; \
 esac
 endef
