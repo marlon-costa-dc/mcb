@@ -635,8 +635,8 @@ wheels = [
 
 [[package]]
 name = "flext-cli"
-version = "0.12.0rc1"
-source = { git = "https://github.com/flext-sh/flext-cli.git?rev=0.12.0rc1#730f703de9d6013468b5d40bf0aaa52d909d32b9" }
+version = "0.12.0rc0"
+source = { git = "https://github.com/flext-sh/flext-cli.git?rev=0.12.0rc2#3d864e578f4541ddeda4b3ae2db82e80f7fa54b1" }
 dependencies = [
     { name = "cachetools" },
     { name = "click" },
@@ -662,8 +662,8 @@ dependencies = [
 
 [[package]]
 name = "flext-core"
-version = "0.12.0rc1"
-source = { git = "https://github.com/flext-sh/flext-core.git?rev=0.12.0rc1#c75fd5a1884b26f931c95df0161c8d3d4fae1e20" }
+version = "0.12.0"
+source = { git = "https://github.com/flext-sh/flext-core.git?rev=0.12.0-dev#f17751e861a698b495be910ba0131a1ddb8b7b30" }
 dependencies = [
     { name = "beartype" },
     { name = "cachetools" },
@@ -1311,8 +1311,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "flext-cli", git = "https://github.com/flext-sh/flext-cli.git?rev=0.12.0rc1" },
-    { name = "flext-core", git = "https://github.com/flext-sh/flext-core.git?rev=0.12.0rc1" },
+    { name = "flext-cli", git = "https://github.com/flext-sh/flext-cli.git?rev=0.12.0rc2" },
+    { name = "flext-core", git = "https://github.com/flext-sh/flext-core.git?rev=0.12.0rc2" },
     { name = "hvac", marker = "extra == 'gitops'" },
     { name = "kubernetes", marker = "extra == 'gitops'" },
     { name = "kubernetes-validate", marker = "extra == 'gitops'" },
