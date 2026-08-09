@@ -205,13 +205,24 @@ impl SubmoduleProvider {
             return None;
         }
 
-        let Some(url) = submodule.url().map(str::to_owned) else {
-            mcb_domain::warn!(
-                "submodule",
-                "Orphaned submodule (no URL in .gitmodules), skipping",
-                &path
-            );
-            return None;
+        let url = match submodule.url() {
+            Ok(Some(url)) => url.to_owned(),
+            Ok(None) => {
+                mcb_domain::warn!(
+                    "submodule",
+                    "Orphaned submodule (no URL in .gitmodules), skipping",
+                    &path
+                );
+                return None;
+            }
+            Err(e) => {
+                mcb_domain::warn!(
+                    "submodule",
+                    "Cannot read submodule URL, skipping",
+                    &format!("path = {path}, error = {e}")
+                );
+                return None;
+            }
         };
 
         let is_initialized = Self::is_submodule_initialized(ctx.current_repo, &path);
