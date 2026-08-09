@@ -23,11 +23,11 @@ SCRIPTS = Path(__file__).resolve().parents[1]
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-from lib.cli import create_app_with_common_params, register_result_command  # noqa: E402
-from lib.core import BaseCommandSettings, get_logger, r  # noqa: E402
-from lib.gitops import GitOpsSummary, summarize  # noqa: E402
-from lib.settings import McbSettings  # noqa: E402
-from pydantic import Field  # noqa: E402
+from lib.cli import create_app_with_common_params, register_result_command  # ruff: ignore[module-import-not-at-top-of-file]
+from lib.core import BaseCommandSettings, get_logger, r  # ruff: ignore[module-import-not-at-top-of-file]
+from lib.gitops import GitOpsSummary, summarize  # ruff: ignore[module-import-not-at-top-of-file]
+from lib.settings import McbSettings  # ruff: ignore[module-import-not-at-top-of-file]
+from pydantic import Field  # ruff: ignore[module-import-not-at-top-of-file]
 
 logger = get_logger(__name__)
 

@@ -78,7 +78,7 @@ class TestResult:
         assert ok_result.fold(lambda _: -1, lambda v: v * 2) == 42
 
         err_result = r[int].fail("boom")
-        assert err_result.fold(lambda e: len(e), lambda _: 0) == 4
+        assert err_result.fold(len, lambda _: 0) == 4
 
     def test_recover(self) -> None:
         assert r[int].ok(42).recover(lambda _: 0).unwrap() == 42
