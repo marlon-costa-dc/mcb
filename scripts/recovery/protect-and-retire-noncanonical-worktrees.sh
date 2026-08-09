@@ -17,6 +17,8 @@ ROOT=/home/marlonsc/mcb
 APPLY="${APPLY:-N}"
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 declare -A BACKUP_REF=()
+STASH_BACKUP_REF=""
+SANITIZED_LARGE_WIP_BACKUP=""
 
 # Full current product-worktree inventory. ROOT is retained as the primary
 # checkout. The Beads-owned internal worktree is intentionally excluded.
@@ -180,6 +182,7 @@ sanitize_large_wip_branch() {
   verify_no_oversized_files "$temporary_worktree" HEAD
   git -C "$temporary_worktree" push -u origin "$sanitized" --no-verify
   git -C "$temporary_worktree" ls-remote --exit-code --heads origin "$sanitized" >/dev/null
+  SANITIZED_LARGE_WIP_BACKUP="$sanitized"
   git -C "$ROOT" worktree remove "$temporary_worktree"
   printf 'Oversized local WIP sanitized and protected by %s\n' "$sanitized"
 }
@@ -249,7 +252,8 @@ protect_stash_ref() {
   git -C "$ROOT" branch "$branch" refs/stash
   git -C "$ROOT" push -u origin "$branch" --no-verify
   git -C "$ROOT" ls-remote --exit-code --heads origin "$branch" >/dev/null
-  printf 'refs/stash is now protected remotely by %s and remains local for review.\n' "$branch"
+  STASH_BACKUP_REF="$branch"
+  printf 'refs/stash is protected remotely by %s and will be removed locally after all backups succeed.\n' "$branch"
 }
 
 protect_local_branches() {
@@ -280,6 +284,11 @@ protect_local_branches() {
   done < <(git -C "$ROOT" for-each-ref --format='%(refname:short)' refs/heads)
 }
 
+remote_contains_oid() {
+  local oid="$1"
+  git -C "$ROOT" ls-remote --heads origin | grep -q "^$oid[[:space:]]"
+}
+
 retire_worktree() {
   local worktree="$1"
   local branch
@@ -300,12 +309,58 @@ retire_worktree() {
   printf 'Retiring noncanonical worktree: %s (%s)\n' "$worktree" "$branch"
   git -C "$ROOT" worktree remove "$worktree"
   test ! -e "$worktree"
+  git -C "$ROOT" branch -D "$branch"
+  printf 'Removed protected local worktree branch: %s\n' "$branch"
+}
 
-  if git -C "$ROOT" branch -d "$branch"; then
-    printf 'Removed merged local branch: %s\n' "$branch"
-  else
-    printf 'Retained unmerged local branch with verified remote backup: %s\n' "$branch"
+purge_local_stash() {
+  [[ -n "$STASH_BACKUP_REF" ]] || return 0
+  git -C "$ROOT" ls-remote --exit-code --heads origin "$STASH_BACKUP_REF" >/dev/null
+  git -C "$ROOT" update-ref -d refs/stash
+  printf 'Removed local refs/stash after verified remote backup: %s\n' "$STASH_BACKUP_REF"
+}
+
+purge_local_branches() {
+  local current_branch
+  local internal_branch
+  local branch
+  local oid
+
+  current_branch="$(git -C "$PRIMARY_WORKTREE" branch --show-current)"
+  internal_branch="$(git -C "$BEADS_INTERNAL_WORKTREE" branch --show-current)"
+
+  while IFS= read -r branch; do
+    [[ -n "$branch" ]] || continue
+    [[ "$branch" == "$current_branch" ]] && continue
+    [[ "$branch" == "$internal_branch" ]] && continue
+    oid="$(git -C "$ROOT" rev-parse "$branch")"
+
+    if branch_contains_oversized_arbor_db "$ROOT" "$branch"; then
+      [[ -n "$SANITIZED_LARGE_WIP_BACKUP" ]] || {
+        printf 'Refusing to remove oversized local ref without sanitized backup: %s\n' "$branch" >&2
+        exit 7
+      }
+      git -C "$ROOT" ls-remote --exit-code --heads origin "$SANITIZED_LARGE_WIP_BACKUP" >/dev/null
+    else
+      remote_contains_oid "$oid" || {
+        printf 'Refusing to remove local branch without exact remote HEAD backup: %s\n' "$branch" >&2
+        exit 7
+      }
+    fi
+
+    git -C "$ROOT" branch -D "$branch"
+    printf 'Removed protected local branch: %s\n' "$branch"
+  done < <(git -C "$ROOT" for-each-ref --format='%(refname:short)' refs/heads)
+}
+
+purge_local_cache_and_unreachable_objects() {
+  if [[ -f "$ROOT/.arbor/cache/db" ]]; then
+    unlink "$ROOT/.arbor/cache/db"
+    printf 'Removed local Arbor cache database.\n'
   fi
+  git -C "$ROOT" reflog expire --expire=now --all
+  git -C "$ROOT" gc --prune=now
+  printf 'Expired local reflogs and pruned unreachable Git objects.\n'
 }
 
 main() {
@@ -324,8 +379,14 @@ main() {
     retire_worktree "$worktree"
   done
 
+  purge_local_stash
+  purge_local_branches
+  purge_local_cache_and_unreachable_objects
+
   printf '=== Remaining registered worktrees ===\n'
   git -C "$ROOT" worktree list --porcelain
+  printf '=== Remaining local branches ===\n'
+  git -C "$ROOT" for-each-ref --format='%(refname:short) %(objectname:short) %(upstream:short)' refs/heads
 }
 
 main "$@"
