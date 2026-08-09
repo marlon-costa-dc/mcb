@@ -1,69 +1,29 @@
-# CLAUDE.md — MCB Project Instructions
+<!-- AIHUB-INVIOLABLE-LAW-PRELUDE v1 -->
+# AI Hub Inviolable Law — Strict Prelude
 
-Reference [`./AGENTS.md`](./AGENTS.md) for all project rules, architecture,
-commands, beads workflow, validation, and Git policy. Do not duplicate those
-rules here.
+1. Truth: never claim done/green/resolved without command, exit code, decisive output.
+2. Root cause: no bypass, fallback, shim, suppression, stub, hardcode, or old+new coexistence.
+3. Beads first: claim/update bead before file write, shell, or multi-step work; update after every repo-state change.
+4. Research first: inspect code, docs, canonical sources before acting; never invent APIs, flags, facts, or behavior.
+5. Owner first: use the project's declared facades/primitives; do not reimplement them locally.
+6. Gate discipline: if a gate blocks, stop and escalate with the exact command/edit; never route around it.
+7. Landing: native gates, commit, fast-forward push, bead evidence.
+8. Divergence: FF push rejected → integrate by cooperation: `git merge --no-ff` the integration base into your lane, resolve conflicts, revalidate, land. Never rebase or force-push a shared branch; never discard another actor's work.
+9. Escalation: impossible rule → exact error. Rule conflict → present both with numbers. Unclear → one targeted question. Never guess.
+10. Precedence: NEWEST > OLDEST. USER REQUEST > BEADS > ADRs > SKILLs > DOCS > default. Adjust lower/older to higher/newer. Doubt → ASK USER FIRST.
+<!-- /AIHUB-INVIOLABLE-LAW-PRELUDE -->
 
-<!-- bd-doctor-divergence: ok -->
-<!-- Intentional: this file is a thin pointer to AGENTS.md (the SSOT); their
-     content legitimately differs, so the bd-doctor Agent-Doc-Divergence check
-     is opted out here rather than syncing the two. -->
+## CLAUDE.md
 
----
+Canonical governance lives in this repo's `AGENTS.md`, whose first bytes are
+the strict prelude selected by `config.AiHub.governance.law_surface`, followed
+by the project overlay. Generated universal-core bodies are retired. **Do not
+duplicate rules here** — keep only project-specific notes below.
 
-## Quick Reference
+- **Task tracking:** `bd` (beads). Run `bd prime`.
+- **Validation:** prefer `make` targets (`make lint` / `make typecheck` /
+  `make test`).
+- **Tools:** `ast-grep` (`sg`) for structural search; never `rm` / `sed -i`
+  (use the Edit tool or `trash-put`).
 
-### Essentials
-
-- **Language / toolchain**: Rust 1.92+, edition 2024. Toolchain pinned in
-  `rust-toolchain.toml`.
-- **Build interface**: `make <verb> [WHAT=phase] [SCOPE=...] [APPLY=Y]`.
-  Do not call `cargo` or `git` directly for canonical workflows.
-- **SSOT**: `AGENTS.md` > `Cargo.toml` / `Makefile` / `config/*.yaml` > static
-  docs.
-
-### Common Commands
-
-| Task | Command |
-| ----- | ------- |
-| Build release | `make build RELEASE=1` |
-| Run dev server | `make dev WHAT=run` |
-| Run unit tests | `make test SCOPE=unit` |
-| Run all tests | `make test` |
-| Lint + format check | `make check WHAT=lint` |
-| Architecture validation | `make check WHAT=validate` |
-| Full CI gate | `make ci` |
-| Banned-pattern scan | `make guard` |
-| Docs lint | `make docs WHAT=lint` |
-| Pre-commit hook | `make hook WHAT=pre-commit` |
-
-### Workspace Crates
-
-```text
-mcb              CLI / Loco app
-mcb-server       MCP protocol, handlers, transport
-mcb-infrastructure  DI, config, cache, logging, AppContext
-mcb-domain       entities, value objects, port traits, errors
-mcb-providers    adapters (DB, embeddings, vector store, git, parsers)
-mcb-validate     architecture rule engine
-mcb-utils        leaf utilities
-```
-
-### Must-Know Conventions
-
-- Clean Architecture: inward-only dependencies; `mcb-domain` has no `mcb-*`
-  deps; handlers use ports, not concrete providers.
-- Error handling: `mcb_domain::error::Error` (`thiserror`) + `Result<T>`;
-  no `unwrap`/`expect`/`panic`/`todo` in production paths.
-- Provider discovery via `linkme` distributed slices.
-- Conventional commits (`feat`, `fix`, `refactor`, `docs`, `test`, `chore`,
-  `perf`, `ci`).
-- Work is tracked in **beads** (`bd`): `bd ready`, `bd update <id> --claim`,
-  `bd close <id> --reason "evidence"`.
-- `third-party/` is excluded from the workspace — do not edit unless explicitly
-  asked.
-
-### First-Time Onboarding
-
-See [`ONBOARDING.md`](./ONBOARDING.md) for a structured walkthrough of the
-stack, architecture, request lifecycle, and where to find things.
+<!-- project-specific notes below -->

@@ -3,6 +3,23 @@
 extend-exclude = [
   "target/",
   "third-party/",
+  "coverage/",
+  ".trash-removed/",
+  "docs/reports/",
+  "docs/generated/",
+  "reports/",
+  "data/",
+  "archive/",
+  ".arbor/",
+  "*.sarif",
+  "*violations*.txt",
+  "build_err.txt",
+  "clippy_output.txt",
+  "validate_output.txt",
+  "violations.txt",
+  "staged_files.txt",
+  "tmp_*.txt",
+  "pr*_comments.txt",
   "**/generated/**",
   "**/fixtures/**",  # external sample codebases (e.g. rustlings) used as validator inputs
   "docs/archive/**", # archived legacy plans (bilingual/Portuguese, not active docs)
@@ -23,13 +40,25 @@ seaorm = "seaorm"
 # Portuguese (intentional)
 ERRO = "ERRO"
 comando = "comando"
+comandos = "comandos"
+Comandos = "Comandos"
+colide = "colide"
+conter = "conter"
+Fase = "Fase"
+Fases = "Fases"
 instale = "instale"
 Atual = "Atual"
+Parametros = "Parametros"
+progresso = "progresso"
+ser = "ser"
+sinal = "sinal"
+vetor = "vetor"
 # crate / acronyms / domain
 ratatui = "ratatui"
 LOV = "LOV"
 lov = "lov"
 flext = "flext"  # FLEXT monorepo name (referenced in AGENTS.md)
+WHATs = "WHATs"
 # regex prefixes in scripts/docs/py/check_outdated.py
 referenc = "referenc"
 deprecat = "deprecat"

@@ -26,6 +26,7 @@ pub mod search_service;
 
 pub use agent_session_service::*;
 pub use context_service::*;
+pub use highlight_sync_service::{HighlightSyncPort, HighlightSyncService};
 pub use indexing_service::*;
 pub use memory_service::*;
 pub use search_service::*;

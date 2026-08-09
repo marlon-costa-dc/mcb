@@ -1,7 +1,0 @@
-# MCB — Cline Rules
-
-`AGENTS.md` is the project single source of truth for all agent rules,
-architecture, conventions, commands, beads workflow, validation, and Git policy.
-
-`CLAUDE.md` is intentionally only a thin pointer back to `AGENTS.md`; do not use
-it as a second rule source and do not duplicate the universal core here.

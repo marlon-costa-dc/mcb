@@ -15,8 +15,8 @@ query while working on code.
 | Language | Rust | 1.92+ (edition 2024) |
 | Async runtime | Tokio | 1.x |
 | Web framework | Axum + Tower | 0.8 / 0.5 |
-| App framework | Loco.rs | 0.16.4 (forked in `third-party/`) |
-| ORM / DB | SeaORM + SeaQuery | 2.0.0-rc.38 (forked in `third-party/`) |
+| App framework | Loco.rs | 0.16.4 (forked via git dependency) |
+| ORM / DB | SeaORM + SeaQuery | 2.0.0-rc.38 (forked via git dependency) |
 | Databases | SQLite (default), PostgreSQL (runtime selectable) | via SeaORM |
 | Vector stores | Milvus, EdgeVec, Qdrant, Pinecone, Encrypted | provider model |
 | Embeddings | FastEmbed, Ollama, OpenAI, VoyageAI, Gemini, Anthropic | provider model |
@@ -87,7 +87,7 @@ dependency rules. The 7 first-party crates form inward-only layers:
 | `tests/` | Golden/integration tests, E2E Playwright tests, fixtures |
 | `scripts/` | Build/release helpers, hooks, codegen, docs generation |
 | `makefiles/` | Make dispatch macros (`dispatch.mk`, `ui.mk`) |
-| `third-party/` | Forked dependencies (SeaORM, Loco, EdgeVec, etc.) — **do not edit** |
+| `third-party/` | Removed; forks are now pinned git dependencies in `Cargo.toml` |
 | `book/` / `book.toml` | mdBook documentation site |
 | `k8s/`, `systemd/`, `Dockerfile` | Deployment artifacts |
 | `assets/admin/` | Static admin UI served by Axum |
@@ -139,17 +139,17 @@ adapters from the Loco `AppContext` so handlers never import providers directly.
 | ---- | ------- |
 | Build debug | `make build` |
 | Build release | `make build RELEASE=1` |
-| Run dev server | `make dev WHAT=run` |
+| Run dev server | `make check WHAT=dev ACT=run` |
 | Run all tests | `make test` |
 | Run unit tests only | `make test SCOPE=unit` |
 | Run golden tests | `make test SCOPE=golden` |
 | Lint + format check | `make check WHAT=lint` |
 | Architecture validation | `make check WHAT=validate` |
-| Full CI gate | `make ci` or `make check WHAT=all` |
-| Auto-fix formatting | `make fix WHAT=fmt` |
-| Docs lint | `make docs WHAT=lint` |
-| Banned-pattern scan | `make guard` |
-| Pre-commit hook | `make hook WHAT=pre-commit` |
+| Full CI gate | `make check WHAT=ci` or `make check WHAT=all` |
+| Auto-fix formatting | `make check WHAT=fix ACT=fmt` |
+| Docs lint | `make build WHAT=docs ACT=lint` |
+| Banned-pattern scan | `make check WHAT=guard` |
+| Pre-commit hook | `make boot WHAT=hook ACT=pre-commit` |
 
 ## Where to Look
 
@@ -162,7 +162,7 @@ adapters from the Loco `AppContext` so handlers never import providers directly.
 | Change architecture rules | `config/mcb-validate.toml` + `crates/mcb-validate/src/` |
 | Change runtime config | `config/development.yaml`, `config/test.yaml`, `config/production.yaml` + `crates/mcb-infrastructure/src/config.rs` |
 | Add a test | Matching crate `tests/` directory or `tests/golden/` for end-to-end MCP scenarios |
-| Update docs | `docs/` and `book/src/`; run `make docs WHAT=lint` |
+| Update docs | `docs/` and `book/src/`; run `make build WHAT=docs ACT=lint` |
 
 ## Next Steps
 

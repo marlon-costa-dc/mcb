@@ -35,7 +35,7 @@ mcb_log()  { printf '%s\n' "$*" >&2; }
 mcb_ok()   { printf '%b✓%b %s\n' "$GREEN" "$RESET" "$*" >&2; }
 mcb_warn() { printf '%b!%b %s\n' "$YELLOW" "$RESET" "$*" >&2; }
 mcb_die()  { local c="$1"; shift; printf '%bERRO:%b %s\n' "$RED" "$RESET" "$*" >&2; exit "$c"; }
-mcb_require_cmd() { command -v "$1" >/dev/null 2>&1 || mcb_die "$EX_PREREQ" "comando '$1' ausente (instale via: make setup WHAT=tools)"; }
+mcb_require_cmd() { command -v "$1" >/dev/null 2>&1 || mcb_die "$EX_PREREQ" "comando '$1' ausente (instale via: make setup)"; }
 
 # --- single mutation gate (APPLY=Y, destructive verbs only) ------------------
 mcb_require_apply() {
@@ -45,17 +45,37 @@ mcb_require_apply() {
 }
 mcb_apply_y() { [ "${APPLY:-N}" = "Y" ]; }
 
+mcb_run() {
+  local run_cmd
+  local -a env_args
+  [ "$#" -gt 0 ] || mcb_die "$EX_PREREQ" "mcb run recebeu nenhum comando"
+  run_cmd="$1"
+  shift
+  while [ "$#" -gt 0 ] && [[ "$run_cmd" == *"="* ]] && printf '%s' "$run_cmd" | grep -qEq '^[A-Za-z_][A-Za-z0-9_]*='; do
+    env_args+=("$run_cmd")
+    run_cmd="$1"
+    shift
+  done
+  [ -n "$run_cmd" ] || mcb_die "$EX_PREREQ" "mcb run recebeu comando vazio"
+  printf '%s' "$run_cmd" | grep -qEq '^[A-Za-z_][A-Za-z0-9_]*=' && mcb_die "$EX_PREREQ" "mcb run recebeu somente variáveis de ambiente"
+  if command -v mise >/dev/null 2>&1 && mise which "$run_cmd" >/dev/null 2>&1; then
+    env "${env_args[@]}" mise exec --quiet -- "$run_cmd" "$@"
+  else
+    env "${env_args[@]}" "$run_cmd" "$@"
+  fi
+}
+
 # --- retry helper ------------------------------------------------------------
 mcb_retry() { local n="$1" s="$2"; shift 2; local t=1; while ! "$@"; do [ "$t" -ge "$n" ] && return 1; sleep "$s"; t=$((t+1)); done; }
 
 # --- SSOT readers ------------------------------------------------------------
 mcb_version() { grep -m1 '^version =' "$MCB_ROOT/Cargo.toml" | sed 's/.*"\([^"]*\)".*/\1/'; }
 
-# Binary lookup chain: PATH > target/release > target/debug > cargo run
+# Binary lookup chain: workspace target > PATH > cargo run
 mcb_bin() {
-  command -v mcb 2>/dev/null && return 0
-  [ -x "$MCB_ROOT/target/release/mcb" ] && { echo "$MCB_ROOT/target/release/mcb"; return 0; }
   [ -x "$MCB_ROOT/target/debug/mcb" ]   && { echo "$MCB_ROOT/target/debug/mcb";   return 0; }
+  [ -x "$MCB_ROOT/target/release/mcb" ] && { echo "$MCB_ROOT/target/release/mcb"; return 0; }
+  command -v mcb 2>/dev/null && return 0
   echo "cargo run --package mcb --"
 }
 
@@ -160,6 +180,7 @@ if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
     validate)       mcb_validate "${2:-full}" ;;
     guard)          shift; mcb_guard "$@" ;;
     guard-bash)     mcb_guard_bash ;;
+    run)            shift; [ "$#" -gt 0 ] || mcb_die "$EX_PREREQ" "mcb run requires a command"; mcb_run "$@" ;;
     files-safe)     mcb_files_safe "${2:-}" ;;
     *)              mcb_die "$EX_PREREQ" "unknown command: ${1:-<none>}" ;;
   esac

@@ -9,6 +9,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 use dashmap::DashSet;
+use mcb_utils::constants::protocol::HTTP_HEADER_EXECUTION_FLOW;
 
 use mcb_domain::entities::agent::{AgentSession, AgentSessionStatus, AgentType};
 use mcb_domain::entities::project::Project;
@@ -254,6 +255,18 @@ tools:
         merge_meta_overrides(Some(&context.meta), &mut overrides);
         merge_meta_overrides(request.meta.as_ref(), &mut overrides);
 
+        // HTTP transport injects the raw request parts as an extension; use any
+        // execution-flow header sent by HTTP clients as an override so the
+        // operation-mode matrix is evaluated for the caller's flow.
+        if let Some(parts) = context.extensions.get::<axum::http::request::Parts>()
+            && let Some(flow) = parts
+                .headers
+                .get(HTTP_HEADER_EXECUTION_FLOW)
+                .and_then(|value| value.to_str().ok())
+        {
+            overrides.insert("execution_flow".to_owned(), flow.to_owned());
+        }
+
         let mut execution_context =
             ToolExecutionContext::resolve(&self.runtime_defaults, &overrides);
 
@@ -381,41 +394,12 @@ async fn auto_create_session(
     if !init_sessions.insert(session_id.clone()) {
         return Ok(());
     }
-    let now = mcb_utils::utils::time::epoch_secs_i64()
-        .map_err(|e| McpError::internal_error(format!("Failed to get current time: {e}"), None))?;
     let ide_label = defaults
         .agent_program
         .as_deref()
         .or(ctx.agent_program.as_deref())
         .unwrap_or(mcb_utils::constants::ide::IDE_MCB_STDIO);
-    let model = ctx
-        .model_id
-        .clone()
-        .filter(|s| !s.trim().is_empty())
-        .ok_or_else(|| {
-            McpError::internal_error(
-                "model_id is required to auto-create session".to_owned(),
-                None,
-            )
-        })?;
-    let session = AgentSession {
-        id: session_id.clone(),
-        session_summary_id: format!("auto_{}", mcb_utils::utils::id::generate().simple()),
-        agent_type: AgentType::Sisyphus,
-        model,
-        parent_session_id: ctx.parent_session_id.clone(),
-        started_at: now,
-        ended_at: None,
-        duration_ms: None,
-        status: AgentSessionStatus::Active,
-        prompt_summary: Some(format!("Auto-session via {ide_label}")),
-        result_summary: None,
-        token_count: None,
-        tool_calls_count: None,
-        delegations_count: None,
-        project_id: ctx.project_id.clone(),
-        worktree_id: ctx.worktree_id.clone(),
-    };
+    let session = build_auto_session(ctx, session_id, ide_label)?;
     services
         .agent_session
         .create_session(session)
@@ -426,6 +410,45 @@ async fn auto_create_session(
         })?;
     tracing::info!("Auto-session created: {session_id} via {ide_label}");
     Ok(())
+}
+
+fn required_session_model(ctx: &ToolExecutionContext) -> Result<String, McpError> {
+    ctx.model_id
+        .clone()
+        .filter(|s| !s.trim().is_empty())
+        .ok_or_else(|| {
+            McpError::internal_error(
+                "model_id is required to auto-create session".to_owned(),
+                None,
+            )
+        })
+}
+
+fn build_auto_session(
+    ctx: &ToolExecutionContext,
+    session_id: &str,
+    ide_label: &str,
+) -> Result<AgentSession, McpError> {
+    let started_at = mcb_utils::utils::time::epoch_secs_i64()
+        .map_err(|e| McpError::internal_error(format!("Failed to get current time: {e}"), None))?;
+    Ok(AgentSession {
+        id: session_id.to_owned(),
+        session_summary_id: format!("auto_{}", mcb_utils::utils::id::generate().simple()),
+        agent_type: AgentType::Sisyphus,
+        model: required_session_model(ctx)?,
+        parent_session_id: ctx.parent_session_id.clone(),
+        started_at,
+        ended_at: None,
+        duration_ms: None,
+        status: AgentSessionStatus::Active,
+        prompt_summary: Some(format!("Auto-session via {ide_label}")),
+        result_summary: None,
+        token_count: None,
+        tool_calls_count: None,
+        delegations_count: None,
+        project_id: ctx.project_id.clone(),
+        worktree_id: ctx.worktree_id.clone(),
+    })
 }
 
 /// T11: Auto-create a project from VCS context (once per org/project pair).

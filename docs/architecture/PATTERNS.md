@@ -1,8 +1,8 @@
 <!-- markdownlint-disable MD013 MD024 MD025 MD003 MD022 MD031 MD032 MD036 MD041 MD060 -->
 # Technical Patterns Reference
 
-**Last updated:** 2026-02-12
-**Source:** Codebase analysis across 6 crates (v0.2.1)
+**Last updated:** 2026-06-28
+**Source:** Codebase analysis across 7 crates (v0.4.0)
 
 This document captures the recurring implementation patterns used throughout MCB. For the full architecture overview, see [ARCHITECTURE.md](./ARCHITECTURE.md). For boundary rules, see [ARCHITECTURE_BOUNDARIES.md](./ARCHITECTURE_BOUNDARIES.md).
 
@@ -19,6 +19,7 @@ mcb-infrastructure → DI (linkme+Handle), config, crypto, logging, health, rout
 mcb-providers      → Embedding, vector store, cache, database, git, language, events
 mcb-server         → MCP handlers, admin UI (Handlebars), transport (stdio/HTTP), hooks
 mcb-validate       → Architecture rules, AST analysis, linters, metrics
+mcb-utils          → Shared leaf utilities (innermost, no mcb-* deps)
 ```
 
 ## Two-Layer DI: linkme → Handle (ADR-050)

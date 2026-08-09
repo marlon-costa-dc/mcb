@@ -40,13 +40,19 @@ struct HighlighterState {
 ///
 /// # Example
 /// ```
-/// use mcb_infrastructure::services::highlight_sync_service::HighlightSyncPort;
+/// use mcb_infrastructure::services::HighlightSyncPort;
 /// fn example(port: &dyn HighlightSyncPort) {
 ///     let _ = port.highlight("fn main() {}", "rust");
 /// }
 /// ```
 pub trait HighlightSyncPort: Send + Sync {
     /// Highlight code using tree-sitter with cached language configs.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`HighlightError`] when the language is unsupported, a tree-sitter
+    /// highlight configuration cannot be built, highlighting fails, or the shared
+    /// highlighter state is poisoned.
     fn highlight(&self, code: &str, language: &str) -> Result<HighlightedCode, HighlightError>;
 }
 
@@ -74,6 +80,12 @@ impl HighlightSyncService {
     }
 
     /// Highlight code using tree-sitter with cached language configs.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`HighlightError`] when the language is unsupported, a tree-sitter
+    /// highlight configuration cannot be built, highlighting fails, or the shared
+    /// highlighter state is poisoned.
     pub fn highlight(&self, code: &str, language: &str) -> Result<HighlightedCode, HighlightError> {
         if code.is_empty() {
             return Ok(HighlightedCode {
