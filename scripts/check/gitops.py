@@ -4,6 +4,7 @@
 Copyright (c) 2025 MCB Contributors. All rights reserved.
 SPDX-License-Identifier: MIT
 """
+
 # /// cosmos-command
 # verb = "check"
 # what = "gitops"
@@ -66,8 +67,7 @@ def run(settings: GitopsSettings) -> r[GitOpsSummary]:
 def main() -> None:
     """Entrypoint used by the cosmos-command dispatcher and direct CLI runs."""
     app = create_app_with_common_params(
-        name="check-gitops",
-        help_text="Run MCB GitOps validation discovery.",
+        name="check-gitops", help_text="Run MCB GitOps validation discovery."
     )
     register_result_command(
         app,

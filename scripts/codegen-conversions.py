@@ -431,26 +431,24 @@ def gen_test_block(name: str, entity: EntityConfig) -> str:
         f"        {entity_module}::Model {{",
     ]
     lines.extend(sample_lines)
-    lines.extend(
-        [
-            "        }",
-            "    }",
-            "",
-            "    #[test]",
-            f"    fn round_trip_{name}() {{",
-            f"        let model = sample_{name}();",
-            f"        let model_val = model.{assert_field}.clone();",
-            "",
-            "        // Model \u2192 Domain",
-            f"        let domain: {domain_type} = model.into();",
-            f"        assert_eq!(domain.{assert_field}, model_val);",
-            "",
-            "        // Domain \u2192 ActiveModel (should not panic)",
-            f"        let _active: {entity_module}::ActiveModel = domain.into();",
-            "    }",
-            "}",
-        ]
-    )
+    lines.extend([
+        "        }",
+        "    }",
+        "",
+        "    #[test]",
+        f"    fn round_trip_{name}() {{",
+        f"        let model = sample_{name}();",
+        f"        let model_val = model.{assert_field}.clone();",
+        "",
+        "        // Model \u2192 Domain",
+        f"        let domain: {domain_type} = model.into();",
+        f"        assert_eq!(domain.{assert_field}, model_val);",
+        "",
+        "        // Domain \u2192 ActiveModel (should not panic)",
+        f"        let _active: {entity_module}::ActiveModel = domain.into();",
+        "    }",
+        "}",
+    ])
 
     return "\n".join(lines)
 
@@ -540,8 +538,7 @@ def gen_mod_rs(names: list[str]) -> str:
 def main() -> None:
     with open(CONFIG_PATH, "rb") as f:
         config = TypeAdapter(dict[str, EntityConfig]).validate_python(
-            tomllib.load(f),
-            experimental_allow_partial=True,
+            tomllib.load(f), experimental_allow_partial=True
         )
 
     entity_names = []

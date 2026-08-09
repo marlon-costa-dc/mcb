@@ -11,16 +11,12 @@ from collections.abc import Callable
 from typing import Any
 
 import typer
+from flext_core import p
 from pydantic import BaseModel
-
-from .result import McbResult
 
 
 def create_app_with_common_params(
-    *,
-    name: str,
-    help_text: str,
-    add_completion: bool = False,
+    *, name: str, help_text: str, add_completion: bool = False
 ) -> typer.Typer:
     """Create a Typer app with MCB CLI conventions."""
     return typer.Typer(name=name, help=help_text, add_completion=add_completion)
@@ -32,10 +28,10 @@ def register_result_command[P: BaseModel, T](
     name: str,
     help_text: str,
     model_cls: type[P],
-    handler: Callable[[P], McbResult[T]],
+    handler: Callable[[P], p.Result[T]],
     success_message: str | None = None,
 ) -> None:
-    """Register a model-backed command that returns an ``McbResult[T]``."""
+    """Register a model-backed command that returns a ``p.Result[T]``."""
     parameters: list[inspect.Parameter] = []
     annotations: dict[str, type[Any]] = {"return": type(None)}
 
@@ -55,7 +51,7 @@ def register_result_command[P: BaseModel, T](
                 kind=inspect.Parameter.KEYWORD_ONLY,
                 default=option,
                 annotation=annotation,
-            ),
+            )
         )
         annotations[field_name] = annotation
 
@@ -67,12 +63,9 @@ def register_result_command[P: BaseModel, T](
         if success_message is not None:
             typer.echo(success_message)
 
-    command.__signature__ = inspect.Signature(parameters)  # type: ignore[attr-defined]
+    command.__signature__ = inspect.Signature(parameters)
     command.__annotations__ = annotations
     app.command(name=name, help=help_text)(command)
 
 
-__all__ = [
-    "create_app_with_common_params",
-    "register_result_command",
-]
+__all__ = ["create_app_with_common_params", "register_result_command"]

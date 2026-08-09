@@ -21,7 +21,8 @@ fn require_query(args: &VcsArgs) -> Result<&str, Box<CallToolResult>> {
         .as_deref()
         .map(str::trim)
         .filter(|value| !value.is_empty())
-        .ok_or_else(|| Box::new(tool_error("Missing query for branch search")))
+        .ok_or_else(|| tool_error("Missing query for branch search"))
+        .map_err(Box::new)
 }
 
 fn append_file_matches(

@@ -3,6 +3,7 @@
 Copyright (c) 2025 MCB Contributors. All rights reserved.
 SPDX-License-Identifier: MIT
 """
+
 from __future__ import annotations
 
 import socket
@@ -17,7 +18,10 @@ ROOT = Path(__file__).resolve().parents[3]
 def test_parse_url_extracts_host_and_port() -> None:
     assert parse_url("http://localhost:19530") == ("localhost", 19530)
     assert parse_url("redis://localhost:26379") == ("localhost", 26379)
-    assert parse_url("postgresql://user:pass@localhost:25432/db") == ("localhost", 25432)
+    assert parse_url("postgresql://user:pass@localhost:25432/db") == (
+        "localhost",
+        25432,
+    )
 
 
 def test_parse_url_returns_none_when_port_missing() -> None:
@@ -58,8 +62,7 @@ def test_main_returns_one_when_no_services_configured(tmp_path: Path) -> None:
 def test_main_returns_one_when_service_unreachable(tmp_path: Path) -> None:
     config = tmp_path / "tests.toml"
     config.write_text(
-        "[test_services]\nmilvus = \"http://localhost:1\"\n",
-        encoding="utf-8",
+        '[test_services]\nmilvus = "http://localhost:1"\n', encoding="utf-8"
     )
     with mock.patch("lib.external_services_check.CONFIG_PATH", config):
         assert main() == 1

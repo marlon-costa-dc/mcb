@@ -3,6 +3,7 @@
 Copyright (c) 2025 MCB Contributors. All rights reserved.
 SPDX-License-Identifier: MIT
 """
+
 from __future__ import annotations
 
 import subprocess
@@ -83,7 +84,9 @@ spec:
     assert report.by_category["gitops"] == 1
 
 
-def test_policy_issue_line_points_to_image_key_not_first_matching_value(temp_dir: Path) -> None:
+def test_policy_issue_line_points_to_image_key_not_first_matching_value(
+    temp_dir: Path,
+) -> None:
     _write_k8s_file(
         temp_dir,
         "k8s/workload.yaml",
@@ -173,7 +176,9 @@ def test_render_cache_key_changes_when_input_changes(temp_dir: Path) -> None:
     assert before != after
 
 
-def test_cached_render_writes_and_reuses_cache(temp_dir: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_cached_render_writes_and_reuses_cache(
+    temp_dir: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     chart_dir = temp_dir / "k8s" / "chart"
     _write_k8s_file(temp_dir, "k8s/chart/Chart.yaml", "apiVersion: v2\nname: sample\n")
     target = GitOpsTarget(kind="helm", path=chart_dir)
@@ -183,7 +188,9 @@ def test_cached_render_writes_and_reuses_cache(temp_dir: Path, monkeypatch: pyte
 
     def fake_run(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
         calls.append(cmd)
-        return subprocess.CompletedProcess(args=cmd, returncode=0, stdout=rendered, stderr="")
+        return subprocess.CompletedProcess(
+            args=cmd, returncode=0, stdout=rendered, stderr=""
+        )
 
     monkeypatch.setattr(subprocess, "run", fake_run)
     first = _cached_render(target)

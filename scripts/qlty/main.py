@@ -10,6 +10,7 @@ import fnmatch
 from pathlib import Path
 
 import typer
+from flext_core import p
 from lib.cli import create_app_with_common_params, register_result_command
 from lib.core import get_logger, r
 from lib.settings import McbSettings
@@ -68,7 +69,9 @@ def _collect_smells_issues(params: QltyParams, all_issues: list[SarifIssue]) -> 
         all_issues.extend(smells)
         logger.info(f"   Found {len(smells)} code smells")
     elif params.scan:
-        smells_result = run_qlty_smells(params.smells_file or McbSettings().qlty_smells_sarif)
+        smells_result = run_qlty_smells(
+            params.smells_file or McbSettings().qlty_smells_sarif
+        )
         if smells_result.failure:
             return r[None].fail(smells_result.error or "qlty smells failed")
         smells = smells_result.unwrap()
@@ -80,7 +83,9 @@ def _collect_smells_issues(params: QltyParams, all_issues: list[SarifIssue]) -> 
 
 def _collect_checks_issues(params: QltyParams, all_issues: list[SarifIssue]) -> r[None]:
     if params.scan:
-        outfile = params.checks_file if params.checks_file else McbSettings().qlty_check_sarif
+        outfile = (
+            params.checks_file if params.checks_file else McbSettings().qlty_check_sarif
+        )
         checks_result = run_qlty_check(output_file=outfile)
         if checks_result.failure:
             return r[None].fail(checks_result.error or "qlty check failed")
@@ -128,17 +133,23 @@ def _collect_all_issues(params: QltyParams) -> r[list[SarifIssue]]:
     if do_checks:
         checks_result = _collect_checks_issues(params, all_issues)
         if checks_result.failure:
-            return r[list[SarifIssue]].fail(checks_result.error or "checks collection failed")
+            return r[list[SarifIssue]].fail(
+                checks_result.error or "checks collection failed"
+            )
 
     if do_smells:
         smells_result = _collect_smells_issues(params, all_issues)
         if smells_result.failure:
-            return r[list[SarifIssue]].fail(smells_result.error or "smells collection failed")
+            return r[list[SarifIssue]].fail(
+                smells_result.error or "smells collection failed"
+            )
 
     return r[list[SarifIssue]].ok(all_issues)
 
 
-def _apply_severity_filter(severity: str | None, filtered: list[SarifIssue]) -> list[SarifIssue]:
+def _apply_severity_filter(
+    severity: str | None, filtered: list[SarifIssue]
+) -> list[SarifIssue]:
     if severity:
         target_sev = Severity.from_str(severity)
         filtered = [i for i in filtered if i.level == target_sev]
@@ -146,49 +157,63 @@ def _apply_severity_filter(severity: str | None, filtered: list[SarifIssue]) -> 
     return filtered
 
 
-def _apply_rule_filter(rule: str | None, filtered: list[SarifIssue]) -> list[SarifIssue]:
+def _apply_rule_filter(
+    rule: str | None, filtered: list[SarifIssue]
+) -> list[SarifIssue]:
     if rule:
         filtered = [i for i in filtered if rule in i.rule_id]
         logger.info(f"🔍 Filtered to {len(filtered)} issues matching rule '{rule}'")
     return filtered
 
 
-def _apply_category_filter(category: str | None, filtered: list[SarifIssue]) -> list[SarifIssue]:
+def _apply_category_filter(
+    category: str | None, filtered: list[SarifIssue]
+) -> list[SarifIssue]:
     if category:
         filtered = [i for i in filtered if category in i.rule_category]
         logger.info(f"🔍 Filtered to {len(filtered)} issues in category '{category}'")
     return filtered
 
 
-def _apply_file_filter(file_pattern: str | None, filtered: list[SarifIssue]) -> list[SarifIssue]:
+def _apply_file_filter(
+    file_pattern: str | None, filtered: list[SarifIssue]
+) -> list[SarifIssue]:
     if file_pattern:
         filtered = [i for i in filtered if fnmatch.fnmatch(i.file_path, file_pattern)]
-        logger.info(f"🔍 Filtered to {len(filtered)} issues in files matching '{file_pattern}'")
+        logger.info(
+            f"🔍 Filtered to {len(filtered)} issues in files matching '{file_pattern}'"
+        )
     return filtered
 
 
-def _apply_exclude_rule_filter(exclude_rules: list[str], filtered: list[SarifIssue]) -> list[SarifIssue]:
+def _apply_exclude_rule_filter(
+    exclude_rules: list[str], filtered: list[SarifIssue]
+) -> list[SarifIssue]:
     for rule in exclude_rules:
         filtered = [i for i in filtered if rule not in i.rule_id]
         logger.info(f"🔍 Excluded issues matching rule '{rule}'")
     return filtered
 
 
-def _apply_exclude_category_filter(exclude_categories: list[str], filtered: list[SarifIssue]) -> list[SarifIssue]:
+def _apply_exclude_category_filter(
+    exclude_categories: list[str], filtered: list[SarifIssue]
+) -> list[SarifIssue]:
     for cat in exclude_categories:
         filtered = [i for i in filtered if cat not in i.rule_category]
         logger.info(f"🔍 Excluded issues in category '{cat}'")
     return filtered
 
 
-def _apply_exclude_file_filter(exclude_files: list[str], filtered: list[SarifIssue]) -> list[SarifIssue]:
+def _apply_exclude_file_filter(
+    exclude_files: list[str], filtered: list[SarifIssue]
+) -> list[SarifIssue]:
     for pattern in exclude_files:
         filtered = [i for i in filtered if not fnmatch.fnmatch(i.file_path, pattern)]
         logger.info(f"🔍 Excluded issues in files matching '{pattern}'")
     return filtered
 
 
-def analyze(params: QltyParams) -> r[AnalysisReport]:
+def analyze(params: QltyParams) -> p.Result[AnalysisReport]:
     """Analyze SARIF quality reports."""
     issues_result = _collect_all_issues(params)
     if issues_result.failure:
@@ -213,7 +238,10 @@ def analyze(params: QltyParams) -> r[AnalysisReport]:
         logger.info("✅ No issues matched filters")
         return r[AnalysisReport].ok(AnalysisReport(issues=[]))
 
-    report = analyze_issues(filtered)
+    report_result = analyze_issues(filtered)
+    if report_result.failure:
+        return r[AnalysisReport].fail(report_result.error or "analysis failed")
+    report = report_result.unwrap()
 
     logger.info("\n" + report.generate_summary())
 
@@ -227,8 +255,7 @@ def analyze(params: QltyParams) -> r[AnalysisReport]:
 
 def main() -> None:
     app = create_app_with_common_params(
-        name="qlty",
-        help_text="Analyze SARIF quality reports.",
+        name="qlty", help_text="Analyze SARIF quality reports."
     )
     register_result_command(
         app,

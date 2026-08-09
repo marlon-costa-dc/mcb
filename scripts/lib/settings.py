@@ -24,9 +24,7 @@ class BaseMcbSettings(FlextSettings):
     ``MCB_LOG_LEVEL`` maps to ``log_level``.
     """
 
-    model_config: ClassVar[SettingsConfigDict] = (
-        FlextSettings.model_config.copy()
-    )
+    model_config: ClassVar[SettingsConfigDict] = FlextSettings.model_config.copy()
     model_config["env_prefix"] = c.ENV_PREFIX
     model_config["extra"] = "ignore"
     model_config["validate_assignment"] = True
@@ -62,9 +60,7 @@ class BaseCommandSettings(BaseMcbSettings):
     ``MCB_`` prefix while keeping the rest of the FLEXT settings lifecycle.
     """
 
-    model_config: ClassVar[SettingsConfigDict] = (
-        BaseMcbSettings.model_config.copy()
-    )
+    model_config: ClassVar[SettingsConfigDict] = BaseMcbSettings.model_config.copy()
     model_config["env_prefix"] = ""
 
 
@@ -76,18 +72,11 @@ class McbSettings(BaseMcbSettings):
     inputs/outputs without editing source.
     """
 
-    project_root: Path = Field(
-        default=Path("."),
-        description="Project root directory",
-    )
+    project_root: Path = Field(default=Path("."), description="Project root directory")
     k8s_dir: Path = Field(
-        default=Path("k8s"),
-        description="Kubernetes manifests directory",
+        default=Path("k8s"), description="Kubernetes manifests directory"
     )
-    docs_dir: Path = Field(
-        default=Path("docs"),
-        description="Documentation directory",
-    )
+    docs_dir: Path = Field(default=Path("docs"), description="Documentation directory")
     qlty_check_sarif: Path = Field(
         default=Path("qlty.check.current.sarif"),
         description="SARIF output path for qlty check",

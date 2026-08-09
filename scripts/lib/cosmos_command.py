@@ -3,6 +3,7 @@
 Copyright (c) 2025 MCB Contributors. All rights reserved.
 SPDX-License-Identifier: MIT
 """
+
 from __future__ import annotations
 
 import os
@@ -27,7 +28,11 @@ HEADER_END = "///"
 COMMAND_SUFFIXES = frozenset({".sh", ".py"})
 IGNORED_DIRS = frozenset({"__pycache__", "hooks", "legado", "lib"})
 MUTATION_REQUIRED_PARAMS = frozenset({"APPLY"})
-INCIDENT_MUTATION_REQUIRED_PARAMS = frozenset({"APPLY", "EMERGENCY", "BREAKING_GLASS_BEAD"})
+INCIDENT_MUTATION_REQUIRED_PARAMS = frozenset({
+    "APPLY",
+    "EMERGENCY",
+    "BREAKING_GLASS_BEAD",
+})
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPTS = ROOT / "scripts"
@@ -72,27 +77,37 @@ class Registry:
     def add(self, command: Command) -> None:
         by_what = self._commands.setdefault(command.verb, {})
         if command.what in by_what:
-            raise RegistryError(f"comando duplicado: {command.verb} WHAT={command.what}")
+            raise RegistryError(
+                f"comando duplicado: {command.verb} WHAT={command.what}"
+            )
         by_what[command.what] = command
         for alias in command.aliases:
             previous = self._aliases.get(alias)
             if previous and previous != command.verb:
-                raise RegistryError(f"alias duplicado: {alias} aponta para {previous} e {command.verb}")
+                raise RegistryError(
+                    f"alias duplicado: {alias} aponta para {previous} e {command.verb}"
+                )
             self._aliases[alias] = command.verb
 
     def validate(self) -> None:
         if not self._commands:
-            raise RegistryError("nenhum comando promovido encontrado em scripts/<verbo>/<WHAT>")
+            raise RegistryError(
+                "nenhum comando promovido encontrado em scripts/<verbo>/<WHAT>"
+            )
         for verb, commands in sorted(self._commands.items()):
             if "all" not in commands:
                 raise RegistryError(f"verbo '{verb}' sem WHAT=all")
             domains = {command.domain for command in commands.values()}
             if len(domains) != 1:
                 valid = ", ".join(sorted(domains))
-                raise RegistryError(f"verbo '{verb}' declara mais de um domain: {valid}")
+                raise RegistryError(
+                    f"verbo '{verb}' declara mais de um domain: {valid}"
+                )
             for command in commands.values():
                 if command.what != "all" and command.aliases:
-                    raise RegistryError(f"{command.path}: aliases devem ser declarados apenas em WHAT=all")
+                    raise RegistryError(
+                        f"{command.path}: aliases devem ser declarados apenas em WHAT=all"
+                    )
                 validate_command_contract(command)
             validate_all_choices(verb, commands)
         for alias in self._aliases:
@@ -119,7 +134,9 @@ class Registry:
         return commands[what]
 
     def aliases_for(self, verb: str) -> list[str]:
-        return sorted(alias for alias, target in self._aliases.items() if target == verb)
+        return sorted(
+            alias for alias, target in self._aliases.items() if target == verb
+        )
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -160,7 +177,9 @@ def run(command: Command) -> int:
     env = command_env(command)
     if command.path.suffix == ".py":
         return run_python(command, env)
-    return subprocess.run(["bash", str(command.path)], cwd=ROOT, env=env, check=False).returncode
+    return subprocess.run(
+        ["bash", str(command.path)], cwd=ROOT, env=env, check=False
+    ).returncode
 
 
 def run_python(command: Command, env: Mapping[str, str]) -> int:
@@ -219,7 +238,11 @@ def discover() -> Registry:
     registry = Registry()
     if not SCRIPTS.exists():
         raise RegistryError("diretorio scripts ausente")
-    verb_dirs = sorted(path for path in SCRIPTS.iterdir() if path.is_dir() and path.name not in IGNORED_DIRS)
+    verb_dirs = sorted(
+        path
+        for path in SCRIPTS.iterdir()
+        if path.is_dir() and path.name not in IGNORED_DIRS
+    )
     for verb_dir in verb_dirs:
         for path in sorted(verb_dir.iterdir()):
             if path.name == "__pycache__":
@@ -243,9 +266,13 @@ def load_command(path: Path, expected_verb: str) -> Command | None:
     verb = require_string(data, "verb", path)
     what = require_string(data, "what", path)
     if verb != expected_verb:
-        raise RegistryError(f"{path}: header verb={verb} diverge do diretorio {expected_verb}")
+        raise RegistryError(
+            f"{path}: header verb={verb} diverge do diretorio {expected_verb}"
+        )
     if what != path.stem:
-        raise RegistryError(f"{path}: header what={what} diverge do arquivo {path.stem}")
+        raise RegistryError(
+            f"{path}: header what={what} diverge do arquivo {path.stem}"
+        )
     return Command(
         verb=verb,
         what=what,
@@ -301,7 +328,9 @@ def parse_aliases(value: TomlValue | None, path: Path) -> tuple[str, ...]:
     return parse_string_list(value, "aliases", path)
 
 
-def parse_string_list(value: TomlValue | None, field: str, path: Path) -> tuple[str, ...]:
+def parse_string_list(
+    value: TomlValue | None, field: str, path: Path
+) -> tuple[str, ...]:
     if value is None:
         return ()
     if not isinstance(value, list):
@@ -361,16 +390,14 @@ def render_global_help(registry: Registry) -> str:
         aliases = registry.aliases_for(verb)
         suffix = f" (alias: {', '.join(aliases)})" if aliases else ""
         lines.append(f"  {verb:14} [{command.domain:12}] {command.summary}{suffix}")
-    lines.extend(
-        [
-            "",
-            "make <verbo> mostra o help do verbo e todos os WHAT.",
-            "make help WHAT=<verbo> mostra o mesmo help.",
-            "make help WHAT=<verbo>/<acao> ou make <verbo> WHAT=<acao> OPTIONS=Y mostra uma acao.",
-            "Comandos mutadores exigem APPLY=Y.",
-            "Novos comandos vivem em scripts/<verbo>/<WHAT>.sh|py com header cosmos-command.",
-        ]
-    )
+    lines.extend([
+        "",
+        "make <verbo> mostra o help do verbo e todos os WHAT.",
+        "make help WHAT=<verbo> mostra o mesmo help.",
+        "make help WHAT=<verbo>/<acao> ou make <verbo> WHAT=<acao> OPTIONS=Y mostra uma acao.",
+        "Comandos mutadores exigem APPLY=Y.",
+        "Novos comandos vivem em scripts/<verbo>/<WHAT>.sh|py com header cosmos-command.",
+    ])
     return "\n".join(lines)
 
 
@@ -378,30 +405,36 @@ def render_verb_help(registry: Registry, requested_verb: str) -> str:
     verb = registry.resolve_verb(requested_verb)
     aliases = registry.aliases_for(verb)
     alias_suffix = f" (alias: {', '.join(aliases)})" if aliases else ""
-    lines = [f"make {requested_verb} WHAT=<WHAT>{alias_suffix}", "", "WHAT disponiveis:"]
+    lines = [
+        f"make {requested_verb} WHAT=<WHAT>{alias_suffix}",
+        "",
+        "WHAT disponiveis:",
+    ]
     commands = registry.commands(verb)
     for what, command in sorted(commands.items()):
         marker = " [mutates]" if command.mutates else ""
         lines.append(f"  {what:20} [{command.domain:12}] {command.summary}{marker}")
-    command_params = [(what, command) for what, command in sorted(commands.items()) if command.params]
+    command_params = [
+        (what, command) for what, command in sorted(commands.items()) if command.params
+    ]
     if command_params:
         lines.extend(["", "Opcoes por WHAT:"])
         for what, command in command_params:
             lines.append(f"  {what:20} {format_params_inline(command.params)}")
-        lines.extend(
-            [
-                "",
-                "Detalhe de uma acao:",
-                f"  make help WHAT={requested_verb}/<WHAT>",
-                f"  make {requested_verb} WHAT=<WHAT> OPTIONS=Y",
-            ]
-        )
+        lines.extend([
+            "",
+            "Detalhe de uma acao:",
+            f"  make help WHAT={requested_verb}/<WHAT>",
+            f"  make {requested_verb} WHAT=<WHAT> OPTIONS=Y",
+        ])
     rules = sorted({rule for command in commands.values() for rule in command.rules})
     if rules:
         lines.extend(["", "Regras:"])
         for rule in rules:
             lines.append(f"  - {rule}")
-    examples = sorted({example_for(command, requested_verb) for command in commands.values()})
+    examples = sorted({
+        example_for(command, requested_verb) for command in commands.values()
+    })
     if examples:
         lines.extend(["", "Exemplos:"])
         for example in examples:
@@ -455,21 +488,21 @@ def render_dry_run(command: Command, requested_verb: str, what: str) -> str:
             shown = value if value else "<ausente>"
             required = "obrigatorio" if param.required else "opcional"
             choices = f" choices={','.join(param.choices)}" if param.choices else ""
-            lines.append(f"  {param.name:24} {shown:24} {required}{choices} - {param.help}")
+            lines.append(
+                f"  {param.name:24} {shown:24} {required}{choices} - {param.help}"
+            )
             if param.required and not value:
                 missing.append(param)
         if missing:
             lines.extend(["", "Faltando antes de executar:"])
             for param in missing:
                 lines.append(f"  {param.name}=<valor>  # {param.help}")
-    lines.extend(
-        [
-            "",
-            "Execucao canonica:",
-            f"  {example_for(command, requested_verb)}",
-            "  # repita com APPLY=Y somente depois de conferir dominio, escopo e bead.",
-        ]
-    )
+    lines.extend([
+        "",
+        "Execucao canonica:",
+        f"  {example_for(command, requested_verb)}",
+        "  # repita com APPLY=Y somente depois de conferir dominio, escopo e bead.",
+    ])
     return "\n".join(lines)
 
 
@@ -522,14 +555,20 @@ def validate_command_contract(command: Command) -> None:
         ensure_required_params(command, param_by_name, MUTATION_REQUIRED_PARAMS)
         apply_param = param_by_name.get("APPLY")
         if apply_param and "Y" not in apply_param.choices:
-            raise RegistryError(f"{command.path}: APPLY mutador deve declarar choices contendo Y")
+            raise RegistryError(
+                f"{command.path}: APPLY mutador deve declarar choices contendo Y"
+            )
     if command.domain == "incident" and command.mutates:
-        ensure_required_params(command, param_by_name, INCIDENT_MUTATION_REQUIRED_PARAMS)
+        ensure_required_params(
+            command, param_by_name, INCIDENT_MUTATION_REQUIRED_PARAMS
+        )
 
 
 def validate_all_choices(verb: str, commands: Mapping[str, Command]) -> None:
     all_command = commands["all"]
-    what_param = next((param for param in all_command.params if param.name == "WHAT"), None)
+    what_param = next(
+        (param for param in all_command.params if param.name == "WHAT"), None
+    )
     if what_param is None or not what_param.choices:
         return
     declared = tuple(sorted(what_param.choices))
@@ -541,11 +580,15 @@ def validate_all_choices(verb: str, commands: Mapping[str, Command]) -> None:
         )
 
 
-def ensure_required_params(command: Command, params: Mapping[str, Param], names: Iterable[str]) -> None:
+def ensure_required_params(
+    command: Command, params: Mapping[str, Param], names: Iterable[str]
+) -> None:
     for name in names:
         param = params.get(name)
         if param is None or not param.required:
-            raise RegistryError(f"{command.path}: parametro {name} deve ser obrigatorio")
+            raise RegistryError(
+                f"{command.path}: parametro {name} deve ser obrigatorio"
+            )
 
 
 def param_value(param: Param, command: Command) -> str:
@@ -558,9 +601,14 @@ def require_dispatched(path: Path) -> None:
     """Fail if a promoted Python command is run outside scripts/dispatch.py."""
 
     expected = str(path.resolve())
-    if os.environ.get("COSMOS_COMMAND_DISPATCHED") == "Y" and os.environ.get("COSMOS_COMMAND_PATH") == expected:
+    if (
+        os.environ.get("COSMOS_COMMAND_DISPATCHED") == "Y"
+        and os.environ.get("COSMOS_COMMAND_PATH") == expected
+    ):
         return
-    logger.error("ERRO: comandos publicos devem ser executados via make <verbo> WHAT=<acao>")
+    logger.error(
+        "ERRO: comandos publicos devem ser executados via make <verbo> WHAT=<acao>"
+    )
     raise SystemExit(2)
 
 

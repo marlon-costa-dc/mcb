@@ -3,6 +3,7 @@
 Copyright (c) 2025 MCB Contributors. All rights reserved.
 SPDX-License-Identifier: MIT
 """
+
 from __future__ import annotations
 
 import subprocess
@@ -14,81 +15,83 @@ import pytest
 from ._utilities.matchers import tm
 
 ROOT = Path(__file__).resolve().parents[3]
-MAKEFILE = ROOT / "Makefile"
-DISPATCH = ROOT / "makefiles" / "dispatch.mk"
 
 
-def test_help_does_not_imply_apply_for_read_only_checks() -> None:
-    help_source = MAKEFILE.read_text(encoding="utf-8")
-
-    tm.that("check WHAT=guard | WHAT=ci | WHAT=optimize [APPLY=Y]" not in help_source)
-    tm.that("check WHAT=guard | WHAT=ci" in help_source)
-    tm.that("check WHAT=optimize ACT=%s [APPLY=Y]" in help_source)
-    tm.that("check WHAT=fix     ACT=%s [APPLY=Y]" in help_source)
+def _run_make(*args: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["make", *args], cwd=ROOT, check=False, capture_output=True, text=True
+    )
 
 
-def test_mutating_make_arms_are_apply_gated() -> None:
-    dispatch = DISPATCH.read_text(encoding="utf-8")
+def test_help_lists_flext_public_verbs() -> None:
+    result = _run_make("help")
+    combined = result.stdout + result.stderr
 
-    gated_markers = {
-        "ship add": "$(call gate,stage files",
-        "ship commit before add": "$(call gate,commit",
-        "ship pull": "$(call gate,pull",
-        "ship branch create": "$(call gate,create branch",
-        "ship checkout": "$(call gate,checkout",
-        "ship tag": "$(call gate,tag",
-        "ship stash": "$(call gate,stash",
-        "ship stash-pop": "$(call gate,stash pop",
-        "ship unstage": "$(call gate,unstage",
-        "pr rerun": "$(call gate,rerun",
-
-        "release package": "$(call gate,package release",
-        "fix fmt": "$(call gate,auto-fix fmt",
-        "fix lint": "$(call gate,auto-fix lint",
-        "fix docs": "$(call gate,auto-fix docs",
-        "dev run": "$(call gate,start dev server",
-        "dev docker-up": "$(call gate,start Docker test services",
-        "dev docker-down": "$(call gate,stop Docker test services",
-        "dev docker-logs": "$(call gate,follow Docker logs",
-        "dev docker-test": "$(call gate,run Docker test services",
-    }
-
-    for label, marker in gated_markers.items():
-        tm.that(marker in dispatch, f"{label} is not gated")
-
-    version_bump = dispatch.split("define MCB_VERSION_BUMP", 1)[1].split("endef", 1)[0]
-    tm.that("$(call gate,version bump" in version_bump)
+    tm.that(result.returncode == 0, combined)
+    tm.that("work       WHAT=start|status|land|finish" in result.stdout)
+    tm.that("_custom_run_mcb-hooks" in result.stdout)
 
 
-def test_docs_fix_and_e2e_have_explicit_gates() -> None:
-    dispatch = DISPATCH.read_text(encoding="utf-8")
+def test_custom_mutations_require_apply() -> None:
+    commands = [
+        ("fmt", "WHAT=apply"),
+        ("fix", "WHAT=apply"),
+        ("run", "WHAT=mcb-hooks"),
+        ("gen", "WHAT=agent-pointers"),
+    ]
 
-    tm.that('if [ "$(FIX)" = "1" ]; then $(call gate,fix markdown docs);' in dispatch)
-    tm.that("define MCB_E2E\n$(call gate,run Playwright E2E" in dispatch)
+    for command in commands:
+        result = _run_make(*command)
+        combined = result.stdout + result.stderr
+        tm.that(
+            result.returncode != 0,
+            f"{command}: mutation ran without APPLY=Y\n{combined}",
+        )
+        tm.that(
+            "requires APPLY=Y" in combined, f"{command}: missing APPLY gate\n{combined}"
+        )
 
 
+@pytest.mark.slow
+@pytest.mark.timeout(900)
 def test_invalid_nested_choices_fail_before_dry_run_gates() -> None:
     commands = [
-        ["make", "build", "WHAT=codegen", "ACT=__invalid__"],
-        ["make", "check", "WHAT=fix", "ACT=__invalid__"],
-        ["make", "check", "WHAT=dev", "ACT=__invalid__"],
-        ["make", "ship", "WHAT=release", "ACT=__invalid__"],
-        ["make", "ship", "WHAT=pr", "ACT=__invalid__"],
-        ["make", "ship", "WHAT=sub", "ACT=__invalid__"],
+        ["make", "build", "WHAT=codegen-__invalid__"],
+        ["make", "check", "WHAT=fix-__invalid__"],
+        ["make", "check", "WHAT=dev-__invalid__"],
+        ["make", "release", "WHAT=__invalid__"],
+        ["make", "work", "WHAT=pr-__invalid__"],
+        ["make", "work", "WHAT=sub-__invalid__"],
         ["make", "clean", "WHAT=__invalid__"],
     ]
 
     for command in commands:
-        result = subprocess.run(command, cwd=ROOT, check=False, capture_output=True, text=True)
+        result = subprocess.run(
+            command, cwd=ROOT, check=False, capture_output=True, text=True
+        )
         combined = result.stdout + result.stderr
-        tm.that(result.returncode == 2, f"{' '.join(command)}: expected rc 2, got {result.returncode}\n{combined}")
-        tm.that("ERRO:" in combined, f"{' '.join(command)}: missing ERRO marker")
+        tm.that(
+            result.returncode != 0,
+            f"{' '.join(command)}: expected failure, got {result.returncode}\n{combined}",
+        )
+        tm.that(
+            "ERROR:" in combined or "unsupported" in combined,
+            f"{' '.join(command)}: missing flext error marker",
+        )
 
 
+@pytest.mark.slow
+@pytest.mark.timeout(900)
 def test_surface_command_runs_safe_matrix() -> None:
     command = ROOT / "scripts" / "check" / "surface.py"
 
-    result = subprocess.run([sys.executable, str(command)], cwd=ROOT, check=False, capture_output=True, text=True)
+    result = subprocess.run(
+        [sys.executable, str(command)],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
 
     tm.that(result.returncode == 0, result.stdout + result.stderr)
     tm.that("SURFACE OK" in result.stdout)

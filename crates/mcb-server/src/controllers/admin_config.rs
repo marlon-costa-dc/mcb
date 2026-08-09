@@ -1,3 +1,5 @@
+use loco_rs::prelude::*;
+
 /// Default config directory when `MCB_PRO_ADMIN_CONFIG_DIR` is not set.
 const DEFAULT_PRO_ADMIN_CONFIG_DIR: &str = "config/pro_admin";
 

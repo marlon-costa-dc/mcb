@@ -89,7 +89,9 @@ def run(settings: CheckSourceRefsSettings) -> r[int]:
 
 
 def main() -> None:
-    app = create_app_with_common_params(name="check-source-refs", help_text="Check broken source references in docs.")
+    app = create_app_with_common_params(
+        name="check-source-refs", help_text="Check broken source references in docs."
+    )
     register_result_command(
         app,
         name="run",

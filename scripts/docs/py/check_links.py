@@ -32,10 +32,7 @@ class CheckLinksSettings(BaseMcbSettings):
 
 
 def _process_links(
-    links: list[tuple[str, str]],
-    filepath: str,
-    rel_filepath: str,
-    project_root: str,
+    links: list[tuple[str, str]], filepath: str, rel_filepath: str, project_root: str
 ) -> tuple[list[tuple[str, str, str, str]], int]:
     broken_in_file: list[tuple[str, str, str, str]] = []
     checked_in_file = 0
@@ -51,12 +48,19 @@ def _process_links(
             target = os.path.normpath(os.path.join(os.path.dirname(filepath), link))
 
         if not os.path.exists(target):
-            broken_in_file.append((rel_filepath, text, link, os.path.relpath(target, project_root)))
+            broken_in_file.append((
+                rel_filepath,
+                text,
+                link,
+                os.path.relpath(target, project_root),
+            ))
 
     return broken_in_file, checked_in_file
 
 
-def _check_files(docs_dir: str, project_root: str) -> tuple[list[tuple[str, str, str, str]], int, int]:
+def _check_files(
+    docs_dir: str, project_root: str
+) -> tuple[list[tuple[str, str, str, str]], int, int]:
     broken: list[tuple[str, str, str, str]] = []
     checked_files = 0
     checked_links = 0
@@ -75,7 +79,9 @@ def _check_files(docs_dir: str, project_root: str) -> tuple[list[tuple[str, str,
             continue
 
         links = utils.extract_links(content)
-        file_broken, file_links = _process_links(links, filepath, rel_filepath, project_root)
+        file_broken, file_links = _process_links(
+            links, filepath, rel_filepath, project_root
+        )
 
         broken.extend(file_broken)
         checked_links += file_links
@@ -109,7 +115,9 @@ def run(settings: CheckLinksSettings) -> r[int]:
 
 
 def main() -> None:
-    app = create_app_with_common_params(name="check-links", help_text="Check broken internal links in docs.")
+    app = create_app_with_common_params(
+        name="check-links", help_text="Check broken internal links in docs."
+    )
     register_result_command(
         app,
         name="run",

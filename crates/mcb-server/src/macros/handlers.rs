@@ -6,10 +6,10 @@
 //! Used by `handlers/memory/` and `handlers/entities/` to reduce
 //! repetitive match + early-return boilerplate.
 
-/// Extract a value from a boxed tool-result error, returning it as `Ok(err)`.
+/// Extract a value from a `Result<T, Box<CallToolResult>>`, returning the error as `Ok(err)`.
 ///
-/// The `require_*` helpers box tool-level errors so parser helpers stay small.
-/// This macro converts the match:
+/// The `require_*` helpers return `Result<T, Box<CallToolResult>>` where the `Err` variant
+/// is a tool-level error (not a protocol error). This macro converts the match:
 ///
 /// ```ignore
 /// let value = match require_str(data, "field") {

@@ -39,13 +39,17 @@ impl StdioServerShutdown {
 /// Build the embedding provider config from the resolved `AppConfig`.
 fn build_embedding_config(
     app_config: &mcb_infrastructure::config::app::AppConfig,
-) -> Result<EmbeddingProviderConfig, loco_rs::Error> {
+) -> Result<EmbeddingProviderConfig, Box<loco_rs::Error>> {
     let provider = app_config
         .providers
         .embedding
         .provider
         .as_deref()
-        .ok_or_else(|| loco_rs::Error::string("Embedding provider is not configured"))?;
+        .ok_or_else(|| {
+            Box::new(loco_rs::Error::string(
+                "Embedding provider is not configured",
+            ))
+        })?;
     let mut embed_cfg = EmbeddingProviderConfig::new(provider);
     if let Some(ref v) = app_config.providers.embedding.cache_dir {
         embed_cfg = embed_cfg.with_cache_dir(v.clone());
@@ -68,13 +72,17 @@ fn build_embedding_config(
 /// Build the vector store provider config from the resolved `AppConfig`.
 fn build_vector_store_config(
     app_config: &mcb_infrastructure::config::app::AppConfig,
-) -> Result<VectorStoreProviderConfig, loco_rs::Error> {
+) -> Result<VectorStoreProviderConfig, Box<loco_rs::Error>> {
     let provider = app_config
         .providers
         .vector_store
         .provider
         .as_deref()
-        .ok_or_else(|| loco_rs::Error::string("Vector store provider is not configured"))?;
+        .ok_or_else(|| {
+            Box::new(loco_rs::Error::string(
+                "Vector store provider is not configured",
+            ))
+        })?;
     let mut vec_cfg = VectorStoreProviderConfig::new(provider);
     if let Some(ref v) = app_config.providers.vector_store.address {
         vec_cfg = vec_cfg.with_uri(v.clone());
@@ -94,23 +102,25 @@ fn stdio_enabled(mcp: &mcb_infrastructure::config::app::McpConfig) -> bool {
 }
 
 /// Resolve and validate `AppConfig` from Loco settings via the config provider.
-fn resolve_app_config(ctx: &AppContext) -> Result<mcb_infrastructure::config::app::AppConfig> {
-    let settings = ctx
-        .config
-        .settings
-        .clone()
-        .ok_or_else(|| loco_rs::Error::string("missing loco settings for AppConfig"))?;
+fn resolve_app_config(
+    ctx: &AppContext,
+) -> Result<mcb_infrastructure::config::app::AppConfig, Box<loco_rs::Error>> {
+    let settings = ctx.config.settings.clone().ok_or_else(|| {
+        Box::new(loco_rs::Error::string(
+            "missing loco settings for AppConfig",
+        ))
+    })?;
 
     // Resolve config provider via CA/DI registry
     let config_provider = resolve_config_provider(&ConfigProviderConfig::new(
         mcb_utils::constants::DEFAULT_CONFIG_PROVIDER,
     ))
-    .map_err(|e| loco_rs::Error::string(&e.to_string()))?;
+    .map_err(|e| Box::new(loco_rs::Error::string(&e.to_string())))?;
 
     // Deserialize + validate via resolved provider (production path)
     let app_config_any = config_provider
         .deserialize_from_value(&settings)
-        .map_err(|e| loco_rs::Error::string(&format!("AppConfig: {e}")))?;
+        .map_err(|e| Box::new(loco_rs::Error::string(&format!("AppConfig: {e}"))))?;
 
     let app_config = *app_config_any
         .downcast::<mcb_infrastructure::config::app::AppConfig>()
@@ -123,7 +133,7 @@ fn resolve_app_config(ctx: &AppContext) -> Result<mcb_infrastructure::config::ap
 fn build_resolution_ctx(
     ctx: &AppContext,
     app_config: mcb_infrastructure::config::app::AppConfig,
-) -> Result<ServiceResolutionContext> {
+) -> Result<ServiceResolutionContext, Box<loco_rs::Error>> {
     let event_bus = mcb_domain::registry::events::resolve_event_bus_provider(
         &mcb_domain::registry::events::EventBusProviderConfig::new(
             app_config
@@ -134,15 +144,15 @@ fn build_resolution_ctx(
                 .provider_name(),
         ),
     )
-    .map_err(|e| loco_rs::Error::string(&e.to_string()))?;
+    .map_err(|e| Box::new(loco_rs::Error::string(&e.to_string())))?;
 
     // Resolve providers via mcb-domain registries — no infrastructure helpers
     let embedding_provider = resolve_embedding_provider(&build_embedding_config(&app_config)?)
-        .map_err(|e| loco_rs::Error::string(&e.to_string()))?;
+        .map_err(|e| Box::new(loco_rs::Error::string(&e.to_string())))?;
 
     let vector_store_provider =
         resolve_vector_store_provider(&build_vector_store_config(&app_config)?)
-            .map_err(|e| loco_rs::Error::string(&e.to_string()))?;
+            .map_err(|e| Box::new(loco_rs::Error::string(&e.to_string())))?;
 
     Ok(ServiceResolutionContext {
         db: Arc::new(ctx.db.clone()),
@@ -158,7 +168,9 @@ fn build_resolution_ctx(
 /// Centralizes config-provider deserialization, provider resolution, and the
 /// bootstrap wiring so `after_routes` reads as a short orchestration. Returns
 /// the bootstrap plus whether the stdio transport should be started.
-fn build_bootstrap(ctx: &AppContext) -> Result<(mcb_server::state::McpServerBootstrap, bool)> {
+fn build_bootstrap(
+    ctx: &AppContext,
+) -> Result<(mcb_server::state::McpServerBootstrap, bool), Box<loco_rs::Error>> {
     let app_config = resolve_app_config(ctx)?;
 
     let execution_flow = if app_config.mcp.stdio_only {
@@ -176,7 +188,7 @@ fn build_bootstrap(ctx: &AppContext) -> Result<(mcb_server::state::McpServerBoot
                 mcb_utils::constants::DEFAULT_HYBRID_SEARCH_PROVIDER,
             ),
         )
-        .map_err(|e| loco_rs::Error::string(&e.to_string()))?;
+        .map_err(|e| Box::new(loco_rs::Error::string(&e.to_string())))?;
 
     let bootstrap = build_mcp_server_bootstrap(
         &resolution_ctx,
@@ -188,7 +200,7 @@ fn build_bootstrap(ctx: &AppContext) -> Result<(mcb_server::state::McpServerBoot
             execution_flow,
         },
     )
-    .map_err(|e| loco_rs::Error::string(&e.to_string()))?;
+    .map_err(|e| Box::new(loco_rs::Error::string(&e.to_string())))?;
     Ok((bootstrap, start_stdio))
 }
 
@@ -223,7 +235,7 @@ impl Initializer for McpServerInitializer {
     async fn after_routes(&self, router: AxumRouter, ctx: &AppContext) -> Result<AxumRouter> {
         mcb_domain::infra::logging::set_log_fn(mcb_infrastructure::logging::tracing_log_fn);
 
-        let (bootstrap, start_stdio) = build_bootstrap(ctx)?;
+        let (bootstrap, start_stdio) = build_bootstrap(ctx).map_err(|e| *e)?;
 
         if start_stdio {
             let (shutdown_tx, shutdown_rx) = tokio::sync::watch::channel(false);

@@ -11,14 +11,7 @@ from typing import Any, cast
 import pytest
 from pydantic import BaseModel
 
-from ..core import (
-    McbResult,
-    McbService,
-    configure_logging,
-    get_logger,
-    r,
-    s,
-)
+from ..core import McbResult, McbService, configure_logging, get_logger, r, s
 from ._utilities.matchers import tm
 
 
@@ -167,20 +160,12 @@ class TestResult:
         tm.fail(invalid)
 
     def test_accumulate_errors(self) -> None:
-        results = [
-            r[int].ok(1),
-            r[int].ok(2),
-            r[int].ok(3),
-        ]
+        results = [r[int].ok(1), r[int].ok(2), r[int].ok(3)]
         combined = McbResult.accumulate_errors(*results)
         tm.ok(combined)
         assert list(combined.value) == [1, 2, 3]
 
-        mixed = [
-            r[int].ok(1),
-            r[int].fail("a"),
-            r[int].fail("b"),
-        ]
+        mixed = [r[int].ok(1), r[int].fail("a"), r[int].fail("b")]
         combined = McbResult.accumulate_errors(*mixed)
         tm.fail(combined, "a")
         tm.fail(combined, "b")
@@ -202,18 +187,14 @@ class TestResult:
 
 class TestSettings:
     def test_base_settings_read_env_with_prefix(
-        self,
-        monkeypatch: pytest.MonkeyPatch,
-        settings_factory: Any,
+        self, monkeypatch: pytest.MonkeyPatch, settings_factory: Any
     ) -> None:
         monkeypatch.setenv("MCB_LOG_LEVEL", "debug")
         settings = settings_factory(log_level="info")
         assert settings.log_level == "debug"
 
     def test_base_settings_ignore_extra_env(
-        self,
-        monkeypatch: pytest.MonkeyPatch,
-        settings_factory: Any,
+        self, monkeypatch: pytest.MonkeyPatch, settings_factory: Any
     ) -> None:
         monkeypatch.setenv("MCB_UNKNOWN_VAR", "ignored")
         settings = settings_factory(log_level="info")

@@ -30,17 +30,15 @@ def settings_factory() -> Callable[..., BaseMcbSettings]:
     """Return a factory that creates a fresh settings subclass instance."""
 
     def _make(**fields: Any) -> BaseMcbSettings:
-        defs: dict[str, Any] = {name: (type(value), value) for name, value in fields.items()}
+        defs: dict[str, Any] = {
+            name: (type(value), value) for name, value in fields.items()
+        }
         _Settings = cast(
             type[BaseMcbSettings],
-            create_model(
-                "_Settings",
-                __base__=BaseMcbSettings,
-                **defs,
-            ),
+            create_model("_Settings", __base__=BaseMcbSettings, **defs),
         )
         _Settings.model_rebuild()
-        return cast(BaseMcbSettings, _Settings.fetch_global())
+        return _Settings.fetch_global()
 
     return _make
 

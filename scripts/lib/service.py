@@ -20,8 +20,7 @@ class McbScriptsService(FlextService):
     settings_type: Annotated[
         type | None,
         Field(
-            exclude=True,
-            description="Settings class used to initialize the service.",
+            exclude=True, description="Settings class used to initialize the service."
         ),
     ] = BaseMcbSettings
 

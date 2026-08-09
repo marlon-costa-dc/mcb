@@ -28,6 +28,12 @@ test-threads = 1
 filter = 'test(test_full_validation_report)'
 slow-timeout = { period = "120s", terminate-after = 2 }
 
+# Quality-validator unit tests scan the live workspace; on a large tree they
+# exceed the default 180s slow-timeout during pre-commit unit runs.
+[[profile.default.overrides]]
+filter = 'test(/test_validate_(with_specific_validator|mcb_workspace_quality)/)'
+slow-timeout = { period = "120s", terminate-after = 3 }
+
 [profile.ci]
 # CI/pre-push profile: controlled parallelism, longer timeout, fail fast.
 test-threads = 4
@@ -42,6 +48,10 @@ test-threads = 1
 [[profile.ci.overrides]]
 filter = 'test(test_full_validation_report)'
 slow-timeout = { period = "240s", terminate-after = 2 }
+
+[[profile.ci.overrides]]
+filter = 'test(/test_validate_(with_specific_validator|mcb_workspace_quality)/)'
+slow-timeout = { period = "120s", terminate-after = 3 }
 
 # Default test groups: serial group for tests with shared resources.
 [[profile.default.test-groups]]

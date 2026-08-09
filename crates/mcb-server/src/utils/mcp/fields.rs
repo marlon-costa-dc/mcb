@@ -13,7 +13,8 @@ pub fn require_str(data: &Map<String, Value>, key: &str) -> Result<String, Box<C
     data.get(key)
         .and_then(Value::as_str)
         .map(str::to_owned)
-        .ok_or_else(|| Box::new(tool_error(format!("Missing required field: {key}"))))
+        .ok_or_else(|| tool_error(format!("Missing required field: {key}")))
+        .map_err(Box::new)
 }
 
 /// Requires an i64 value from a JSON object, returning an error if missing.
@@ -23,7 +24,8 @@ pub fn require_str(data: &Map<String, Value>, key: &str) -> Result<String, Box<C
 pub fn require_i64(data: &Map<String, Value>, key: &str) -> Result<i64, Box<CallToolResult>> {
     data.get(key)
         .and_then(Value::as_i64)
-        .ok_or_else(|| Box::new(tool_error(format!("Missing required field: {key}"))))
+        .ok_or_else(|| tool_error(format!("Missing required field: {key}")))
+        .map_err(Box::new)
 }
 
 /// Requires an i32 value from a JSON object, returning an error if missing or out of range.
@@ -34,7 +36,8 @@ pub fn require_i32(data: &Map<String, Value>, key: &str) -> Result<i32, Box<Call
     data.get(key)
         .and_then(Value::as_i64)
         .and_then(|value| value.try_into().ok())
-        .ok_or_else(|| Box::new(tool_error(format!("Missing required field: {key}"))))
+        .ok_or_else(|| tool_error(format!("Missing required field: {key}")))
+        .map_err(Box::new)
 }
 
 /// Requires a boolean value from a JSON object, returning an error if missing.
@@ -44,7 +47,8 @@ pub fn require_i32(data: &Map<String, Value>, key: &str) -> Result<i32, Box<Call
 pub fn require_bool(data: &Map<String, Value>, key: &str) -> Result<bool, Box<CallToolResult>> {
     data.get(key)
         .and_then(Value::as_bool)
-        .ok_or_else(|| Box::new(tool_error(format!("Missing required field: {key}"))))
+        .ok_or_else(|| tool_error(format!("Missing required field: {key}")))
+        .map_err(Box::new)
 }
 
 /// Extracts an optional string value from a JSON object.

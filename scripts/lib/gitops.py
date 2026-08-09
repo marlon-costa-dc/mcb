@@ -3,6 +3,7 @@
 Copyright (c) 2025 MCB Contributors. All rights reserved.
 SPDX-License-Identifier: MIT
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -12,7 +13,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import cast
 
-from flext_core import FlextResult
+from flext_core import FlextResult, p
 from kubernetes_validate import validate_resource
 from qlty.model import SarifIssue, Severity
 from qlty.report import AnalysisReport, analyze_issues
@@ -20,17 +21,15 @@ from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
 from ruamel.yaml.error import YAMLError
 
-from lib.core import get_logger, r
+from lib.core import get_logger
 
 logger = get_logger(__name__)
 
-KUSTOMIZE_FILES = frozenset(
-    {
-        "kustomization.yaml",
-        "kustomization.yml",
-        "Kustomization",
-    }
-)
+KUSTOMIZE_FILES = frozenset({
+    "kustomization.yaml",
+    "kustomization.yml",
+    "Kustomization",
+})
 YAML_SUFFIXES = frozenset({".yaml", ".yml"})
 CACHE_DIR = Path(".gitops-cache")
 DEFAULT_KUBE_VERSION = "1.32.0"
@@ -92,13 +91,15 @@ def discover_targets(root: Path) -> list[GitOpsTarget]:
     return unique
 
 
-def summarize(root: Path) -> FlextResult[GitOpsSummary]:
+def summarize(root: Path) -> p.Result[GitOpsSummary]:
     """Return a discovery summary for GitOps targets below ``root``."""
 
     targets = discover_targets(root)
     report_result = analyze(root)
     if report_result.failure:
-        return FlextResult[GitOpsSummary].fail(report_result.error or "gitops analysis failed")
+        return FlextResult[GitOpsSummary].fail(
+            report_result.error or "gitops analysis failed"
+        )
     report = report_result.unwrap()
 
     if report.total_issues:
@@ -129,7 +130,7 @@ def summarize(root: Path) -> FlextResult[GitOpsSummary]:
     )
 
 
-def analyze(root: Path) -> r[AnalysisReport]:
+def analyze(root: Path) -> p.Result[AnalysisReport]:
     """Analyze GitOps source manifests through the existing qlty report model."""
 
     issues = policy_issues(root) + rendered_issues(root)
@@ -145,12 +146,7 @@ def policy_issues(root: Path) -> list[SarifIssue]:
             documents = _load_yaml_documents(path)
         except YAMLError as exc:
             issues.append(
-                _issue(
-                    "gitops:yaml-parse",
-                    f"YAML parse error: {exc}",
-                    path,
-                    1,
-                )
+                _issue("gitops:yaml-parse", f"YAML parse error: {exc}", path, 1)
             )
             continue
         for document in documents:
@@ -266,11 +262,7 @@ def _render_target(target: GitOpsTarget) -> str | None:
 
     try:
         result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=60,
+            cmd, capture_output=True, text=True, check=False, timeout=60
         )
     except FileNotFoundError:
         logger.warning(f"{target.kind} CLI not installed; skipping {target.path}")
@@ -280,7 +272,9 @@ def _render_target(target: GitOpsTarget) -> str | None:
         return None
 
     if result.returncode != 0:
-        logger.warning(f"{target.kind} render failed for {target.path}: {result.stderr.strip()}")
+        logger.warning(
+            f"{target.kind} render failed for {target.path}: {result.stderr.strip()}"
+        )
         return None
     return result.stdout
 
@@ -288,7 +282,11 @@ def _render_target(target: GitOpsTarget) -> str | None:
 def _yaml_files(root: Path) -> list[Path]:
     if not root.exists():
         return []
-    return sorted(path for path in root.rglob("*") if path.is_file() and path.suffix in YAML_SUFFIXES)
+    return sorted(
+        path
+        for path in root.rglob("*")
+        if path.is_file() and path.suffix in YAML_SUFFIXES
+    )
 
 
 def _load_yaml_documents(path: Path) -> list[YamlNode]:
@@ -301,7 +299,9 @@ def _image_references(node: YamlNode) -> list[ImageReference]:
     if isinstance(node, CommentedMap):
         image = node.get("image")
         if isinstance(image, str):
-            references.append(ImageReference(value=image, line=_line_for_key(node, "image")))
+            references.append(
+                ImageReference(value=image, line=_line_for_key(node, "image"))
+            )
         for child in node.values():
             references.extend(_image_references(cast("YamlNode", child)))
     elif isinstance(node, CommentedSeq):

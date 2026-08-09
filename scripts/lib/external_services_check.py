@@ -4,6 +4,7 @@
 Copyright (c) 2025 MCB Contributors. All rights reserved.
 SPDX-License-Identifier: MIT
 """
+
 from __future__ import annotations
 
 import socket
@@ -50,7 +51,9 @@ def main() -> int:
     """Print availability summary and exit 0 only if all configured services are up."""
     services = load_services()
     if not services:
-        print("No external test services configured in config/tests.toml; skipping external test group.")
+        print(
+            "No external test services configured in config/tests.toml; skipping external test group."
+        )
         return 1
 
     print("External service availability:")
@@ -67,7 +70,9 @@ def main() -> int:
         print("All configured external services are available.")
         return 0
 
-    print("One or more external services are unavailable; skipping external test group.")
+    print(
+        "One or more external services are unavailable; skipping external test group."
+    )
     return 1
 
 

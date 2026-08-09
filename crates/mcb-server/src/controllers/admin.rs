@@ -43,7 +43,7 @@ pub async fn config(
     )
     .await
     .map_err(map_auth_error)?;
-    format::json(load_admin_config().map_err(|error| *error)?)
+    format::json(load_admin_config().map_err(|e| *e)?)
 }
 
 /// Returns dashboard series data for the requested graph.
@@ -131,7 +131,7 @@ fn map_auth_error(err: crate::auth::AuthError) -> loco_rs::errors::Error {
 ///
 /// Fails when config cannot be loaded or serialized.
 pub async fn config_via_middleware(Extension(_state): Extension<McbState>) -> Result<Response> {
-    format::json(load_admin_config().map_err(|error| *error)?)
+    format::json(load_admin_config().map_err(|e| *e)?)
 }
 
 /// Registers admin routes under `/admin`.

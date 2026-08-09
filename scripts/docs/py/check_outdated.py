@@ -55,9 +55,7 @@ def _is_suppressed(line: str) -> bool:
 
 
 def _process_lines(
-    lines: list[str],
-    rel_filepath: str,
-    outdated_patterns: list[tuple[str, str]],
+    lines: list[str], rel_filepath: str, outdated_patterns: list[tuple[str, str]]
 ) -> list[tuple[str, int, str, str]]:
     issues_in_file: list[tuple[str, int, str, str]] = []
     for i, line in enumerate(lines, 1):
@@ -72,11 +70,15 @@ def _process_lines(
     return issues_in_file
 
 
-def _check_files(docs_dir: str, project_root: str) -> tuple[list[tuple[str, int, str, str]], int]:
+def _check_files(
+    docs_dir: str, project_root: str
+) -> tuple[list[tuple[str, int, str, str]], int]:
     issues: list[tuple[str, int, str, str]] = []
     checked = 0
 
-    md_files = utils.find_md_files(docs_dir, exclude_dirs={".git", "fixtures", "archive"})
+    md_files = utils.find_md_files(
+        docs_dir, exclude_dirs={".git", "fixtures", "archive"}
+    )
 
     for filepath in md_files:
         rel_filepath = os.path.relpath(filepath, project_root)
@@ -122,7 +124,9 @@ def run(settings: CheckOutdatedSettings) -> r[int]:
 
 
 def main() -> None:
-    app = create_app_with_common_params(name="check-outdated", help_text="Check outdated content in docs.")
+    app = create_app_with_common_params(
+        name="check-outdated", help_text="Check outdated content in docs."
+    )
     register_result_command(
         app,
         name="run",

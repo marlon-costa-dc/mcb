@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import NamedTuple
 
 import typer
-from flext_core import FlextResult
+from flext_core import FlextResult, p
 from pydantic import BaseModel
 
 from lib.cli import create_app_with_common_params, register_result_command
@@ -62,8 +62,7 @@ def render_all() -> dict[str, str]:
         "CONVENTIONS.md": _pointer("MCB — Conventions (Aider)", "AGENTS.md"),
         "codex.md": _pointer("Codex Instructions — MCB", "AGENTS.md"),
         ".github/copilot-instructions.md": _pointer(
-            "Copilot Instructions — MCB",
-            "../AGENTS.md",
+            "Copilot Instructions — MCB", "../AGENTS.md"
         ),
         ".continue/rules/mcb.md": _frontmatter_pointer(
             "MCB — Continue.dev Rules",
@@ -117,7 +116,7 @@ def sync(root: Path, *, check: bool) -> SyncResult:
     return SyncResult(changed_paths)
 
 
-def generate(params: AgentPointerParams) -> FlextResult[SyncResult]:
+def generate(params: AgentPointerParams) -> p.Result[SyncResult]:
     """Generate or check agent pointer files."""
     result = sync(params.root.resolve(), check=params.check)
     if result.changed_paths:
@@ -134,8 +133,7 @@ def generate(params: AgentPointerParams) -> FlextResult[SyncResult]:
 
 def main() -> None:
     app = create_app_with_common_params(
-        name="agent-pointers",
-        help_text="Synchronize generated agent pointer files.",
+        name="agent-pointers", help_text="Synchronize generated agent pointer files."
     )
     register_result_command(
         app,
