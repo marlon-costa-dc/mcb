@@ -9,10 +9,9 @@ from __future__ import annotations
 from typing import Any, cast
 
 import pytest
-from flext_core import FlextModelsPydantic as fmp
+from pydantic import BaseModel
 
 from ..core import (
-    McbLogger,
     McbResult,
     McbService,
     configure_logging,
@@ -156,7 +155,7 @@ class TestResult:
         assert isinstance(with_exception.exception, ValueError)
 
     def test_from_validation(self) -> None:
-        class User(fmp.BaseModel):
+        class User(BaseModel):
             name: str
             age: int
 
@@ -241,7 +240,7 @@ class TestSettings:
     def test_validate_overrides_rejects_unknown(self, settings_factory: Any) -> None:
         settings = settings_factory(name="default")
         with pytest.raises(ValueError, match="Unknown settings override"):
-            settings.validate_overrides(unknown="value")
+            settings.clone(unknown="value")
 
 
 class TestLogging:
@@ -254,7 +253,6 @@ class TestLogging:
     def test_logger_bind(self) -> None:
         configure_logging(json_format=False)
         logger = get_logger(__name__).bind(request_id="abc")
-        assert isinstance(logger, McbLogger)
         assert logger.info("bound.event").success
 
 

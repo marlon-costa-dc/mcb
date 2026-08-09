@@ -6,19 +6,7 @@ SPDX-License-Identifier: MIT
 
 from __future__ import annotations
 
-from typing import cast
-
-from flext_core import FlextLogger
-
-
-class McbLogger(FlextLogger):
-    """Structured logger facade wired to MCB defaults."""
-
-    @classmethod
-    def fetch_logger(cls, name: str | None = None) -> McbLogger:
-        """Fetch the canonical logger for a module as an ``McbLogger``."""
-        base = cast(FlextLogger, super().fetch_logger(name))
-        return cls(name, _bound_logger=base.logger)
+from flext_core import FlextUtilitiesLogging, p, u
 
 
 def configure_logging(json_format: bool = False) -> None:
@@ -28,12 +16,12 @@ def configure_logging(json_format: bool = False) -> None:
     plain key=value lines; set ``json_format=True`` (or ``MCB_LOG_JSON=1``) for
     JSON output suitable for CI aggregation.
     """
-    McbLogger.configure_structlog(console_renderer=not json_format)
+    FlextUtilitiesLogging.configure_structlog(console_renderer=not json_format)
 
 
-def get_logger(name: str) -> McbLogger:
+def get_logger(name: str) -> p.Logger:
     """Fetch a structured logger for the given module name."""
-    return McbLogger.fetch_logger(name)
+    return u.fetch_logger(name)
 
 
-__all__ = ["McbLogger", "configure_logging", "get_logger"]
+__all__ = ["configure_logging", "get_logger"]

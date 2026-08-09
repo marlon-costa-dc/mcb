@@ -40,16 +40,20 @@ struct ExecutionObservationStore {
 
 impl ValidatedExecutionData {
     /// Validate and extract all required fields from JSON data
-    fn validate(data: &serde_json::Map<String, serde_json::Value>) -> Result<Self, CallToolResult> {
+    fn validate(
+        data: &serde_json::Map<String, serde_json::Value>,
+    ) -> Result<Self, Box<CallToolResult>> {
         let command = require_str(data, "command")?;
         let exit_code = require_i32(data, "exit_code")?;
         let duration_ms = require_i64(data, "duration_ms")?;
         let success = require_bool(data, "success")?;
         let execution_type_str = require_str(data, "execution_type")?;
 
-        let execution_type = execution_type_str
-            .parse()
-            .map_err(|_| tool_error(format!("Invalid execution_type: {execution_type_str}")))?;
+        let execution_type = execution_type_str.parse().map_err(|_| {
+            Box::new(tool_error(format!(
+                "Invalid execution_type: {execution_type_str}"
+            )))
+        })?;
 
         Ok(Self {
             command,
