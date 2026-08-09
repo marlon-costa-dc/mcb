@@ -2,8 +2,9 @@
 # Public verbs and environment ownership remain in the generated Makefile.
 
 post-setup:
-	@cp scripts/hooks/pre-commit scripts/hooks/pre-push .git/hooks/
-	@chmod +x .git/hooks/pre-commit .git/hooks/pre-push
+	@hooks_dir=$$(git rev-parse --git-path hooks); \
+		cp scripts/hooks/pre-commit scripts/hooks/pre-push "$$hooks_dir/"; \
+		chmod +x "$$hooks_dir/pre-commit" "$$hooks_dir/pre-push"
 	@printf '%s\n' 'MCB hooks installed'
 
 _custom_build_artifacts:

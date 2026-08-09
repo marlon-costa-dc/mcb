@@ -328,7 +328,7 @@ def discover() -> Registry:
 
 
 def _script_roots() -> list[Path]:
-    return [SCRIPTS, *sorted(SUBMODULE_SCRIPT_ROOTS, key=lambda p: str(p))]
+    return [SCRIPTS, *sorted(SUBMODULE_SCRIPT_ROOTS, key=str)]
 
 
 def _discover_verb_dir(registry: Registry, verb_dir: Path) -> None:
