@@ -14,7 +14,12 @@ from pathlib import Path
 from typing import cast
 
 from flext_core import FlextResult, p
-from kubernetes_validate import validate_resource
+from kubernetes_validate import (
+    InvalidSchemaError,
+    SchemaNotFoundError,
+    ValidationError,
+    validate_resource,
+)
 from qlty.model import SarifIssue, Severity
 from qlty.report import AnalysisReport, analyze_issues
 from ruamel.yaml import YAML
@@ -210,7 +215,7 @@ def _render_and_validate(target: GitOpsTarget) -> list[SarifIssue]:
                 quiet=True,
                 no_warn=True,
             )
-        except Exception as exc:  # kubernetes_validate raises various exceptions
+        except (ValidationError, InvalidSchemaError, SchemaNotFoundError) as exc:
             issues.append(
                 _issue(
                     "gitops:schema-invalid",

@@ -59,7 +59,7 @@ _custom_check_lint:
 
 _custom_check_python:
 	@UV_CACHE_DIR=.cache/uv uv run --no-sync ruff check scripts
-	@UV_CACHE_DIR=.cache/uv uv run --no-sync mypy scripts/lib
+	@UV_CACHE_DIR=.cache/uv MYPYPATH=scripts uv run --no-sync mypy scripts/lib
 	@UV_CACHE_DIR=.cache/uv uv run --no-sync pytest -m 'not slow' scripts/lib/tests
 
 _custom_check_validate:
@@ -79,7 +79,7 @@ _custom_check_audit:
 
 _custom_check_all:
 	@UV_CACHE_DIR=.cache/uv uv run --no-sync ruff check scripts
-	@UV_CACHE_DIR=.cache/uv uv run --no-sync mypy scripts/lib
+	@UV_CACHE_DIR=.cache/uv MYPYPATH=scripts uv run --no-sync mypy scripts/lib
 	@UV_CACHE_DIR=.cache/uv uv run --no-sync pytest -m 'not slow' scripts/lib/tests
 	@bash scripts/lib/mcb.sh run cargo fmt --all -- --check
 	@bash scripts/lib/mcb.sh run cargo clippy --all-targets -- -D warnings
@@ -100,7 +100,7 @@ _custom_run_mcb-hook-pre-commit:
 
 _custom_run_mcb-hook-pre-push:
 	@UV_CACHE_DIR=.cache/uv uv run --no-sync ruff check scripts
-	@UV_CACHE_DIR=.cache/uv uv run --no-sync mypy scripts/lib
+	@UV_CACHE_DIR=.cache/uv MYPYPATH=scripts uv run --no-sync mypy scripts/lib
 	@UV_CACHE_DIR=.cache/uv uv run --no-sync pytest -m 'not slow' scripts/lib/tests
 	@bash scripts/lib/mcb.sh run cargo fmt --all -- --check
 	@bash scripts/lib/mcb.sh run cargo clippy --all-targets -- -D warnings

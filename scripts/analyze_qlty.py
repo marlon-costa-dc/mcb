@@ -16,7 +16,7 @@ SCRIPTS = Path(__file__).resolve().parent
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-from qlty.main import main  # noqa: E402
+from qlty.main import main  # ruff: ignore[module-import-not-at-top-of-file]
 
 if __name__ == "__main__":
     main()

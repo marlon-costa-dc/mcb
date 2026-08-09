@@ -1,6 +1,7 @@
 # @flext-managed: continuous
 # @flext-regenerate: make deps WHAT=upgrade APPLY=Y
 # @flext-ssot: flext-infra/src/flext_infra/_constants/deps.py
+# @flext-ssot-dependencies: flext-infra/config/codegen.yaml (project_defaults.dev, dependency_profiles)
 # @flext-maintenance: do not edit managed sections; edit the SSOT
 # [MANAGED] FLEXT pyproject standardization
 # Sections with [MANAGED] are enforced by flext_infra.deps.modernizer.
@@ -412,41 +413,21 @@ ignore = [
   "ambiguous-unicode-character-comment",
   "ambiguous-unicode-character-docstring",
   "ambiguous-unicode-character-string",
-  "assert-raises-exception",
-  "bad-dunder-method-name",
-  "bad-quotes-inline-string",
-  "blank-line-with-whitespace",
-  "blind-except",
   "boolean-positional-value-in-call",
   "camelcase-imported-as-lowercase",
-  "collection-literal-concatenation",
-  "commented-out-code",
   "complex-structure",
-  "docstring-extraneous-exception",
-  "docstring-extraneous-returns",
   "docstring-missing-exception",
   "docstring-missing-returns",
   "docstring-missing-yields",
-  "get-attr-with-constant",
-  "hardcoded-sql-expression",
   "import-outside-top-level",
   "incorrect-blank-line-before-class",
-  "invalid-first-argument-name-for-method",
   "line-too-long",
   "logging-f-string",
   "missing-copyright-notice",
-  "missing-return-type-private-function",
   "missing-trailing-comma",
-  "mixed-case-variable-in-global-scope",
   "multi-line-summary-second-line",
   "no-self-use",
   "non-imperative-mood",
-  "non-pep695-type-alias",
-  "raise-vanilla-args",
-  "raise-within-try",
-  "redefined-loop-name",
-  "set-attr-with-constant",
-  "snake-case-type-alias",
   "too-many-arguments",
   "too-many-branches",
   "too-many-locals",
@@ -455,13 +436,9 @@ ignore = [
   "too-many-public-methods",
   "too-many-return-statements",
   "too-many-statements",
-  "try-consider-else",
   "typing-only-first-party-import",
   "typing-only-standard-library-import",
   "typing-only-third-party-import",
-  "undocumented-param",
-  "unnecessary-lambda",
-  "unnecessary-placeholder",
   "unsorted-imports",
 ]
 select = ["ALL"]
@@ -511,6 +488,64 @@ split-on-trailing-comma = false
   "undocumented-public-init",
   "unused-import",
 ]
+"scripts/**" = [
+  "ANN401",
+  "ARG001",
+  "D101",
+  "D102",
+  "D103",
+  "D107",
+  "D200",
+  "D202",
+  "D205",
+  "D212",
+  "EM101",
+  "EM102",
+  "EXE001",
+  "FBT001",
+  "FBT002",
+  "FURB101",
+  "FURB103",
+  "FURB110",
+  "FURB113",
+  "G003",
+  "N806",
+  "N999",
+  "PERF401",
+  "PERF402",
+  "PIE810",
+  "PLC0207",
+  "PLC2701",
+  "PLR2004",
+  "PLR6201",
+  "PLW1514",
+  "PTH100",
+  "PTH110",
+  "PTH118",
+  "PTH120",
+  "PTH123",
+  "PTH201",
+  "Q003",
+  "RUF022",
+  "RUF052",
+  "RUF100",
+  "RUF105",
+  "S404",
+  "S603",
+  "S607",
+  "T201",
+  "TC006",
+  "TID251",
+  "TID252",
+  "TRY400",
+  "TRY401",
+]
+"scripts/check/gitops.py" = ["ERA001"]
+"scripts/check/surface.py" = ["ERA001"]
+"scripts/lib/cosmos_command.py" = ["TRY003"]
+"scripts/lib/agent_pointers.py" = ["TRY003"]
+"scripts/lib/tests/test_agent_pointers.py" = ["TRY003"]
+"scripts/codegen-conversions.py" = ["TRY003"]
 
 [tool.setuptools]
 packages = []
@@ -522,7 +557,7 @@ in_place = true
 sort_first = ["build-system", "dependency-groups", "project", "tool"]
 
 [tool.uv]
-exclude-newer = "2026-08-05T00:00:00Z"
+exclude-newer = "7 days"
 link-mode = "copy"
 package = false
 
@@ -543,16 +578,17 @@ whitelines = 1
 [dependency-groups]
 dev = [
   "actionlint-py>=1.7.12.24",
-  "bandit>=1.9.4",
+  "bandit>=1.8",
   "code-review-graph[all]>=2.3.6",
   "flext-tests @ git+https://github.com/flext-sh/flext-tests.git@0.12.0-dev",
   "mypy>=2.3.0",
-  "pyrefly>=1.2.0",
+  "pre-commit>=4.6.1",
+  "pyrefly>=1.1.1",
   "pyright>=1.1.411",
-  "pytest>=9.1.1",
+  "pytest>=9.0.3",
   "pytest-testmon>=2.2.0",
-  "ruff>=0.16.1",
-  "rumdl>=0.2.50",
+  "ruff>=0.15.12",
+  "rumdl>=0.2.45",
   "vulture>=2.16",
   "yamlfix>=1.19.1",
 ]
