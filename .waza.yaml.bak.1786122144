@@ -1,7 +1,5 @@
 # Microsoft Waza configuration for the ~/.ai-hub governance control plane.
 # Enforces the workspace standard: SKILL.md must stay <=500 tokens.
-# SSOT owner for SKILL.md / UNIVERSAL_CORE budgets: config.AiHub.skills.budget
-# (config/skills.yaml). Keep these waza limits equal to that typed budget.
 # Distributed to governed projects via `ai-hub ssot-relink`.
 #
 # waza 0.38.3 matcher rules (empirically verified, ai-hub-bw54):
