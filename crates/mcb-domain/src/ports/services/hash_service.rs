@@ -31,5 +31,5 @@ pub trait FileHashService: Send + Sync {
     /// # Errors
     ///
     /// Returns an error if the file cannot be opened or read.
-    fn compute_hash(path: &Path) -> Result<String>;
+    fn compute_hash(&self, path: &Path) -> Result<String>;
 }
