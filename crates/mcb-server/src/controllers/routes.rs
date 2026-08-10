@@ -18,9 +18,11 @@ use tokio_util::sync::CancellationToken;
 use crate::McpServer;
 use crate::state::McbState;
 
-/// Public routes — no auth required (static assets + redirect).
-pub fn build_public_routes() -> AxumRouter {
-    axum::Router::new()
+/// Public routes — no auth required (health endpoints, static assets, and redirect).
+pub fn build_public_routes(metrics_enabled: bool) -> AxumRouter {
+    let router = axum::Router::new()
+        .route("/alive", axum::routing::get(super::health_api::alive))
+        .route("/ready", axum::routing::get(super::health_api::ready))
         .route(
             "/",
             axum::routing::get(|| async { axum::response::Redirect::temporary("/ui/") }),
@@ -51,7 +53,13 @@ pub fn build_public_routes() -> AxumRouter {
                     include_str!("../../../../assets/admin/ui/shared.js"),
                 )
             }),
-        )
+        );
+
+    if metrics_enabled {
+        router.route("/metrics", axum::routing::get(super::health_api::metrics))
+    } else {
+        router
+    }
 }
 
 /// Admin web UI page routes.
@@ -151,10 +159,18 @@ pub fn build_router_without_fallback(
     mcp_server: Arc<McpServer>,
     settings: Option<serde_json::Value>,
 ) -> AxumRouter {
+    let metrics_enabled = settings
+        .as_ref()
+        .and_then(|settings| settings.get("system"))
+        .and_then(|system| system.get("infrastructure"))
+        .and_then(|infrastructure| infrastructure.get("metrics"))
+        .and_then(|metrics| metrics.get("endpoint_enabled"))
+        .and_then(serde_json::Value::as_bool)
+        .unwrap_or(false);
     let protected_routes = build_protected_routes(state.clone(), settings);
 
     AxumRouter::new()
-        .merge(build_public_routes())
+        .merge(build_public_routes(metrics_enabled))
         .merge(protected_routes)
         .layer(axum::Extension(state))
         .merge(build_mcp_router(mcp_server))
