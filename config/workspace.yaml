@@ -41,7 +41,7 @@ members: []
 exclusions: []
 integration:
   provider: datacosmos-br
-  branch: feature/v0-4-0-multitenant-weaviate
+  branch: develop
 repository_policy_overlays:
   - project: mcb-scripts
     beads_enabled: true
