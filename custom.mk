@@ -2,8 +2,9 @@
 # Public verbs and environment ownership remain in the generated Makefile.
 
 post-setup:
-	@cp scripts/hooks/pre-commit scripts/hooks/pre-push .git/hooks/
-	@chmod +x .git/hooks/pre-commit .git/hooks/pre-push
+	@hooks_dir=$$(git rev-parse --git-path hooks); \
+		cp scripts/hooks/pre-commit scripts/hooks/pre-push "$$hooks_dir/"; \
+		chmod +x "$$hooks_dir/pre-commit" "$$hooks_dir/pre-push"
 	@printf '%s\n' 'MCB hooks installed'
 
 _custom_build_artifacts:
@@ -33,6 +34,9 @@ _custom_test_integration:
 _custom_test_doc:
 	@bash scripts/lib/mcb.sh run cargo test --workspace --doc
 
+_custom_test_golden:
+	@MCB_MODEL_ID=test-model bash scripts/lib/mcb.sh run cargo test -p mcb-server --test e2e "$(if $(strip $(MATCH)),$(MATCH),golden)"
+
 _custom_fmt_check:
 	@bash scripts/lib/mcb.sh run cargo fmt --all -- --check
 	@UV_CACHE_DIR=.cache/uv uv run --no-sync ruff format --check scripts
@@ -59,7 +63,7 @@ _custom_check_lint:
 
 _custom_check_python:
 	@UV_CACHE_DIR=.cache/uv uv run --no-sync ruff check scripts
-	@UV_CACHE_DIR=.cache/uv uv run --no-sync mypy scripts/lib
+	@UV_CACHE_DIR=.cache/uv MYPYPATH=scripts uv run --no-sync mypy scripts/lib
 	@UV_CACHE_DIR=.cache/uv uv run --no-sync pytest -m 'not slow' scripts/lib/tests
 
 _custom_check_validate:
@@ -79,7 +83,7 @@ _custom_check_audit:
 
 _custom_check_all:
 	@UV_CACHE_DIR=.cache/uv uv run --no-sync ruff check scripts
-	@UV_CACHE_DIR=.cache/uv uv run --no-sync mypy scripts/lib
+	@UV_CACHE_DIR=.cache/uv MYPYPATH=scripts uv run --no-sync mypy scripts/lib
 	@UV_CACHE_DIR=.cache/uv uv run --no-sync pytest -m 'not slow' scripts/lib/tests
 	@bash scripts/lib/mcb.sh run cargo fmt --all -- --check
 	@bash scripts/lib/mcb.sh run cargo clippy --all-targets -- -D warnings
@@ -100,7 +104,7 @@ _custom_run_mcb-hook-pre-commit:
 
 _custom_run_mcb-hook-pre-push:
 	@UV_CACHE_DIR=.cache/uv uv run --no-sync ruff check scripts
-	@UV_CACHE_DIR=.cache/uv uv run --no-sync mypy scripts/lib
+	@UV_CACHE_DIR=.cache/uv MYPYPATH=scripts uv run --no-sync mypy scripts/lib
 	@UV_CACHE_DIR=.cache/uv uv run --no-sync pytest -m 'not slow' scripts/lib/tests
 	@bash scripts/lib/mcb.sh run cargo fmt --all -- --check
 	@bash scripts/lib/mcb.sh run cargo clippy --all-targets -- -D warnings

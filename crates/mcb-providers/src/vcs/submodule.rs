@@ -196,34 +196,7 @@ impl SubmoduleProvider {
     ) -> Option<SubmoduleInfo> {
         let path = submodule.path().to_str().unwrap_or_default().to_owned();
 
-        if !visited.insert(format!("{}:{path}", ctx.parent_id)) {
-            mcb_domain::warn!(
-                "submodule",
-                "Circular submodule reference detected, skipping",
-                &path
-            );
-            return None;
-        }
-
-        let url = match submodule.url() {
-            Ok(Some(url)) => url.to_owned(),
-            Ok(None) => {
-                mcb_domain::warn!(
-                    "submodule",
-                    "Orphaned submodule (no URL in .gitmodules), skipping",
-                    &path
-                );
-                return None;
-            }
-            Err(e) => {
-                mcb_domain::warn!(
-                    "submodule",
-                    "Cannot read submodule URL, skipping",
-                    &format!("path = {path}, error = {e}")
-                );
-                return None;
-            }
-        };
+        let url = Self::validated_submodule_url(submodule, ctx, visited, &path)?;
 
         let is_initialized = Self::is_submodule_initialized(ctx.current_repo, &path);
         if ctx.skip_uninitialized && !is_initialized {
@@ -247,6 +220,42 @@ impl SubmoduleProvider {
             name,
             is_initialized,
         })
+    }
+
+    fn validated_submodule_url(
+        submodule: &git2::Submodule<'_>,
+        ctx: &BuildContext<'_>,
+        visited: &mut HashSet<String>,
+        path: &str,
+    ) -> Option<String> {
+        if !visited.insert(format!("{}:{path}", ctx.parent_id)) {
+            mcb_domain::warn!(
+                "submodule",
+                "Circular submodule reference detected, skipping",
+                &path
+            );
+            return None;
+        }
+
+        match submodule.url() {
+            Ok(Some(url)) => Some(url.to_owned()),
+            Ok(None) => {
+                mcb_domain::warn!(
+                    "submodule",
+                    "Orphaned submodule (no URL in .gitmodules), skipping",
+                    &path
+                );
+                None
+            }
+            Err(error) => {
+                mcb_domain::warn!(
+                    "submodule",
+                    "Cannot read submodule URL, skipping",
+                    &format!("path = {path}, error = {error}")
+                );
+                None
+            }
+        }
     }
 
     /// Whether a submodule has a populated working tree (initialized).

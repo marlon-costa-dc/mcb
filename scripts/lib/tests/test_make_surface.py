@@ -6,6 +6,7 @@ SPDX-License-Identifier: MIT
 
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -18,26 +19,33 @@ ROOT = Path(__file__).resolve().parents[3]
 
 
 def _run_make(*args: str) -> subprocess.CompletedProcess[str]:
+    env = os.environ.copy()
+    for name in ("MAKEFLAGS", "MFLAGS", "MAKELEVEL"):
+        env.pop(name, None)
     return subprocess.run(
-        ["make", *args], cwd=ROOT, check=False, capture_output=True, text=True
+        ["make", *args], cwd=ROOT, check=False, capture_output=True, text=True, env=env
     )
 
 
 def test_help_lists_flext_public_verbs() -> None:
-    result = _run_make("help")
+    result = _run_make("help", "WHAT=usage")
     combined = result.stdout + result.stderr
 
     tm.that(result.returncode == 0, combined)
     tm.that("work       WHAT=start|status|land|finish" in result.stdout)
     tm.that("_custom_run_mcb-hooks" in result.stdout)
+    tm.that("golden" in result.stdout)
 
 
 def test_custom_mutations_require_apply() -> None:
+    # The public verbs are the contract a caller can invoke; the internal
+    # `_serialized_*` targets are a generator implementation detail and were
+    # removed when flext-infra dropped the `serialize-make` CLI route.
     commands = [
-        ("fmt", "WHAT=apply"),
-        ("fix", "WHAT=apply"),
-        ("run", "WHAT=mcb-hooks"),
-        ("gen", "WHAT=agent-pointers"),
+        ("fmt", "WHAT=apply", "APPLY=N"),
+        ("fix", "WHAT=apply", "APPLY=N"),
+        ("run", "WHAT=mcb-hooks", "APPLY=N"),
+        ("gen", "WHAT=agent-pointers", "APPLY=N"),
     ]
 
     for command in commands:
