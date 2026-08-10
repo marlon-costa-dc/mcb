@@ -1,4 +1,4 @@
-use std::process::Command;
+use mcb_domain::utils::tests::git_helpers::run_git;
 
 use tempfile::TempDir;
 
@@ -43,24 +43,15 @@ fn git_inventory_uses_git_source_when_repository_exists() {
     let temp = TempDir::new().expect("tempdir");
     let root = temp.path();
 
-    let init = Command::new("git")
-        .arg("init")
-        .arg(root)
-        .status()
-        .expect("run git init");
-    assert!(init.success());
+    // Route through the shared helper: it clears the inherited git environment,
+    // so this repository is built here and not against the surrounding
+    // repository when the suite runs inside a git hook.
+    run_git(root, &["init"]).expect("run git init");
 
     std::fs::create_dir_all(root.join("src")).expect("create src");
     std::fs::write(root.join("src/lib.rs"), "pub fn ok() {}\n").expect("write src");
 
-    let add = Command::new("git")
-        .arg("-C")
-        .arg(root)
-        .arg("add")
-        .arg("src/lib.rs")
-        .status()
-        .expect("run git add");
-    assert!(add.success());
+    run_git(root, &["add", "src/lib.rs"]).expect("run git add");
 
     let config = ValidationConfig::new(root);
     let context = ValidationRunContext::build(&config).expect("context");
