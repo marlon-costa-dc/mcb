@@ -70,7 +70,7 @@ fn semantic_constructor_matches(path: &Path, constructor: &str) -> TestResult<Ve
 /// token trees, so constructor calls inside `register_*!` invocations never
 /// produce constructor matches and are implicitly authorized.
 fn semantic_registration_matches(path: &Path) -> TestResult<Vec<AstMatch>> {
-    const REGISTRATION_RULES: &str = r#"
+    const REGISTRATION_RULES: &str = "
 id: distributed-slice-registration
 language: Rust
 rule:
@@ -78,7 +78,7 @@ rule:
   follows:
     kind: attribute_item
     regex: 'linkme::distributed_slice'
-"#;
+";
     let output = Command::new("ast-grep")
         .args([
             "scan",
@@ -192,7 +192,7 @@ fn no_direct_concrete_di_shortcuts_outside_linkme_registries() -> TestResult {
             {
                 let rel = file
                     .strip_prefix(&root)
-                    .unwrap_or(&file)
+                    .unwrap_or(file)
                     .display()
                     .to_string();
                 violations.entry(rel).or_default().push(format!(
