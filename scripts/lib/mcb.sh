@@ -97,11 +97,34 @@ mcb_validate() {  # $1 = "quick" | "full"
 # FILES word-split safety (ported from cosmos Makefile:80): refuse shell metachars.
 mcb_files_safe() { printf '%s' "${1:-}" | grep -qE '[;|&`$()<>]' && mcb_die "$EX_PREREQ" "FILES contem metacaractere de shell perigoso; liste apenas caminhos"; return 0; }
 
+mcb_guard_ast_hits() {
+  local ast_grep="$1" pattern file output scan_status
+  shift
+  for pattern in '$VALUE.unwrap()' '$VALUE.expect($$$ARGS)' 'panic!($$$ARGS)' 'todo!($$$ARGS)' 'unimplemented!($$$ARGS)'; do
+    while IFS= read -r file; do
+      [ -n "$file" ] || continue
+      scan_status=0
+      if output=$("$ast_grep" run --pattern "$pattern" --lang rust --json "$file"); then
+        scan_status=0
+      else
+        scan_status=$?
+      fi
+      [ "$scan_status" -eq 0 ] || { [ "$scan_status" -eq 1 ] && [ "$output" = '[]' ]; } \
+        || { mcb_log "guard ast-grep scan failed for $file"; return "$EX_INFRA"; }
+      [ "$output" != '[]' ] && printf '%s\n' "$output"
+    done <<< "$1"
+  done
+  return 0
+}
+
 # --- banned-pattern guard ----------------------------------------------------
 # Scans first-party crates/ for the constructs AGENTS.md forbids in prod paths.
 # Excludes: tests, #[cfg(test)] modules, target/. Fails EX_GUARD.
 mcb_guard() {
-  local rc=0 hits src staged=0
+  local ast_grep rc=0 hits src staged=0
+  ast_grep=$(command -v ast-grep) || mcb_die "$EX_PREREQ" "guard requires ast-grep (install via: make setup)"
+  "$ast_grep" --version >/dev/null \
+    || mcb_die "$EX_INFRA" "guard ast-grep verification failed: $ast_grep"
   [ "${1:-}" = "--staged" ] && staged=1
   if [ "$staged" = "1" ]; then
     # Block only NEW violations in staged prod .rs (added/copied/modified), not
@@ -113,24 +136,12 @@ mcb_guard() {
     src=$(find "$MCB_ROOT/crates" -name '*.rs' -not -path '*/tests/*' -not -path '*/benches/*' -not -path '*/target/*' 2>/dev/null || true)
     [ -z "$src" ] && { mcb_warn "guard: no source files found under crates/"; return 0; }
   fi
-  # Exclusion paths per-check:
-  # check1 (unwrap/panic/todo): validator source files contain regex patterns
-  # and error messages that cite banned constructs by definition.
-  local guard_excludes_check1='mcb-validate/src/|mcb-utils/src/constants/validate/'
-  # check2/3 (TODO/FIXME, #[allow]): validator source files and constant-definition files.
-  local guard_excludes='mcb-validate/src/|mcb-utils/src/constants/validate/'
+  local guard_excludes='mcb-utils/src/constants/validate/'
 
   # 1. unwrap/expect/panic/todo/unimplemented in non-test .rs
-  # Exclude: doc comments (///, //!), const/static declarations, string literals.
-  hits=$(grep -rnE '\b(unwrap|expect)\(|\bpanic!|\btodo!|\bunimplemented!' $src 2>/dev/null \
-      | grep -vE '//.*(unwrap|expect)' \
-      | grep -vE '#\[cfg\(test\)\]' \
-      | grep -vE '^[^:]+:[0-9]+:\s*///' \
-      | grep -vE '^[^:]+:[0-9]+:\s*//!' \
-      | grep -vE '^[^:]+:[0-9]+:\s*(pub\s+)?(const|static)\s+' \
-      | grep -vE ':\s*&?str\s*=' \
-      | grep -vE 'r#"' \
-      | grep -vE "$guard_excludes_check1" || true)
+  hits=$(mcb_guard_ast_hits "$ast_grep" "$src") \
+    || mcb_die "$EX_INFRA" "guard ast-grep invocation failed"
+  hits=$(printf '%s\n' "$hits" | grep -vE "$guard_excludes" || true)
   [ -n "$hits" ] && { mcb_warn "prod unwrap/expect/panic/todo:"; printf '%s\n' "$hits" >&2; rc=$EX_GUARD; }
   # 2. TODO/FIXME markers
   hits=$(grep -rnE '\b(TODO|FIXME)\b' $src 2>/dev/null \
