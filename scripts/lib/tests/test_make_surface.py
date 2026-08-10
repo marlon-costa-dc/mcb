@@ -34,6 +34,7 @@ def test_help_lists_flext_public_verbs() -> None:
     tm.that(result.returncode == 0, combined)
     tm.that("work       WHAT=start|status|land|finish" in result.stdout)
     tm.that("_custom_run_mcb-hooks" in result.stdout)
+    tm.that("golden" in result.stdout)
 
 
 def test_custom_mutations_require_apply() -> None:

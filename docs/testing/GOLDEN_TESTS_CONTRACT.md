@@ -1,7 +1,7 @@
 <!-- markdownlint-disable MD013 MD024 MD025 MD003 MD022 MD031 MD032 MD036 MD041 MD060 -->
 # Golden Tests Contract
 
-The authoritative test count is the output of `make test SCOPE=golden`; this
+The authoritative test count is the output of `make test WHAT=golden`; this
 document records the behaviour contract, not a frozen count.
 
 Golden tests validate **real** MCP tool behaviour: indexing, search, status,
@@ -15,7 +15,7 @@ and content.
 (`golden_acceptance_integration.rs`), and `tests/golden/` for fixture data only
 (non-executable).
 
-**Run:** `cargo test -p mcb-server golden` or `make test SCOPE=golden`
+**Run:** `make test WHAT=golden`
 
 **Fixtures:** `sample_codebase/` (Rust files), `golden_queries.json`
 (queries + expected_files for E2E via handlers)

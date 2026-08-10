@@ -34,6 +34,9 @@ _custom_test_integration:
 _custom_test_doc:
 	@bash scripts/lib/mcb.sh run cargo test --workspace --doc
 
+_custom_test_golden:
+	@MCB_MODEL_ID=test-model bash scripts/lib/mcb.sh run cargo test -p mcb-server --test e2e "$(if $(strip $(MATCH)),$(MATCH),golden)"
+
 _custom_fmt_check:
 	@bash scripts/lib/mcb.sh run cargo fmt --all -- --check
 	@UV_CACHE_DIR=.cache/uv uv run --no-sync ruff format --check scripts
