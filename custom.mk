@@ -5,6 +5,13 @@ post-setup:
 	@hooks_dir=$$(git rev-parse --git-path hooks); \
 		cp scripts/hooks/pre-commit scripts/hooks/pre-push "$$hooks_dir/"; \
 		chmod +x "$$hooks_dir/pre-commit" "$$hooks_dir/pre-push"
+	@# Why (mcb-o96i.19): CI runners need sccache installed before any cargo
+	@# invocation because .cargo/config.toml sets rustc-wrapper = "sccache".
+	@# The setup-ci.sh script installs sccache when not present. On local
+	@# machines where sccache is already installed this is a no-op.
+	@if [ "$$CI" = "Y" ] && [ -f .github/setup-ci.sh ]; then \
+		bash .github/setup-ci.sh; \
+	fi
 	@printf '%s\n' 'MCB hooks installed'
 
 _custom_build_artifacts:
