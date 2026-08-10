@@ -142,7 +142,7 @@ project-excludes = [
   "typings/**",
   "vendor/**",
 ]
-project-includes = ["scripts/**/*.py*", "tests/**/*.py*"]
+project-includes = ["archive/**/*.py*", "scripts/**/*.py*", "tests/**/*.py*"]
 python-version = "3.13"
 search-path = ["."]
 use-ignore-files = false
@@ -262,7 +262,7 @@ exclude = [
   "vendor",
 ]
 extraPaths = ["src", "."]
-include = ["scripts", "tests"]
+include = ["archive", "scripts", "tests"]
 pythonPlatform = "Linux"
 pythonVersion = "3.13"
 reportArgumentType = "none"
@@ -296,6 +296,22 @@ reportUnusedVariable = "error"
 typeCheckingMode = "strict"
 venv = ".venv"
 venvPath = "."
+
+[[tool.pyright.executionEnvironments]]
+extraPaths = [".", "src"]
+reportAssignmentType = "none"
+reportAttributeAccessIssue = "none"
+reportGeneralTypeIssues = "none"
+reportInvalidTypeForm = "none"
+reportPrivateImportUsage = "none"
+reportPrivateUsage = "none"
+reportUnknownArgumentType = "none"
+reportUnknownLambdaType = "none"
+reportUnknownMemberType = "none"
+reportUnknownParameterType = "none"
+reportUnknownVariableType = "none"
+reportUnusedImport = "none"
+root = "archive"
 
 [[tool.pyright.executionEnvironments]]
 extraPaths = [".", "src"]
