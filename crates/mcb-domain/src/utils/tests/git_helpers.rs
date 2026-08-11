@@ -8,13 +8,40 @@ use std::path::Path;
 use std::process::{Command, Stdio};
 use tempfile::TempDir;
 
-/// Execute a git command in the given directory.
+/// Execute a git command scoped strictly to `dir`.
+///
+/// `git` resolves `GIT_DIR`, `GIT_WORK_TREE`, `GIT_INDEX_FILE` and
+/// `GIT_CONFIG` ahead of the process working directory. When the suite runs
+/// inside a git operation — a pre-commit or pre-push hook, a rebase, a merge —
+/// those variables are exported and would redirect this call onto the
+/// surrounding real repository instead of `dir`. They are cleared here, and
+/// hooks and system/global config are disabled, so a test repository can never
+/// reach outside itself.
 ///
 /// # Errors
 ///
 /// Returns an error if the git command fails.
 pub fn run_git(dir: &Path, args: &[&str]) -> TestResult<()> {
-    let output = Command::new("git")
+    const INHERITED_GIT_VARS: [&str; 6] = [
+        "GIT_DIR",
+        "GIT_WORK_TREE",
+        "GIT_INDEX_FILE",
+        "GIT_CONFIG",
+        "GIT_OBJECT_DIRECTORY",
+        "GIT_COMMON_DIR",
+    ];
+
+    let mut command = Command::new("git");
+    for key in INHERITED_GIT_VARS {
+        command.env_remove(key);
+    }
+    let output = command
+        // Ignore system/global config and never run repository hooks: a test
+        // repository must not execute the surrounding project's tooling.
+        .env("GIT_CONFIG_NOSYSTEM", "1")
+        .env("GIT_CONFIG_GLOBAL", "/dev/null")
+        .arg("-c")
+        .arg("core.hooksPath=/dev/null")
         .args(args)
         .current_dir(dir)
         .stdout(Stdio::null())
