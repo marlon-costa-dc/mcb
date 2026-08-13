@@ -144,8 +144,8 @@ CHECK_GATES_DEFAULT := lint pyrefly mypy pyright security markdown smells
 
 # === SECTION: lint/type paths (managed) ===
 # Source: template + computed (script_dispatch conditional)
-RUFF_PATHS := $(PROJECT_ROOT)/src $(PROJECT_ROOT)/tests
-MYPY_PATHS := $(PROJECT_ROOT)/src $(PROJECT_ROOT)/tests
+RUFF_PATHS := $(PROJECT_ROOT)/src $(PROJECT_ROOT)/tests $(PROJECT_ROOT)/scripts
+MYPY_PATHS := $(PROJECT_ROOT)/src $(PROJECT_ROOT)/tests $(PROJECT_ROOT)/scripts
 # End SECTION: lint/type paths
 
 # === SECTION: infra bootstrap (managed) ===
@@ -340,6 +340,11 @@ $(error ERROR: Cannot use PROJECT and PROJECTS together)
 endif
 endif
 
+# Script command framework: non-builtin verbs/WHATs route to scripts/<verb>/<what>.
+# A hyphenated WHAT (make check WHAT=no-fallbacks) maps to the underscore module
+# stem (scripts/check/no_fallbacks.py) so PEP 8 module names stay valid.
+_SCRIPT_DISPATCH_ROOTS := scripts
+
 
 -include custom.mk
 SELF_MAKE := $(MAKE) --no-print-directory -f "$(SELF_MAKEFILE)"
@@ -376,7 +381,23 @@ define _dispatch
 	if [ "$$custom_rc" -ne 2 ]; then \
 		$(SELF_MAKE) "$$custom" || exit $$?; \
 	else \
-		$(SELF_MAKE) "$$builtin" || exit $$?; \
+		what_norm=$$(printf '%s' "$$what" | tr '-' '_'); \
+		script=''; script_what=''; \
+		for root in $(_SCRIPT_DISPATCH_ROOTS); do \
+			for cand in "$$what_norm" "$$what"; do \
+				for ext in py sh; do \
+					if [ -z "$$script" ] && [ -f "$(PROJECT_ROOT)/$$root/$(1)/$$cand.$$ext" ]; then \
+						script="$(PROJECT_ROOT)/$$root/$(1)/$$cand.$$ext"; script_what="$$cand"; \
+					fi; \
+				done; \
+			done; \
+		done; \
+		case " $(BUILTIN_VERBS) " in \
+		*" $(1) "*) $(SELF_MAKE) "$$builtin" || exit $$? ;; \
+		*) if [ -n "$$script" ]; then \
+			WHAT="$$script_what" $(UV_RUN) python "$(PROJECT_ROOT)/scripts/dispatch.py" "$(1)" || exit $$?; \
+		else printf 'ERROR: declared handler script is missing for %s WHAT=%s\n' "$(1)" "$$what" >&2; exit 2; fi ;; \
+		esac; \
 	fi; \
 	for hook in "post-$(1)-$$what" "post-$(1)"; do \
 		$(SELF_MAKE) -q "$$hook" >/dev/null 2>&1; rc=$$?; \

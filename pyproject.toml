@@ -66,6 +66,9 @@ source = ["src"]
 known_first_party = ["flext_cli", "flext_core", "flext_tests", "mcb_scripts"]
 pep621_dev_dependency_groups = ["dev"]
 
+[tool.hatch.build.targets.wheel]
+packages = ["src/mcb_scripts"]
+
 [tool.hatch.metadata]
 allow-direct-references = true
 
@@ -96,7 +99,7 @@ files = ["scripts/check", "scripts/lib", "scripts/qlty"]
 follow_imports = "normal"
 ignore_missing_imports = true
 local_partial_types = true
-mypy_path = ["."]
+mypy_path = ["src", "."]
 namespace_packages = true
 no_implicit_reexport = true
 plugins = ["pydantic.mypy"]
@@ -142,9 +145,9 @@ project-excludes = [
   "typings/**",
   "vendor/**",
 ]
-project-includes = ["scripts/**/*.py*", "tests/**/*.py*"]
+project-includes = ["scripts/**/*.py*", "src/**/*.py*", "tests/**/*.py*"]
 python-version = "3.13"
-search-path = ["."]
+search-path = ["src", "."]
 use-ignore-files = false
 
 [tool.pyrefly.errors]
@@ -262,7 +265,7 @@ exclude = [
   "vendor",
 ]
 extraPaths = ["src", "."]
-include = ["scripts", "tests"]
+include = ["scripts", "src", "tests"]
 pythonPlatform = "Linux"
 pythonVersion = "3.13"
 reportArgumentType = "none"
@@ -314,6 +317,23 @@ reportUnusedImport = "none"
 root = "scripts"
 
 [[tool.pyright.executionEnvironments]]
+extraPaths = ["src"]
+reportAssignmentType = "none"
+reportAttributeAccessIssue = "none"
+reportGeneralTypeIssues = "none"
+reportInvalidTypeForm = "none"
+reportPrivateImportUsage = "none"
+reportPrivateUsage = "error"
+reportReturnType = "none"
+reportUnknownArgumentType = "none"
+reportUnknownLambdaType = "none"
+reportUnknownMemberType = "none"
+reportUnknownParameterType = "none"
+reportUnknownVariableType = "none"
+reportUnusedImport = "none"
+root = "src"
+
+[[tool.pyright.executionEnvironments]]
 extraPaths = [".", "src"]
 reportArgumentType = "none"
 reportAssignmentType = "none"
@@ -361,7 +381,7 @@ markers = [
 minversion = "8.0"
 python_classes = ["Test*"]
 python_files = ["*_test.py", "*_tests.py", "test_*.py"]
-pythonpath = ["scripts"]
+pythonpath = ["src"]
 testpaths = [".", "docs", "examples", "scripts", "src", "tests"]
 
 # [MANAGED] ruff
@@ -539,14 +559,13 @@ split-on-trailing-comma = false
   "TRY401",
 ]
 "scripts/check/gitops.py" = ["ERA001"]
-"scripts/check/surface.py" = ["ERA001"]
-"scripts/lib/cosmos_command.py" = ["TRY003"]
-"scripts/lib/agent_pointers.py" = ["TRY003"]
-"scripts/lib/tests/test_agent_pointers.py" = ["TRY003"]
 "scripts/codegen-conversions.py" = ["TRY003"]
-
-[tool.setuptools]
-packages = []
+"src/mcb_scripts/cosmos_command.py" = ["S404", "S603", "TRY003"]
+"src/mcb_scripts/agent_pointers.py" = ["TRY003"]
+"src/mcb_scripts/workspace_command.py" = ["S404", "S603"]
+"src/mcb_scripts/qlty/runner.py" = ["S404", "S603"]
+"src/mcb_scripts/gitops.py" = ["S404", "S603"]
+"tests/python/**" = ["S404", "S603", "S607", "TRY003"]
 
 # [MANAGED] tomlsort
 [tool.tomlsort]
@@ -557,7 +576,7 @@ sort_first = ["build-system", "dependency-groups", "project", "tool"]
 [tool.uv]
 exclude-newer = "7 days"
 link-mode = "copy"
-package = false
+package = true
 
 [tool.vulture]
 exclude = ["*/_protocols/*"]

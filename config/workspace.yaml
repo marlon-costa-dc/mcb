@@ -16,9 +16,22 @@ repository:
   state: active
   checkout: independent
   codegen: conform
-  package: false
-  editable: false
+  # The shared Python library lives at src/mcb_scripts/, so this repository IS
+  # a package. (This flag does not feed analyzer-root ordering.)
+  package: true
+  # The test suite and the scripts/ command tree import mcb_scripts.*, so the
+  # package must be installed into the runtime venv, not merely present on disk.
+  editable: true
   read_only: false
+  # mcb owns two Python roots: the library at src/mcb_scripts/ and the command
+  # tree at scripts/<verb>/<what>, executed by scripts/dispatch.py. Declaring
+  # the dispatch seam is what makes the generated Makefile append
+  # $(PROJECT_ROOT)/scripts to RUFF_PATHS/MYPY_PATHS, so the official ruff and
+  # mypy gates reach the command tree instead of only the library.
+  script_dispatch:
+    dispatcher: scripts/dispatch.py
+    roots:
+      - scripts
 project:
   package_name: "mcb_scripts"
   class_stem: "McbScripts"
@@ -52,6 +65,13 @@ repository_policy_overlays:
     # and added these rules as the barrier against a repeat. Declared at the
     # generator input so `make gen` reproduces them instead of stripping them.
     extra_ignored_patterns:
+<<<<<<< HEAD
+=======
+      # Recovery archive written by the archive-not-delete rule. It preserves
+      # superseded files so a removal stays reversible; it is never source, and
+      # versioning it would resurrect exactly what the removal took out.
+      - "/.archive/"
+>>>>>>> origin/develop
       # Machine-local build/editor configuration. These encode one workstation
       # (linker, job counts, cache sizes, editor state) and break every other
       # environment when versioned. The leading slash anchors each rule to the

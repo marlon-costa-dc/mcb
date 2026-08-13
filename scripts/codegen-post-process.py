@@ -8,6 +8,7 @@ aliases so both forms resolve.
 
 import re
 import sys
+import pathlib
 
 IRREGULAR_PLURALS = {
     "branches": "branch",
@@ -36,8 +37,7 @@ def main() -> None:
         sys.exit(1)
 
     mod_path = sys.argv[1]
-    with open(mod_path) as f:
-        content = f.read()
+    content = pathlib.Path(mod_path).read_text()
 
     modules = re.findall(r"pub mod (\w+);", content)
     modules = [m for m in modules if m != "prelude"]
@@ -51,8 +51,7 @@ def main() -> None:
     if aliases:
         content = content.rstrip() + "\n\n" + "\n".join(aliases) + "\n"
 
-    with open(mod_path, "w") as f:
-        f.write(content)
+    pathlib.Path(mod_path).write_text(content)
 
 
 if __name__ == "__main__":
