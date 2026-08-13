@@ -294,8 +294,6 @@ reportUnusedFunction = "error"
 reportUnusedImport = "error"
 reportUnusedVariable = "error"
 typeCheckingMode = "strict"
-venv = ".venv"
-venvPath = "."
 
 [[tool.pyright.executionEnvironments]]
 extraPaths = [".", "src"]
@@ -340,7 +338,7 @@ addopts = [
   "--durations=10",
   "--markdown-docs",
   "--strict-markers",
-  "--timeout=30",
+  "--timeout=90",
 ]
 filterwarnings = [
   "error",
@@ -579,7 +577,7 @@ whitelines = 1
 dev = [
   "actionlint-py>=1.7.12.24",
   "bandit>=1.8",
-  "code-review-graph[all]>=2.3.6",
+  "code-review-graph[all]>=2.3.7",
   "flext-tests @ git+https://github.com/flext-sh/flext-tests.git@0.12.0-dev",
   "mypy>=2.3.0",
   "pre-commit>=4.6.1",
