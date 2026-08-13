@@ -12,6 +12,7 @@ import sys
 from pathlib import Path
 
 import pytest
+import yaml
 
 from ._utilities.matchers import tm
 
@@ -150,6 +151,42 @@ def test_pre_push_hook_runs_under_ci_no() -> None:
     offenders = [line for line in commands if "CI=N" not in line]
     tm.that(
         not offenders, "pre-push commands missing CI=N token:\n" + "\n".join(offenders)
+    )
+
+
+def test_generated_gitignore_keeps_declared_project_exceptions() -> None:
+    """Regeneration must not drop the project's own ignore rules.
+
+    `.gitignore` is a generated projection, so the project's rules live in the
+    `extra_ignored_patterns` overlay of config/workspace.yaml (the mro-jnm1.3
+    seam). Both sides are read from their real files here: if the overlay ever
+    stops reaching the rendered artifact, the barrier that keeps machine
+    config and tool output out of version control silently disappears.
+    """
+    manifest = yaml.safe_load((ROOT / "config" / "workspace.yaml").read_text())
+    overlays = manifest.get("repository_policy_overlays") or []
+    declared: list[str] = [
+        pattern
+        for overlay in overlays
+        for pattern in (overlay.get("extra_ignored_patterns") or [])
+    ]
+
+    tm.that(
+        bool(declared),
+        "config/workspace.yaml declares no extra_ignored_patterns, so the"
+        " project's ignore rules are not owned by the generator input",
+    )
+
+    rendered = {
+        line.strip()
+        for line in (ROOT / ".gitignore").read_text().splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    }
+    missing = [pattern for pattern in declared if pattern not in rendered]
+    tm.that(
+        not missing,
+        "declared ignore patterns absent from the generated .gitignore:\n"
+        + "\n".join(missing),
     )
 
 
