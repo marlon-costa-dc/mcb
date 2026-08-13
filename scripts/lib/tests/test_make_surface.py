@@ -105,5 +105,53 @@ def test_surface_command_runs_safe_matrix() -> None:
     tm.that("SURFACE OK" in result.stdout)
 
 
+def _hook_commands(hook_what: str) -> list[str]:
+    """Return the commands make would execute for a hook handler.
+
+    Expands the private handler directly through make's own dry-run, so the
+    assertion reflects what the hook really runs rather than a copy of the
+    Makefile text. The public `run` verb is skipped here because its dispatch
+    wrapper is generator-owned plumbing, not part of the hook's gate contract.
+    """
+    result = _run_make("--dry-run", f"_custom_run_{hook_what}")
+    recipe = result.stdout + result.stderr
+    return [
+        line.strip()
+        for line in recipe.splitlines()
+        if line.strip() and not line.lstrip().startswith("make[")
+    ]
+
+
+def test_pre_commit_hook_runs_under_ci_yes() -> None:
+    """pre-commit must execute its gates with the CI=Y token.
+
+    CI=Y is the ternary state that omits the gates CI workflows own
+    (lint/format/pyrefly/markdown), which is what a fast commit gate wants.
+    """
+    commands = _hook_commands("mcb-hook-pre-commit")
+
+    tm.that(bool(commands), "pre-commit handler expanded no commands")
+    offenders = [line for line in commands if "CI=Y" not in line]
+    tm.that(
+        not offenders,
+        "pre-commit commands missing CI=Y token:\n" + "\n".join(offenders),
+    )
+
+
+def test_pre_push_hook_runs_under_ci_no() -> None:
+    """pre-push must execute its gates with the CI=N token.
+
+    CI=N is the ternary state that runs the FULL suite with coverage and
+    keeps every blocking gate, which is what a pre-push gate must do.
+    """
+    commands = _hook_commands("mcb-hook-pre-push")
+
+    tm.that(bool(commands), "pre-push handler expanded no commands")
+    offenders = [line for line in commands if "CI=N" not in line]
+    tm.that(
+        not offenders, "pre-push commands missing CI=N token:\n" + "\n".join(offenders)
+    )
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
