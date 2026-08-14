@@ -8,8 +8,6 @@ pub mod assertions_tests;
 pub mod collection_tests;
 #[allow(missing_docs)]
 pub mod di_strict_enforcement_tests;
-/// Git test helper isolation tests.
-pub mod git_helpers_tests;
 /// Path utility tests.
 pub mod path_tests;
 /// External service detection tests.

@@ -1,5 +1,4 @@
 use crate::utils::test_fixtures::create_test_mcp_server;
-use mcb_domain::utils::tests::git_helpers::run_git;
 use mcb_domain::utils::tests::utils::TestResult;
 use mcb_domain::utils::text::extract_text_from;
 use mcb_server::args::SessionAction;
@@ -12,6 +11,7 @@ use mcb_utils::constants::testing::TEST_REPO_NAME;
 use rmcp::handler::server::wrapper::Parameters;
 use rstest::rstest;
 use std::fs;
+use std::process::Command;
 
 #[rstest]
 #[tokio::test]
@@ -106,16 +106,27 @@ async fn test_gap2_vcs_list_repositories_discovers_repos() -> TestResult {
     let repo_path = temp_dir.path().join(TEST_REPO_NAME);
     fs::create_dir(&repo_path).unwrap();
 
-    // Use the shared helper: it clears the inherited git environment, so this
-    // repository is built here instead of in the surrounding repository when the
-    // suite runs inside a git hook.
-    run_git(&repo_path, &["init"])?;
-    run_git(&repo_path, &["config", "user.email", "test@example.com"])?;
-    run_git(&repo_path, &["config", "user.name", "Test User"])?;
+    let _ = Command::new("git")
+        .args(["init"])
+        .current_dir(&repo_path)
+        .output()
+        .expect("Failed to init git repo");
 
     fs::write(repo_path.join("README.md"), "# test-repo\n").unwrap();
-    run_git(&repo_path, &["add", "."])?;
-    run_git(&repo_path, &["commit", "-m", "init"])?;
+    let _ = Command::new("git")
+        .args(["add", "."])
+        .current_dir(&repo_path)
+        .output()
+        .expect("Failed to git add");
+    let _ = Command::new("git")
+        .env("GIT_AUTHOR_NAME", "test")
+        .env("GIT_AUTHOR_EMAIL", "test@example.com")
+        .env("GIT_COMMITTER_NAME", "test")
+        .env("GIT_COMMITTER_EMAIL", "test@example.com")
+        .args(["commit", "-m", "init"])
+        .current_dir(&repo_path)
+        .output()
+        .expect("Failed to create initial commit");
 
     let result = vcs_h
         .handle(Parameters(VcsArgs {

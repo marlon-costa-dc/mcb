@@ -8,11 +8,3 @@
 <!-- AIHUB-AGENTS-SCOPE-LOCAL-BEGIN -->
 <!-- project-specific notes below -->
 <!-- AIHUB-AGENTS-SCOPE-LOCAL-END -->
-
-<!-- AIHUB-WORKSPACE-PROVIDERS-BEGIN -->
-## Workspace providers
-
-These routes are generated from provider-owned manifests.
-
-- flext: read `.agents/skills/flext-context-routing/SKILL.md` first.
-<!-- AIHUB-WORKSPACE-PROVIDERS-END -->

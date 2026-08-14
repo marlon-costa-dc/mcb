@@ -1,6 +1,7 @@
 //! `EdgeVec` vector store client types and implementation.
 
 use std::collections::HashMap;
+use std::thread;
 
 use mcb_domain::error::{Error, Result};
 use mcb_domain::value_objects::{CollectionId, CollectionInfo, Embedding, FileInfo, SearchResult};
@@ -131,20 +132,8 @@ impl EdgeVecVectorStoreProvider {
     ///
     /// Returns an error if the `EdgeVec` actor fails to initialize.
     pub fn new(config: &EdgeVecConfig) -> Result<Self> {
-        let (tx, rx) = mpsc::channel(mcb_utils::constants::vector_store::EDGEVEC_CHANNEL_CAPACITY);
-        let config_clone = config.clone();
-
-        let actor = actor::EdgeVecActor::new(rx, config_clone)?;
-        tokio::spawn(async move {
-            actor.run().await;
-        });
-
         let generated_collection = CollectionId::from_name(&format!("edgevec-{}", id::generate()));
-
-        Ok(Self {
-            sender: tx,
-            _collection: generated_collection,
-        })
+        Self::launch(config, generated_collection)
     }
 
     /// Create a new `EdgeVec` provider with custom collection
@@ -153,13 +142,18 @@ impl EdgeVecVectorStoreProvider {
     ///
     /// Returns an error if the `EdgeVec` actor fails to initialize.
     pub fn with_collection(config: &EdgeVecConfig, collection: CollectionId) -> Result<Self> {
-        let (tx, rx) = mpsc::channel(mcb_utils::constants::vector_store::EDGEVEC_CHANNEL_CAPACITY);
-        let config_clone = config.clone();
+        Self::launch(config, collection)
+    }
 
-        let actor = actor::EdgeVecActor::new(rx, config_clone)?;
-        tokio::spawn(async move {
-            actor.run().await;
-        });
+    fn launch(config: &EdgeVecConfig, collection: CollectionId) -> Result<Self> {
+        let (tx, rx) = mpsc::channel(mcb_utils::constants::vector_store::EDGEVEC_CHANNEL_CAPACITY);
+        let actor = actor::EdgeVecActor::new(rx, config.clone())?;
+        thread::Builder::new()
+            .name("mcb-edgevec-actor".to_owned())
+            .spawn(move || actor.run())
+            .map_err(|error| {
+                Error::vector_db(format!("Failed to spawn EdgeVec actor thread: {error}"))
+            })?;
 
         Ok(Self {
             sender: tx,
