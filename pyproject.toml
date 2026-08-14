@@ -12,6 +12,7 @@
 dependencies = [
   "flext-cli @ git+https://github.com/flext-sh/flext-cli.git@0.12.0-dev",
   "flext-core @ git+https://github.com/flext-sh/flext-core.git@0.12.0-dev",
+  "flext-infra @ git+https://github.com/flext-sh/flext-infra.git@0.12.0-dev",
   "pydantic>=2.13.4",
   "pydantic-settings>=2.14.2",
   "structlog>=26.1.0",
@@ -63,8 +64,17 @@ source = ["src"]
 
 # [MANAGED] deptry
 [tool.deptry]
-known_first_party = ["flext_cli", "flext_core", "flext_tests", "mcb_scripts"]
+known_first_party = [
+  "flext_cli",
+  "flext_core",
+  "flext_infra",
+  "flext_tests",
+  "mcb_scripts",
+]
 pep621_dev_dependency_groups = ["dev"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mcb_scripts"]
 
 [tool.hatch.metadata]
 allow-direct-references = true
@@ -92,11 +102,11 @@ disable_error_code = [
 disallow_untyped_defs = true
 explicit_package_bases = true
 extra_checks = true
-files = ["scripts/check", "scripts/lib", "scripts/qlty"]
+files = ["scripts/check", "src"]
 follow_imports = "normal"
 ignore_missing_imports = true
 local_partial_types = true
-mypy_path = ["."]
+mypy_path = ["src", "."]
 namespace_packages = true
 no_implicit_reexport = true
 plugins = ["pydantic.mypy"]
@@ -142,9 +152,9 @@ project-excludes = [
   "typings/**",
   "vendor/**",
 ]
-project-includes = ["scripts/**/*.py*", "tests/**/*.py*"]
+project-includes = ["scripts/**/*.py*", "src/**/*.py*", "tests/**/*.py*"]
 python-version = "3.13"
-search-path = ["."]
+search-path = ["src", "."]
 use-ignore-files = false
 
 [tool.pyrefly.errors]
@@ -262,7 +272,7 @@ exclude = [
   "vendor",
 ]
 extraPaths = ["src", "."]
-include = ["scripts", "tests"]
+include = ["scripts", "src", "tests"]
 pythonPlatform = "Linux"
 pythonVersion = "3.13"
 reportArgumentType = "none"
@@ -294,8 +304,6 @@ reportUnusedFunction = "error"
 reportUnusedImport = "error"
 reportUnusedVariable = "error"
 typeCheckingMode = "strict"
-venv = ".venv"
-venvPath = "."
 
 [[tool.pyright.executionEnvironments]]
 extraPaths = [".", "src"]
@@ -314,6 +322,23 @@ reportUnknownParameterType = "none"
 reportUnknownVariableType = "none"
 reportUnusedImport = "none"
 root = "scripts"
+
+[[tool.pyright.executionEnvironments]]
+extraPaths = ["src"]
+reportAssignmentType = "none"
+reportAttributeAccessIssue = "none"
+reportGeneralTypeIssues = "none"
+reportInvalidTypeForm = "none"
+reportPrivateImportUsage = "none"
+reportPrivateUsage = "error"
+reportReturnType = "none"
+reportUnknownArgumentType = "none"
+reportUnknownLambdaType = "none"
+reportUnknownMemberType = "none"
+reportUnknownParameterType = "none"
+reportUnknownVariableType = "none"
+reportUnusedImport = "none"
+root = "src"
 
 [[tool.pyright.executionEnvironments]]
 extraPaths = [".", "src"]
@@ -340,7 +365,7 @@ addopts = [
   "--durations=10",
   "--markdown-docs",
   "--strict-markers",
-  "--timeout=30",
+  "--timeout=10",
 ]
 filterwarnings = [
   "error",
@@ -363,7 +388,7 @@ markers = [
 minversion = "8.0"
 python_classes = ["Test*"]
 python_files = ["*_test.py", "*_tests.py", "test_*.py"]
-pythonpath = ["scripts"]
+pythonpath = ["src"]
 testpaths = [".", "docs", "examples", "scripts", "src", "tests"]
 
 # [MANAGED] ruff
@@ -458,7 +483,13 @@ msg = "Use cli.create_app_with_common_params / cli.register_command from flext_c
 [tool.ruff.lint.isort]
 combine-as-imports = true
 force-single-line = false
-known-first-party = ["flext_cli", "flext_core", "flext_tests", "mcb_scripts"]
+known-first-party = [
+  "flext_cli",
+  "flext_core",
+  "flext_infra",
+  "flext_tests",
+  "mcb_scripts",
+]
 split-on-trailing-comma = false
 
 [tool.ruff.lint.per-file-ignores]
@@ -541,14 +572,11 @@ split-on-trailing-comma = false
   "TRY401",
 ]
 "scripts/check/gitops.py" = ["ERA001"]
-"scripts/check/surface.py" = ["ERA001"]
-"scripts/lib/cosmos_command.py" = ["TRY003"]
-"scripts/lib/agent_pointers.py" = ["TRY003"]
-"scripts/lib/tests/test_agent_pointers.py" = ["TRY003"]
 "scripts/codegen-conversions.py" = ["TRY003"]
-
-[tool.setuptools]
-packages = []
+"src/mcb_scripts/agent_pointers.py" = ["TRY003"]
+"src/mcb_scripts/qlty/runner.py" = ["S404", "S603"]
+"src/mcb_scripts/gitops.py" = ["S404", "S603"]
+"tests/python/**" = ["S404", "S603", "S607", "TRY003"]
 
 # [MANAGED] tomlsort
 [tool.tomlsort]
@@ -559,7 +587,7 @@ sort_first = ["build-system", "dependency-groups", "project", "tool"]
 [tool.uv]
 exclude-newer = "7 days"
 link-mode = "copy"
-package = false
+package = true
 
 [tool.vulture]
 exclude = ["*/_protocols/*"]
@@ -579,7 +607,7 @@ whitelines = 1
 dev = [
   "actionlint-py>=1.7.12.24",
   "bandit>=1.8",
-  "code-review-graph[all]>=2.3.6",
+  "code-review-graph[all]>=2.3.7",
   "flext-tests @ git+https://github.com/flext-sh/flext-tests.git@0.12.0-dev",
   "mypy>=2.3.0",
   "pre-commit>=4.6.1",

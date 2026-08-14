@@ -13,12 +13,17 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+PROJECT_ROOT=$(readlink -f "${PROJECT_ROOT:-${SCRIPT_DIR}/..}") || {
+    printf "[ERROR] Unable to resolve project root.\n" >&2
+    exit 1
+}
+PROC_ROOT="${PROC_ROOT:-/proc}"
+KILL_COMMAND="${KILL_COMMAND:-kill}"
 APPLY=N
-KEEP_RA=1          # max rust-analyzer instances to keep per project
-KEEP_SERENA=2      # max Serena MCP servers to keep per project
-KEEP_CARGO=1       # max cargo processes to keep (zombie detection)
-CARGO_ZOMBIE_MIN=30 # cargo processes older than this (minutes) are flagged
+KEEP_RA="${KEEP_RA:-1}"          # max rust-analyzer instances to keep per project
+KEEP_SERENA="${KEEP_SERENA:-2}"  # max Serena MCP servers to keep per project
+KEEP_CARGO="${KEEP_CARGO:-1}"    # max cargo processes to keep (zombie detection)
+CARGO_ZOMBIE_MIN="${CARGO_ZOMBIE_MIN:-30}" # cargo processes older than this (minutes) are flagged
 
 # ---------------------------------------------------------------------------
 # Parse arguments
@@ -73,6 +78,29 @@ human_bytes() {
     fi
 }
 
+process_belongs_to_project() {
+    local pid=$1 command_line=${2:-} process_cwd
+    process_cwd=$(readlink -f "${PROC_ROOT}/${pid}/cwd" 2>/dev/null || true)
+    case "${process_cwd}" in
+        "${PROJECT_ROOT}"|"${PROJECT_ROOT}"/*) return 0 ;;
+    esac
+    case " ${command_line} " in
+        *" ${PROJECT_ROOT} "*|*" ${PROJECT_ROOT}/"*) return 0 ;;
+    esac
+    return 1
+}
+
+project_pids() {
+    local pattern=$1 pid command_line
+    while read -r pid command_line; do
+        [ -n "${pid}" ] || continue
+        process_belongs_to_project "${pid}" "${command_line}" && printf '%s\n' "${pid}"
+    done < <(pgrep -a -f "${pattern}" 2>/dev/null || true)
+    return 0
+}
+
+terminate_process() { "${KILL_COMMAND}" -TERM "$1"; }
+
 # ---------------------------------------------------------------------------
 # Resource report
 # ---------------------------------------------------------------------------
@@ -81,23 +109,6 @@ print_resource_report() {
     if command -v free &>/dev/null; then
         free -h
     fi
-    printf "\n--- Top memory consumers (relevant processes) -------------------------------\n"
-    ps aux 2>/dev/null | awk '
-        /rust.analyzer|rust-analyzer/ && !/awk/ {printf "%-8s %10s %10s %s\n", $2, $5, $6, $11}
-        /serena.*start-mcp-server|solidlsp.*language_server/ && !/awk/ {printf "%-8s %10s %10s %s\n", $2, $5, $6, $11}
-        /kimi-code|kimi $/ && !/awk/ {printf "%-8s %10s %10s %s\n", $2, $5, $6, $11}
-    ' | sort -k3 -rn | head -20 || true
-
-    printf "\n--- Process counts ----------------------------------------------------------\n"
-    local ra_count serena_count kimi_count cargo_count
-    ra_count=$(pgrep -c -f 'rust.analyzer|rust-analyzer' 2>/dev/null || echo 0)
-    serena_count=$(pgrep -c -f 'serena.*start-mcp-server' 2>/dev/null || echo 0)
-    kimi_count=$(pgrep -c -f 'kimi-code' 2>/dev/null || echo 0)
-    cargo_count=$(pgrep -c -f '^cargo ' 2>/dev/null || echo 0)
-    printf "rust-analyzer instances: %s\n" "${ra_count}"
-    printf "Serena MCP servers:      %s\n" "${serena_count}"
-    printf "kimi-code sessions:      %s\n" "${kimi_count}"
-    printf "cargo processes:         %s\n" "${cargo_count}"
     printf "=============================================================================\n"
 }
 
@@ -107,7 +118,7 @@ print_resource_report() {
 kill_duplicate_rust_analyzers() {
     printf "\n--- rust-analyzer duplicate cleanup -----------------------------------------\n"
     local pids
-    pids=$(pgrep -a -f 'rust.analyzer|rust-analyzer' 2>/dev/null | grep -v 'grep' | awk '{print $1}' || true)
+    pids=$(project_pids 'rust.analyzer|rust-analyzer')
 
     if [ -z "${pids}" ]; then
         log_info "No rust-analyzer processes found."
@@ -134,7 +145,7 @@ kill_duplicate_rust_analyzers() {
         else
             if [ "${APPLY}" = "Y" ]; then
                 log_kill "PID ${pid} (rust-analyzer) — duplicate"
-                kill -TERM "${pid}" 2>/dev/null || log_warn "Failed to kill PID ${pid}"
+                terminate_process "${pid}" 2>/dev/null || log_warn "Failed to kill PID ${pid}"
             else
                 log_skip "Would kill PID ${pid} (rust-analyzer) — DRY-RUN"
             fi
@@ -157,7 +168,7 @@ kill_duplicate_rust_analyzers() {
 kill_duplicate_serena_servers() {
     printf "\n--- Serena MCP server duplicate cleanup -------------------------------------\n"
     local pids
-    pids=$(pgrep -a -f 'serena.*start-mcp-server' 2>/dev/null | awk '{print $1}' || true)
+    pids=$(project_pids 'serena.*start-mcp-server')
 
     if [ -z "${pids}" ]; then
         log_info "No Serena MCP server processes found."
@@ -182,7 +193,7 @@ kill_duplicate_serena_servers() {
         else
             if [ "${APPLY}" = "Y" ]; then
                 log_kill "PID ${pid} (Serena MCP server) — duplicate"
-                kill -TERM "${pid}" 2>/dev/null || log_warn "Failed to kill PID ${pid}"
+                terminate_process "${pid}" 2>/dev/null || log_warn "Failed to kill PID ${pid}"
             else
                 log_skip "Would kill PID ${pid} (Serena MCP server) — DRY-RUN"
             fi
@@ -205,7 +216,7 @@ kill_duplicate_serena_servers() {
 flag_stale_cargo() {
     printf "\n--- Stale cargo process check -----------------------------------------------\n"
     local procs
-    procs=$(ps -eo pid,etime,cmd 2>/dev/null | awk '/^cargo / && !/awk/ {print $1, $2, $3}' || true)
+    procs=$(ps -eo pid,etime,cmd 2>/dev/null | awk '$3 == "cargo" {print $1, $2, $3}' || true)
 
     if [ -z "${procs}" ]; then
         log_info "No cargo processes found."
@@ -218,6 +229,8 @@ flag_stale_cargo() {
         pid=$(echo "${line}" | awk '{print $1}')
         elapsed=$(echo "${line}" | awk '{print $2}')
         cmd=$(echo "${line}" | awk '{print $3}')
+
+        process_belongs_to_project "${pid}" "${line}" || continue
 
         # Parse elapsed time (format: [[dd-]hh:]mm:ss)
         local minutes=0
@@ -244,7 +257,7 @@ flag_stale_cargo() {
             log_warn "PID ${pid} (${cmd}) running for ${minutes} min — possibly stale"
             if [ "${APPLY}" = "Y" ]; then
                 log_kill "PID ${pid} (${cmd}) — stale cargo process"
-                kill -TERM "${pid}" 2>/dev/null || log_warn "Failed to kill PID ${pid}"
+                terminate_process "${pid}" 2>/dev/null || log_warn "Failed to kill PID ${pid}"
             fi
         fi
     done <<< "${procs}"

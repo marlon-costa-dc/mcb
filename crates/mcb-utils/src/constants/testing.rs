@@ -58,13 +58,6 @@ pub const TEST_TIMESTAMP_SMALL: i64 = 1000;
 /// Default embedding dimensions for tests (`FastEmbed` MiniLM-L6-v2).
 pub const TEST_EMBEDDING_DIMENSIONS: usize = 384;
 
-// ============================================================================
-// Collection / Resource Names
-// ============================================================================
-
-/// Default golden-test collection name.
-pub const GOLDEN_COLLECTION: &str = "mcb_golden_test";
-
 /// Expected files in `sample_codebase` for search assertions.
 pub const SAMPLE_CODEBASE_FILES: &[&str] = &[
     "embedding.rs",
