@@ -67,7 +67,7 @@ _custom_check_guard:
 	@bash scripts/lib/mcb.sh guard
 
 _custom_check_gitops:
-	@$(UV_RUN) python scripts/check/gitops.py
+	@$(UV_RUN) python scripts/check/gitops.py run
 
 
 _custom_check_audit:
