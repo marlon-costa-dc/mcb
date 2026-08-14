@@ -22,6 +22,9 @@ post-setup:
 		bash .github/setup-ci.sh; \
 	fi
 
+pre-check:
+	@bash scripts/lib/mcb.sh conflict-markers
+
 _custom_build_artifacts:
 	@if [ "$(RELEASE)" = "1" ]; then \
 		bash scripts/lib/mcb.sh run cargo build --release; \

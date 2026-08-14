@@ -58,6 +58,22 @@ def test_gitops_check_executes_registered_run_command() -> None:
     assert "GITOPS SKIP" in combined
 
 
+def test_default_check_runs_conflict_marker_guard() -> None:
+    default_check = _run_make("-n", "check")
+    pre_check = _run_make("-n", "pre-check")
+    combined = (
+        default_check.stdout
+        + default_check.stderr
+        + pre_check.stdout
+        + pre_check.stderr
+    )
+
+    assert default_check.returncode == 0, combined
+    assert pre_check.returncode == 0, combined
+    assert '"pre-check"' in default_check.stdout
+    assert "bash scripts/lib/mcb.sh conflict-markers" in pre_check.stdout
+
+
 def test_custom_mutations_require_apply() -> None:
     # The public verbs are the contract a caller can invoke; the internal
     # `_serialized_*` targets are a generator implementation detail and were
