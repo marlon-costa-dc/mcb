@@ -25,34 +25,17 @@ post-setup:
 pre-check:
 	@bash scripts/lib/mcb.sh conflict-markers
 
-# Why (mcb-da36): the work saga pushes via GitPython, which inherits the
-# recipe environment. Make exports command-line variables (WHAT=land APPLY=Y)
-# into every recipe, so without a scrub the pre-push hooks spawned by that
-# push re-parse the tokens as their own WHAT and abort with
-# 'unsupported gen WHAT=land' / 'check does not accept APPLY'. The scrub
-# runs the SAME builtin saga command from a shell with the leaked dispatch
-# tokens and make flag carriers removed, so GitPython and every hook it
-# triggers see a clean invocation environment. Verified: env WHAT=land
-# pre-commit run flext-pre-push-gen fails; env -u WHAT -u APPLY passes.
-_custom_work_start:
-	@unset WHAT APPLY MAKEFILES GNUMAKEFLAGS MAKEFLAGS MAKELEVEL MAKEOVERRIDES MFLAGS; \
-		$(MAKE) --no-print-directory -f "$(SELF_MAKEFILE)" _builtin_work_start
-
-_custom_work_land:
-	@unset WHAT APPLY MAKEFILES GNUMAKEFLAGS MAKEFLAGS MAKELEVEL MAKEOVERRIDES MFLAGS; \
-		$(MAKE) --no-print-directory -f "$(SELF_MAKEFILE)" _builtin_work_land
-
-_custom_work_finish:
-	@unset WHAT APPLY MAKEFILES GNUMAKEFLAGS MAKEFLAGS MAKELEVEL MAKEOVERRIDES MFLAGS; \
-		$(MAKE) --no-print-directory -f "$(SELF_MAKEFILE)" _builtin_work_finish
-
-_custom_build_artifacts:
+# Why: the generated `build` builtin owns the Python wheel (uv build); the
+# Rust workspace binary is this project's artifact, so it builds here as a
+# pre-build hook instead of a reserved _custom_build_artifacts override.
+pre-build:
 	@if [ "$(RELEASE)" = "1" ]; then \
 		bash scripts/lib/mcb.sh run cargo build --release; \
 	else \
 		bash scripts/lib/mcb.sh run cargo build; \
 	fi
 
+	@bash scripts/lib/mcb.sh conflict-markers
 # Rust test selectors. `all`/`full` stay with the builtin so the FLEXT pytest
 # entry keeps owning the Python suite; these are additional WHATs only.
 _custom_test_unit:
