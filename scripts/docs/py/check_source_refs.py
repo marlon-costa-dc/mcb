@@ -9,19 +9,15 @@ from __future__ import annotations
 
 import os
 import re
-import sys
 from pathlib import Path
 
-SCRIPTS = Path(__file__).resolve().parents[2]
-if str(SCRIPTS) not in sys.path:
-    sys.path.insert(0, str(SCRIPTS))
 
-from lib.cli import create_app_with_common_params, register_result_command  # ruff: ignore[module-import-not-at-top-of-file]
-from lib.core import BaseMcbSettings, get_logger, r  # ruff: ignore[module-import-not-at-top-of-file]
-from lib.settings import McbSettings  # ruff: ignore[module-import-not-at-top-of-file]
-from pydantic import Field  # ruff: ignore[module-import-not-at-top-of-file]
+from flext_cli import cli
+from mcb_scripts.core import BaseMcbSettings, get_logger, r
+from mcb_scripts.settings import McbSettings
+from pydantic import Field
 
-from docs.py import utils  # ruff: ignore[module-import-not-at-top-of-file]
+from mcb_scripts.docs import utils
 
 logger = get_logger(__name__)
 
@@ -29,10 +25,18 @@ logger = get_logger(__name__)
 class CheckSourceRefsSettings(BaseMcbSettings):
     """Settings for the broken source-reference documentation check."""
 
-    root: Path = Field(default=Path("."), description="Project root directory")
+    root: Path = Field(default=Path(), description="Project root directory")
 
 
-def _check_files(docs_dir: str, project_root: str) -> tuple[list[tuple[str, str]], int]:
+# `from __future__ import annotations` defers every annotation to a string, and
+# the CLI facade resolves the model in ITS namespace, where names like Path are
+# absent. Rebuilding here binds them in the module that actually declares them.
+CheckSourceRefsSettings.model_rebuild()
+
+
+def _check_files(
+    docs_dir: str, project_root: Path
+) -> tuple[list[tuple[str, str]], int]:
     issues: list[tuple[str, str]] = []
     checked = 0
 
@@ -43,8 +47,7 @@ def _check_files(docs_dir: str, project_root: str) -> tuple[list[tuple[str, str]
         checked += 1
 
         try:
-            with open(filepath, encoding="utf-8") as file:
-                content = file.read()
+            content = Path(filepath).read_text(encoding="utf-8")
         except Exception as e:  # noqa: BLE001
             logger.error(f"Error reading {rel_filepath}: {e}")
             continue
@@ -57,7 +60,7 @@ def _check_files(docs_dir: str, project_root: str) -> tuple[list[tuple[str, str]
                 continue
 
             target = os.path.join(project_root, ref.rstrip("/"))
-            if not os.path.exists(target) and not os.path.exists(target + ".rs"):
+            if not Path(target).exists() and not Path(target + ".rs").exists():
                 issues.append((rel_filepath, ref))
 
     return issues, checked
@@ -65,13 +68,13 @@ def _check_files(docs_dir: str, project_root: str) -> tuple[list[tuple[str, str]
 
 def run(settings: CheckSourceRefsSettings) -> r[int]:
     """Check broken source references in documentation."""
-    project_root = os.path.abspath(settings.root)
-    if settings.root == Path("."):
+    project_root = Path(settings.root).resolve()
+    if settings.root == Path():
         project_root = utils.get_project_root()
 
     docs_dir = os.path.join(project_root, str(McbSettings().docs_dir))
 
-    if not os.path.exists(docs_dir):
+    if not Path(docs_dir).exists():
         return r[int].fail(f"docs directory not found at {docs_dir}")
 
     issues, checked = _check_files(docs_dir, project_root)
@@ -89,17 +92,19 @@ def run(settings: CheckSourceRefsSettings) -> r[int]:
 
 
 def main() -> None:
-    app = create_app_with_common_params(
+    app = cli.create_app_with_common_params(
         name="check-source-refs", help_text="Check broken source references in docs."
     )
-    register_result_command(
+    cli.register_result_command(
         app,
         name="run",
         help_text="Check broken source references in documentation.",
         model_cls=CheckSourceRefsSettings,
         handler=run,
     )
-    app()
+    result = cli.execute_app(app, prog_name="check-source-refs")
+    if result.failure:
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":

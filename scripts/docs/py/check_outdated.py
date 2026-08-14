@@ -9,19 +9,15 @@ from __future__ import annotations
 
 import os
 import re
-import sys
 from pathlib import Path
 
-SCRIPTS = Path(__file__).resolve().parents[2]
-if str(SCRIPTS) not in sys.path:
-    sys.path.insert(0, str(SCRIPTS))
 
-from lib.cli import create_app_with_common_params, register_result_command  # ruff: ignore[module-import-not-at-top-of-file]
-from lib.core import BaseMcbSettings, get_logger, r  # ruff: ignore[module-import-not-at-top-of-file]
-from lib.settings import McbSettings  # ruff: ignore[module-import-not-at-top-of-file]
-from pydantic import Field  # ruff: ignore[module-import-not-at-top-of-file]
+from flext_cli import cli
+from mcb_scripts.core import BaseMcbSettings, get_logger, r
+from mcb_scripts.settings import McbSettings
+from pydantic import Field
 
-from docs.py import utils  # ruff: ignore[module-import-not-at-top-of-file]
+from mcb_scripts.docs import utils
 
 logger = get_logger(__name__)
 
@@ -47,7 +43,13 @@ SUPPRESS_RE = re.compile(
 class CheckOutdatedSettings(BaseMcbSettings):
     """Settings for the outdated-content documentation check."""
 
-    root: Path = Field(default=Path("."), description="Project root directory")
+    root: Path = Field(default=Path(), description="Project root directory")
+
+
+# `from __future__ import annotations` defers every annotation to a string, and
+# the CLI facade resolves the model in ITS namespace, where names like Path are
+# absent. Rebuilding here binds them in the module that actually declares them.
+CheckOutdatedSettings.model_rebuild()
 
 
 def _is_suppressed(line: str) -> bool:
@@ -60,7 +62,7 @@ def _process_lines(
     issues_in_file: list[tuple[str, int, str, str]] = []
     for i, line in enumerate(lines, 1):
         stripped = line.strip()
-        if not stripped or stripped.startswith("<!--") or stripped.startswith("```"):
+        if not stripped or stripped.startswith(("<!--", "```")):
             continue
 
         for pattern, desc in outdated_patterns:
@@ -71,7 +73,7 @@ def _process_lines(
 
 
 def _check_files(
-    docs_dir: str, project_root: str
+    docs_dir: str, project_root: Path
 ) -> tuple[list[tuple[str, int, str, str]], int]:
     issues: list[tuple[str, int, str, str]] = []
     checked = 0
@@ -85,7 +87,7 @@ def _check_files(
         checked += 1
 
         try:
-            with open(filepath, encoding="utf-8") as fh:
+            with Path(filepath).open(encoding="utf-8") as fh:
                 lines = fh.readlines()
         except Exception as e:  # noqa: BLE001
             logger.error(f"Error reading {rel_filepath}: {e}")
@@ -99,13 +101,13 @@ def _check_files(
 
 def run(settings: CheckOutdatedSettings) -> r[int]:
     """Check outdated content in documentation."""
-    project_root = os.path.abspath(settings.root)
-    if settings.root == Path("."):
+    project_root = Path(settings.root).resolve()
+    if settings.root == Path():
         project_root = utils.get_project_root()
 
     docs_dir = os.path.join(project_root, str(McbSettings().docs_dir))
 
-    if not os.path.exists(docs_dir):
+    if not Path(docs_dir).exists():
         return r[int].fail(f"docs directory not found at {docs_dir}")
 
     issues, checked = _check_files(docs_dir, project_root)
@@ -124,17 +126,19 @@ def run(settings: CheckOutdatedSettings) -> r[int]:
 
 
 def main() -> None:
-    app = create_app_with_common_params(
+    app = cli.create_app_with_common_params(
         name="check-outdated", help_text="Check outdated content in docs."
     )
-    register_result_command(
+    cli.register_result_command(
         app,
         name="run",
         help_text="Check outdated content in documentation.",
         model_cls=CheckOutdatedSettings,
         handler=run,
     )
-    app()
+    result = cli.execute_app(app, prog_name="check-outdated")
+    if result.failure:
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":
