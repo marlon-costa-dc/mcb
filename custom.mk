@@ -26,23 +26,23 @@ pre-check:
 	@bash scripts/lib/mcb.sh conflict-markers
 	
 # Why (mcb-da36): the work saga pushes via GitPython, which inherits this
-# process's environment. Under `make work WHAT=land APPLY=Y` the exported
-# MAKEFLAGS carries WHAT/APPLY into the pre-push hooks, so their `make gen
-# APPLY=Y` / `make check` re-parse those tokens as their own WHAT and abort
-# with `unsupported gen WHAT=land` / `check does not accept APPLY`. Clearing
-# the make-specific carriers before dispatching the builtin keeps the same
-# official saga and gates running under a clean environment. The generated
-# Makefile already uses this exact pattern for cross-checkout setup.
+# process's environment. Under `make work WHAT=land APPLY=Y` make exports
+# WHAT/APPLY into every recipe's environment, so the pre-push hooks'
+# `make gen APPLY=Y` / `make check` re-parse those tokens as their own WHAT
+# and abort with `unsupported gen WHAT=land` / `check does not accept APPLY`.
+# The fix runs the builtin saga from a shell that first unsets the leaked
+# variables AND the make flag carriers, so GitPython and the hooks it
+# triggers see a clean invocation environment.
 _custom_work_start:
-	env -u MAKEFILES -u GNUMAKEFLAGS -u MAKEFLAGS -u MAKELEVEL -u MAKEOVERRIDES -u MFLAGS \
+	@unset WHAT APPLY MAKEFILES GNUMAKEFLAGS MAKEFLAGS MAKELEVEL MAKEOVERRIDES MFLAGS; \
 		$(MAKE) --no-print-directory -f "$(SELF_MAKEFILE)" _builtin_work_start
 
 _custom_work_land:
-	env -u MAKEFILES -u GNUMAKEFLAGS -u MAKEFLAGS -u MAKELEVEL -u MAKEOVERRIDES -u MFLAGS \
+	@unset WHAT APPLY MAKEFILES GNUMAKEFLAGS MAKEFLAGS MAKELEVEL MAKEOVERRIDES MFLAGS; \
 		$(MAKE) --no-print-directory -f "$(SELF_MAKEFILE)" _builtin_work_land
 
 _custom_work_finish:
-	env -u MAKEFILES -u GNUMAKEFLAGS -u MAKEFLAGS -u MAKELEVEL -u MAKEOVERRIDES -u MFLAGS \
+	@unset WHAT APPLY MAKEFILES GNUMAKEFLAGS MAKEFLAGS MAKELEVEL MAKEOVERRIDES MFLAGS; \
 		$(MAKE) --no-print-directory -f "$(SELF_MAKEFILE)" _builtin_work_finish
 
 
