@@ -65,25 +65,10 @@ ManagedArtifacts:
         - TID252
         - TRY400
         - TRY401
-      # The `# /// cosmos-command` header is a DATA contract parsed by
-      # src/mcb_scripts/cosmos_command.py (HEADER_START), not disabled code.
+      # The `# /// cosmos-command` header is a DATA contract consumed by the
+      # command registry, not disabled code.
       "scripts/check/gitops.py":
         - ERA001
-      # TRY003: these modules raise ONE typed error class each (RegistryError,
-      # etc.) whose value is the per-call-site context in the message. Minting
-      # a subclass per message would add ~30 classes with no new behavior.
-      "src/mcb_scripts/cosmos_command.py":
-        - TRY003
-        # S404/S603: this module IS the command dispatcher. Executing a
-        # repository command is its entire purpose, and the argv it builds
-        # comes from a validated TOML header plus a shell resolved through
-        # shutil.which, never from a shell string or unvalidated input.
-        - S404
-        - S603
-      "src/mcb_scripts/workspace_command.py":
-        # Same dispatcher contract as cosmos_command.py.
-        - S404
-        - S603
       "src/mcb_scripts/qlty/runner.py":
         # Runs the qlty CLI with a fixed argv; the executable is resolved to an
         # absolute path first, so PATH order cannot select a different binary.
