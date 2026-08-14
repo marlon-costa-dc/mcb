@@ -767,7 +767,7 @@ wheels = [
 [[package]]
 name = "flext-cli"
 version = "0.12.0rc0"
-source = { git = "https://github.com/flext-sh/flext-cli.git?rev=0.12.0-dev#d8422f0f3eae8789b4179162a9677c8cd4991f2c" }
+source = { git = "https://github.com/flext-sh/flext-cli.git?rev=0.12.0-dev#f56a29dd86d749a03e07e831b19b2c8b4f2466c0" }
 dependencies = [
     { name = "cachetools" },
     { name = "click" },
@@ -794,7 +794,7 @@ dependencies = [
 [[package]]
 name = "flext-core"
 version = "0.12.0rc1"
-source = { git = "https://github.com/flext-sh/flext-core.git?rev=0.12.0-dev#4e3ceb15f0db43944c83f5587daac18102ec4359" }
+source = { git = "https://github.com/flext-sh/flext-core.git?rev=0.12.0-dev#8748e2df021017d017d84efcb20fdada6f92d9e8" }
 dependencies = [
     { name = "beartype" },
     { name = "cachetools" },
@@ -820,7 +820,7 @@ dependencies = [
 [[package]]
 name = "flext-infra"
 version = "0.12.0rc0"
-source = { git = "https://github.com/flext-sh/flext-infra.git?rev=0.12.0-dev#26c848a8854ea3afa05a98deff05edc534c0b7ac" }
+source = { git = "https://github.com/flext-sh/flext-infra.git?rev=0.12.0-dev#532eab82aff8ef68843f4ee2a8c4465979bcd569" }
 dependencies = [
     { name = "defusedxml" },
     { name = "filelock" },
@@ -842,7 +842,7 @@ dependencies = [
 [[package]]
 name = "flext-tests"
 version = "0.12.0rc0"
-source = { git = "https://github.com/flext-sh/flext-tests.git?rev=0.12.0-dev#7e84ad5ce617d8b39dc269a12fbfca5db073f623" }
+source = { git = "https://github.com/flext-sh/flext-tests.git?rev=0.12.0-dev#29f4c49313c1fbc73e6a42e1c6f329b30a90d603" }
 dependencies = [
     { name = "docker" },
     { name = "factory-boy" },
@@ -1589,6 +1589,7 @@ source = { editable = "." }
 dependencies = [
     { name = "flext-cli" },
     { name = "flext-core" },
+    { name = "flext-infra" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
     { name = "structlog" },
@@ -1625,6 +1626,7 @@ dev = [
 requires-dist = [
     { name = "flext-cli", git = "https://github.com/flext-sh/flext-cli.git?rev=0.12.0-dev" },
     { name = "flext-core", git = "https://github.com/flext-sh/flext-core.git?rev=0.12.0-dev" },
+    { name = "flext-infra", git = "https://github.com/flext-sh/flext-infra.git?rev=0.12.0-dev" },
     { name = "hvac", marker = "extra == 'gitops'", specifier = ">=2.4.0" },
     { name = "kubernetes", marker = "extra == 'gitops'", specifier = ">=36.0.3" },
     { name = "kubernetes-validate", marker = "extra == 'gitops'", specifier = ">=1.36.0" },

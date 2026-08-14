@@ -22,13 +22,20 @@ post-setup:
 		bash .github/setup-ci.sh; \
 	fi
 
-_custom_build_artifacts:
+pre-check:
+	@bash scripts/lib/mcb.sh conflict-markers
+
+# Why: the generated `build` builtin owns the Python wheel (uv build); the
+# Rust workspace binary is this project's artifact, so it builds here as a
+# pre-build hook instead of a reserved _custom_build_artifacts override.
+pre-build:
 	@if [ "$(RELEASE)" = "1" ]; then \
 		bash scripts/lib/mcb.sh run cargo build --release; \
 	else \
 		bash scripts/lib/mcb.sh run cargo build; \
 	fi
 
+	@bash scripts/lib/mcb.sh conflict-markers
 # Rust test selectors. `all`/`full` stay with the builtin so the FLEXT pytest
 # entry keeps owning the Python suite; these are additional WHATs only.
 _custom_test_unit:
@@ -67,7 +74,7 @@ _custom_check_guard:
 	@bash scripts/lib/mcb.sh guard
 
 _custom_check_gitops:
-	@$(UV_RUN) python scripts/check/gitops.py
+	@$(UV_RUN) python scripts/check/gitops.py run
 
 
 _custom_check_audit:

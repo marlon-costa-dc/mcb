@@ -163,5 +163,30 @@ def test_guard_accepts_successful_ast_grep_with_zero_matches(temp_dir: Path) -> 
     assert "guard: clean" in result.stderr
 
 
+def test_conflict_marker_guard_rejects_tracked_markers(temp_dir: Path) -> None:
+    workspace = temp_dir / "workspace"
+    script_dir = workspace / "scripts" / "lib"
+    script_dir.mkdir(parents=True)
+    shutil.copy(MCB_SH, script_dir / "mcb.sh")
+    marker_file = workspace / "conflicted.txt"
+    marker_file.write_text(
+        ("<" * 7) + " HEAD\nleft\n" + ("=" * 7) + "\nright\n" + (">" * 7) + " branch\n",
+        encoding="utf-8",
+    )
+    subprocess.run(["git", "init", "-q"], cwd=workspace, check=True)
+    subprocess.run(["git", "add", "conflicted.txt"], cwd=workspace, check=True)
+
+    result = subprocess.run(
+        ["bash", "scripts/lib/mcb.sh", "guard"],
+        cwd=workspace,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 3
+    assert "conflicted.txt" in result.stderr
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

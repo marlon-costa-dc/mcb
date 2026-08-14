@@ -117,6 +117,16 @@ mcb_guard_ast_hits() {
   return 0
 }
 
+mcb_conflict_markers() {
+  local grep_args=(-nE '^(<<<<<<<|=======|>>>>>>>)') hits
+  [ "${1:-}" = "--staged" ] && grep_args=(--cached "${grep_args[@]}")
+  hits=$(git -C "$MCB_ROOT" grep "${grep_args[@]}" -- . 2>/dev/null || true)
+  [ -z "$hits" ] && return 0
+  mcb_warn "merge conflict markers:"
+  printf '%s\n' "$hits" >&2
+  return "$EX_GUARD"
+}
+
 # --- banned-pattern guard ----------------------------------------------------
 # Scans first-party crates/ for the constructs AGENTS.md forbids in prod paths.
 # Excludes: tests, #[cfg(test)] modules, target/. Fails EX_GUARD.
@@ -127,14 +137,19 @@ mcb_guard() {
     || mcb_die "$EX_INFRA" "guard ast-grep verification failed: $ast_grep"
   [ "${1:-}" = "--staged" ] && staged=1
   if [ "$staged" = "1" ]; then
+    mcb_conflict_markers --staged || rc=$EX_GUARD
+  else
+    mcb_conflict_markers || rc=$EX_GUARD
+  fi
+  if [ "$staged" = "1" ]; then
     # Block only NEW violations in staged prod .rs (added/copied/modified), not
     # the retroactive baseline. Excludes tests/ and benches/ (test-like).
     src=$(git -C "$MCB_ROOT" diff --cached --name-only --diff-filter=ACM -- crates 2>/dev/null \
       | grep -E '\.rs$' | grep -vE '/(tests|benches)/' | sed "s|^|$MCB_ROOT/|" || true)
-    [ -z "$src" ] && { mcb_ok "guard: no staged prod .rs to scan"; return 0; }
+    [ -z "$src" ] && { mcb_ok "guard: no staged prod .rs to scan"; return "$rc"; }
   else
     src=$(find "$MCB_ROOT/crates" -name '*.rs' -not -path '*/tests/*' -not -path '*/benches/*' -not -path '*/target/*' 2>/dev/null || true)
-    [ -z "$src" ] && { mcb_warn "guard: no source files found under crates/"; return 0; }
+    [ -z "$src" ] && { mcb_warn "guard: no source files found under crates/"; return "$rc"; }
   fi
   local guard_excludes='mcb-utils/src/constants/validate/'
 
@@ -189,6 +204,7 @@ if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
     bin)            mcb_bin ;;
     ignores)        printf '%s\n' "${MCB_AUDIT_IGNORES[*]}" ;;
     validate)       mcb_validate "${2:-full}" ;;
+    conflict-markers) shift; mcb_conflict_markers "$@" ;;
     guard)          shift; mcb_guard "$@" ;;
     guard-bash)     mcb_guard_bash ;;
     run)            shift; [ "$#" -gt 0 ] || mcb_die "$EX_PREREQ" "mcb run requires a command"; mcb_run "$@" ;;

@@ -12,6 +12,7 @@
 dependencies = [
   "flext-cli @ git+https://github.com/flext-sh/flext-cli.git@0.12.0-dev",
   "flext-core @ git+https://github.com/flext-sh/flext-core.git@0.12.0-dev",
+  "flext-infra @ git+https://github.com/flext-sh/flext-infra.git@0.12.0-dev",
   "pydantic>=2.13.4",
   "pydantic-settings>=2.14.2",
   "structlog>=26.1.0",
@@ -63,7 +64,13 @@ source = ["src"]
 
 # [MANAGED] deptry
 [tool.deptry]
-known_first_party = ["flext_cli", "flext_core", "flext_tests", "mcb_scripts"]
+known_first_party = [
+  "flext_cli",
+  "flext_core",
+  "flext_infra",
+  "flext_tests",
+  "mcb_scripts",
+]
 pep621_dev_dependency_groups = ["dev"]
 
 [tool.hatch.build.targets.wheel]
@@ -95,7 +102,7 @@ disable_error_code = [
 disallow_untyped_defs = true
 explicit_package_bases = true
 extra_checks = true
-files = ["scripts/check", "scripts/lib", "scripts/qlty"]
+files = ["scripts/check", "src"]
 follow_imports = "normal"
 ignore_missing_imports = true
 local_partial_types = true
@@ -358,7 +365,7 @@ addopts = [
   "--durations=10",
   "--markdown-docs",
   "--strict-markers",
-  "--timeout=90",
+  "--timeout=10",
 ]
 filterwarnings = [
   "error",
@@ -476,7 +483,13 @@ msg = "Use cli.create_app_with_common_params / cli.register_command from flext_c
 [tool.ruff.lint.isort]
 combine-as-imports = true
 force-single-line = false
-known-first-party = ["flext_cli", "flext_core", "flext_tests", "mcb_scripts"]
+known-first-party = [
+  "flext_cli",
+  "flext_core",
+  "flext_infra",
+  "flext_tests",
+  "mcb_scripts",
+]
 split-on-trailing-comma = false
 
 [tool.ruff.lint.per-file-ignores]
@@ -560,9 +573,7 @@ split-on-trailing-comma = false
 ]
 "scripts/check/gitops.py" = ["ERA001"]
 "scripts/codegen-conversions.py" = ["TRY003"]
-"src/mcb_scripts/cosmos_command.py" = ["S404", "S603", "TRY003"]
 "src/mcb_scripts/agent_pointers.py" = ["TRY003"]
-"src/mcb_scripts/workspace_command.py" = ["S404", "S603"]
 "src/mcb_scripts/qlty/runner.py" = ["S404", "S603"]
 "src/mcb_scripts/gitops.py" = ["S404", "S603"]
 "tests/python/**" = ["S404", "S603", "S607", "TRY003"]
