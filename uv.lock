@@ -820,11 +820,7 @@ dependencies = [
 [[package]]
 name = "flext-infra"
 version = "0.12.0rc0"
-<<<<<<< HEAD
-source = { git = "https://github.com/flext-sh/flext-infra.git?rev=0.12.0-dev#c5a5f2ec6ca5380c23a0dec7ca53e1dce727b7cf" }
-=======
 source = { git = "https://github.com/flext-sh/flext-infra.git?rev=0.12.0-dev#26c848a8854ea3afa05a98deff05edc534c0b7ac" }
->>>>>>> origin/develop
 dependencies = [
     { name = "defusedxml" },
     { name = "filelock" },
@@ -1643,21 +1639,17 @@ provides-extras = ["gitops"]
 [package.metadata.requires-dev]
 dev = [
     { name = "actionlint-py", specifier = ">=1.7.12.24" },
-<<<<<<< HEAD
-    { name = "bandit", specifier = ">=1.9.4" },
-=======
     { name = "bandit", specifier = ">=1.8" },
->>>>>>> origin/develop
     { name = "code-review-graph", extras = ["all"], specifier = ">=2.3.7" },
     { name = "flext-tests", git = "https://github.com/flext-sh/flext-tests.git?rev=0.12.0-dev" },
     { name = "mypy", specifier = ">=2.3.0" },
     { name = "pre-commit", specifier = ">=4.6.1" },
-    { name = "pyrefly", specifier = ">=1.2.0" },
+    { name = "pyrefly", specifier = ">=1.1.1" },
     { name = "pyright", specifier = ">=1.1.411" },
-    { name = "pytest", specifier = ">=9.1.1" },
+    { name = "pytest", specifier = ">=9.0.3" },
     { name = "pytest-testmon", specifier = ">=2.2.0" },
-    { name = "ruff", specifier = ">=0.16.1" },
-    { name = "rumdl", specifier = ">=0.2.52" },
+    { name = "ruff", specifier = ">=0.15.12" },
+    { name = "rumdl", specifier = ">=0.2.45" },
     { name = "vulture", specifier = ">=2.16" },
     { name = "yamlfix", specifier = ">=1.19.1" },
 ]

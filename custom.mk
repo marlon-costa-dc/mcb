@@ -73,47 +73,6 @@ _custom_check_gitops:
 _custom_check_audit:
 	@bash scripts/lib/mcb.sh run cargo audit
 
-<<<<<<< HEAD
-_custom_check_all:
-	@UV_CACHE_DIR=.cache/uv uv run --no-sync ruff check scripts
-	@UV_CACHE_DIR=.cache/uv MYPYPATH=scripts uv run --no-sync mypy scripts/lib
-	@UV_CACHE_DIR=.cache/uv uv run --no-sync pytest -m 'not slow' scripts/lib/tests
-	@bash scripts/lib/mcb.sh run cargo fmt --all -- --check
-	@bash scripts/lib/mcb.sh run cargo clippy --all-targets -- -D warnings
-	@MCB_MODEL_ID=test-model bash scripts/lib/mcb.sh run cargo test --workspace --all-targets
-	@bash scripts/lib/mcb.sh validate quick
-	@bash scripts/lib/mcb.sh guard
-
-_custom_run_mcb-hooks:
-	$(call _require_apply)
-	@$(MAKE) --no-print-directory post-setup
-
-# CI is ternary (flext-infra config/codegen.yaml, RULING 1): CI=Y omits the
-# gates the CI workflows own (lint/format/pyrefly/markdown) and revokes pytest;
-# CI=N runs the full suite with coverage and keeps every blocking gate.
-# pre-commit is the fast tier, so it declares CI=Y. pre-push is the complete
-# local gate before the work leaves this machine, so it declares CI=N. The
-# token is stated per command because each one is its own process.
-_custom_run_mcb-hook-pre-commit:
-	@CI=Y bash scripts/lib/mcb.sh guard --staged
-	@CI=Y UV_CACHE_DIR=.cache/uv uv run --no-sync ruff check scripts
-	@CI=Y UV_CACHE_DIR=.cache/uv uv run --no-sync pytest -m 'not slow' scripts/lib/tests
-	@CI=Y bash scripts/lib/mcb.sh run cargo fmt --all -- --check
-	@CI=Y bash scripts/lib/mcb.sh run cargo clippy --workspace -- -D warnings
-
-_custom_run_mcb-hook-pre-push:
-	@CI=N UV_CACHE_DIR=.cache/uv uv run --no-sync ruff check scripts
-	@CI=N UV_CACHE_DIR=.cache/uv MYPYPATH=scripts uv run --no-sync mypy scripts/lib
-	@CI=N UV_CACHE_DIR=.cache/uv uv run --no-sync pytest -m 'not slow' scripts/lib/tests
-	@CI=N bash scripts/lib/mcb.sh run cargo fmt --all -- --check
-	@CI=N bash scripts/lib/mcb.sh run cargo clippy --all-targets -- -D warnings
-	@CI=N MCB_MODEL_ID=test-model bash scripts/lib/mcb.sh run cargo test --workspace --all-targets
-	@CI=N bash scripts/lib/mcb.sh run cargo test --workspace --doc
-	@CI=N bash scripts/lib/mcb.sh validate quick
-	@CI=N bash scripts/lib/mcb.sh guard
-
-=======
->>>>>>> origin/develop
 _custom_gen_agent-pointers:
 	@if [ "$(CHECK)" != "1" ] && [ "$(APPLY)" != "Y" ]; then printf 'ERROR: this action requires APPLY=Y\n' >&2; exit 2; fi
 	@$(UV_RUN) python scripts/lib/agent_pointers.py $(if $(filter 1,$(CHECK)),--check,)

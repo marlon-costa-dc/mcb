@@ -11,9 +11,9 @@ flext-infra as a pinned git rev from GitHub, so neither can be fixed in mcb.
 
 ## Defect 1 (P0) — pre-commit `entry` is unrunnable, blocks every commit
 
-**Symptom in any consuming project**
+### Symptom in any consuming project
 
-```
+```text
 make check...............................................................Failed
 - hook id: flext-pre-commit-check
 - exit code: 1
@@ -23,11 +23,11 @@ Executable `CI=Y` not found
 
 Reproduce (mcb, current `origin/0.12.0-dev`):
 
-```
+```bash
 .venv/bin/python -m pre_commit run flext-pre-commit-check --hook-stage pre-commit --all-files
 ```
 
-**Rendered output today**
+### Rendered output today
 
 ```yaml
 - id: flext-pre-commit-check
@@ -37,7 +37,7 @@ Reproduce (mcb, current `origin/0.12.0-dev`):
     CI=Y make check
 ```
 
-**Root cause**
+### Root cause
 
 `pre-commit` with `language: system` executes `entry` as an **argv vector**, never
 through a shell. A shell would read `CI=Y make check` as "assign CI, then run make";
@@ -49,13 +49,13 @@ in `bash -eu -o pipefail -c '...'` (for `unset $(git rev-parse --local-env-vars)
 and that wrapper incidentally makes a leading assignment legal. So the bug is
 specific to the `pre_commit` branch and only appeared once `CI=Y` was added there.
 
-**File**
+### File
 
 `src/flext_infra/templates/project/base/.pre-commit-config.yaml.j2`
 
 The `pre_commit` loop's `entry` line currently begins with:
 
-```
+```jinja
 {% if step.verb == "check" %}{{ make.ci.variable }}={{ make.ci.value }} {% endif %}...
 ```
 
@@ -63,7 +63,7 @@ The `pre_commit` loop's `entry` line currently begins with:
 to set a variable for a command that runs without a shell, and apply it to every
 step rather than only `check`:
 
-```
+```jinja
 env {{ make.ci.variable }}={{ make.ci.value }} ...
 ```
 
@@ -75,7 +75,7 @@ env {{ make.ci.variable }}={{ make.ci.value }} ...
 
 ## Defect 2 (P1) — pre-push states no CI token, so the tier runs in the wrong ternary arm
 
-**Rendered output today**
+### Rendered output today
 
 ```yaml
 - id: flext-pre-push-check
@@ -85,7 +85,7 @@ env {{ make.ci.variable }}={{ make.ci.value }} ...
 
 No `CI` token at all.
 
-**Why that is wrong**
+### Why that is wrong
 
 `config/codegen.yaml` already documents the contract (RULING 1):
 
@@ -100,7 +100,7 @@ the gates a push must not skip (lint/format/pyrefly per 9b604d43, pytest per
 mro-v4p5). Unsetting is not the answer either, because pre-commit legitimately
 wants `CI=Y`. Each tier must **declare** its arm.
 
-**Required changes**
+### Required changes
 
 1. `config/codegen.yaml`, in the `make.ci` block that already holds
    `variable: CI` / `value: Y`, add the local arm so no surface spells a bare
@@ -117,7 +117,7 @@ wants `CI=Y`. Each tier must **declare** its arm.
 3. `src/flext_infra/templates/project/base/.pre-commit-config.yaml.j2`, inside the
    `pre_push` loop's existing `bash -c` wrapper, state the token after the `unset`:
 
-   ```
+   ```jinja
    bash -eu -o pipefail -c 'unset $(git rev-parse --local-env-vars); {{ make.ci.variable }}={{ make.ci.local_value }} ... make {{ step.verb }} ...'
    ```
 

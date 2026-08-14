@@ -314,10 +314,7 @@ CLAUDE.local.md
 !custom.mk
 
 # Project-local exceptions (config/workspace.yaml overlay)
-<<<<<<< HEAD
-=======
 /.archive/
->>>>>>> origin/develop
 /.cargo/
 /.vscode/
 /.waza.yaml

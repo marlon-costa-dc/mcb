@@ -65,13 +65,10 @@ repository_policy_overlays:
     # and added these rules as the barrier against a repeat. Declared at the
     # generator input so `make gen` reproduces them instead of stripping them.
     extra_ignored_patterns:
-<<<<<<< HEAD
-=======
       # Recovery archive written by the archive-not-delete rule. It preserves
       # superseded files so a removal stays reversible; it is never source, and
       # versioning it would resurrect exactly what the removal took out.
       - "/.archive/"
->>>>>>> origin/develop
       # Machine-local build/editor configuration. These encode one workstation
       # (linker, job counts, cache sizes, editor state) and break every other
       # environment when versioned. The leading slash anchors each rule to the
