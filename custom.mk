@@ -24,15 +24,16 @@ post-setup:
 
 pre-check:
 	@bash scripts/lib/mcb.sh conflict-markers
-	
-# Why (mcb-da36): the work saga pushes via GitPython, which inherits this
-# process's environment. Under `make work WHAT=land APPLY=Y` make exports
-# WHAT/APPLY into every recipe's environment, so the pre-push hooks'
-# `make gen APPLY=Y` / `make check` re-parse those tokens as their own WHAT
-# and abort with `unsupported gen WHAT=land` / `check does not accept APPLY`.
-# The fix runs the builtin saga from a shell that first unsets the leaked
-# variables AND the make flag carriers, so GitPython and the hooks it
-# triggers see a clean invocation environment.
+
+# Why (mcb-da36): the work saga pushes via GitPython, which inherits the
+# recipe environment. Make exports command-line variables (WHAT=land APPLY=Y)
+# into every recipe, so without a scrub the pre-push hooks spawned by that
+# push re-parse the tokens as their own WHAT and abort with
+# 'unsupported gen WHAT=land' / 'check does not accept APPLY'. The scrub
+# runs the SAME builtin saga command from a shell with the leaked dispatch
+# tokens and make flag carriers removed, so GitPython and every hook it
+# triggers see a clean invocation environment. Verified: env WHAT=land
+# pre-commit run flext-pre-push-gen fails; env -u WHAT -u APPLY passes.
 _custom_work_start:
 	@unset WHAT APPLY MAKEFILES GNUMAKEFLAGS MAKEFLAGS MAKELEVEL MAKEOVERRIDES MFLAGS; \
 		$(MAKE) --no-print-directory -f "$(SELF_MAKEFILE)" _builtin_work_start
@@ -44,7 +45,6 @@ _custom_work_land:
 _custom_work_finish:
 	@unset WHAT APPLY MAKEFILES GNUMAKEFLAGS MAKEFLAGS MAKELEVEL MAKEOVERRIDES MFLAGS; \
 		$(MAKE) --no-print-directory -f "$(SELF_MAKEFILE)" _builtin_work_finish
-
 
 _custom_build_artifacts:
 	@if [ "$(RELEASE)" = "1" ]; then \
