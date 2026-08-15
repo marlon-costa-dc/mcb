@@ -1,6 +1,5 @@
 use std::fs;
-
-use mcb_domain::utils::tests::git_helpers::run_git;
+use std::process::Command;
 
 use mcb_server::args::{VcsAction, VcsArgs};
 use mcb_server::handlers::VcsHandler;
@@ -36,18 +35,43 @@ fn create_git_repo_fixture() -> Result<(tempfile::TempDir, String), std::io::Err
 
     fs::write(repo_path.join("README.md"), "# test\n")?;
 
-    // Route through the shared helper: it clears the inherited git environment,
-    // so this fixture is built here and not against the surrounding repository
-    // when the suite runs inside a git hook.
-    let git = |args: &[&str]| -> Result<(), std::io::Error> {
-        run_git(&repo_path, args).map_err(|e| std::io::Error::other(e.to_string()))
-    };
+    let init = Command::new("git")
+        .args(["init", "-q"])
+        .current_dir(&repo_path)
+        .output()?;
+    assert!(
+        init.status.success(),
+        "git init should succeed: {}",
+        String::from_utf8_lossy(&init.stderr)
+    );
 
-    git(&["init", "-q"])?;
-    git(&["config", "user.name", "Test User"])?;
-    git(&["config", "user.email", "test@example.com"])?;
-    git(&["add", "README.md"])?;
-    git(&["commit", "-qm", "init"])?;
+    let add = Command::new("git")
+        .args(["add", "README.md"])
+        .current_dir(&repo_path)
+        .output()?;
+    assert!(
+        add.status.success(),
+        "git add should succeed: {}",
+        String::from_utf8_lossy(&add.stderr)
+    );
+
+    let commit = Command::new("git")
+        .args([
+            "-c",
+            "user.name=Test User",
+            "-c",
+            "user.email=test@example.com",
+            "commit",
+            "-qm",
+            "init",
+        ])
+        .current_dir(&repo_path)
+        .output()?;
+    assert!(
+        commit.status.success(),
+        "git commit should succeed: {}",
+        String::from_utf8_lossy(&commit.stderr)
+    );
 
     Ok((repo_dir, repo_path.to_string_lossy().to_string()))
 }
