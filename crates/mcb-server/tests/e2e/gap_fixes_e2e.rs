@@ -106,19 +106,29 @@ async fn test_gap2_vcs_list_repositories_discovers_repos() -> TestResult {
     let repo_path = temp_dir.path().join(TEST_REPO_NAME);
     fs::create_dir(&repo_path).unwrap();
 
-    let _ = Command::new("git")
+    let init = Command::new("git")
         .args(["init"])
         .current_dir(&repo_path)
         .output()
         .expect("Failed to init git repo");
+    assert!(
+        init.status.success(),
+        "git init failed: {}",
+        String::from_utf8_lossy(&init.stderr)
+    );
 
     fs::write(repo_path.join("README.md"), "# test-repo\n").unwrap();
-    let _ = Command::new("git")
+    let add = Command::new("git")
         .args(["add", "."])
         .current_dir(&repo_path)
         .output()
         .expect("Failed to git add");
-    let _ = Command::new("git")
+    assert!(
+        add.status.success(),
+        "git add failed: {}",
+        String::from_utf8_lossy(&add.stderr)
+    );
+    let commit = Command::new("git")
         .env("GIT_AUTHOR_NAME", "test")
         .env("GIT_AUTHOR_EMAIL", "test@example.com")
         .env("GIT_COMMITTER_NAME", "test")
@@ -127,6 +137,11 @@ async fn test_gap2_vcs_list_repositories_discovers_repos() -> TestResult {
         .current_dir(&repo_path)
         .output()
         .expect("Failed to create initial commit");
+    assert!(
+        commit.status.success(),
+        "git commit failed: {}",
+        String::from_utf8_lossy(&commit.stderr)
+    );
 
     let result = vcs_h
         .handle(Parameters(VcsArgs {
