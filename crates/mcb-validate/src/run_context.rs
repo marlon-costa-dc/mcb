@@ -253,7 +253,20 @@ fn enumerate_with_git(
     ignore_patterns: &[String],
     detector: &LanguageDetector,
 ) -> std::io::Result<Option<Vec<InventoryEntry>>> {
-    let output = Command::new("git")
+    let mut command = Command::new("git");
+    for key in [
+        "GIT_DIR",
+        "GIT_WORK_TREE",
+        "GIT_INDEX_FILE",
+        "GIT_OBJECT_DIRECTORY",
+        "GIT_COMMON_DIR",
+    ] {
+        command.env_remove(key);
+    }
+    let output = command
+        .arg("-C")
+        .arg(workspace_root)
+        .arg("ls-files")
         .arg("-C")
         .arg(workspace_root)
         .arg("ls-files")
