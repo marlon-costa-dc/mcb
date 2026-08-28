@@ -53,6 +53,7 @@ CONTINUATION_*.md
 .PROTOCOL_*.md
 
 # GitHub AI prompts/skills (local only)
+.agents/
 .github/prompts/
 .github/skills/
 
