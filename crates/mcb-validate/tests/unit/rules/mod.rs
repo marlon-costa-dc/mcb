@@ -1,3 +1,4 @@
 //! Unit tests.
 
-// No files moved here yet
+/// Pattern-registry rules-directory containment tests (path-traversal cure).
+pub mod pattern_registry_tests;

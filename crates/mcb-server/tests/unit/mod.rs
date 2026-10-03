@@ -19,6 +19,8 @@ pub mod auth_tests;
 pub mod state_tests;
 
 pub mod constants;
+/// GraphQL playground auth-marker tests (CWE-798 cure).
+pub mod graphql_playground_tests;
 pub mod context_resolution;
 pub mod error_mapping;
 pub mod fixtures;

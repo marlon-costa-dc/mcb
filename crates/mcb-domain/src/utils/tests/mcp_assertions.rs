@@ -29,7 +29,7 @@ pub fn extract_text(result: &CallToolResult) -> String {
     result
         .content
         .iter()
-        .filter_map(|c| c.raw.as_text())
+        .filter_map(rmcp::model::ContentBlock::as_text)
         .map(|t| t.text.as_str())
         .collect::<Vec<_>>()
         .join("\n")

@@ -292,10 +292,12 @@ async fn test_stdio_roundtrip_initialize() -> TestResult {
         );
 
         // Verify serverInfo
-        assert!(
-            !peer_info.server_info.name.is_empty(),
-            "Should have server name"
-        );
+        let server_info = peer_info.server_info.as_ref().ok_or_else(|| {
+            Box::new(std::io::Error::other(
+                "server_info should be available after serve",
+            )) as Box<dyn std::error::Error>
+        })?;
+        assert!(!server_info.name.is_empty(), "Should have server name");
 
         let _ = client.cancel().await;
         cleanup_temp_dbs();

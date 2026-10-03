@@ -20,6 +20,28 @@ impl Initializer for GraphQLInitializer {
     }
 
     async fn after_routes(&self, router: AxumRouter, ctx: &AppContext) -> Result<AxumRouter> {
+        // The GraphQL playground must never be served without its
+        // deployment-owned auth-header marker (CWE-798 cure): refuse to start
+        // when the HTTP surface is enabled and the marker is absent or invalid.
+        // stdio-only mode never binds HTTP, so the playground is unreachable
+        // there and the marker is not required.
+        let stdio_only = ctx
+            .config
+            .settings
+            .as_ref()
+            .and_then(|s| s.get("mcp"))
+            .and_then(|mcp| mcp.get("stdio_only"))
+            .and_then(serde_json::Value::as_bool)
+            .unwrap_or(false);
+        if !stdio_only {
+            mcb_server::controllers::graphql::PlaygroundAuthConfig::resolve(
+                ctx.config.settings.as_ref(),
+            )
+            .map_err(|e| {
+                loco_rs::Error::string(&format!("graphql playground misconfigured: {e}"))
+            })?;
+        }
+
         // Resolve the GraphQL schema provider via domain DI registry
         let provider = mcb_domain::registry::graphql::resolve_graphql_schema_provider(
             &mcb_domain::registry::graphql::GraphQLSchemaProviderConfig::new("seaography"),
