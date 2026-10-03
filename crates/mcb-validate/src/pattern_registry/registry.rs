@@ -273,15 +273,17 @@ impl Default for PatternRegistry {
 /// Get the default rules directory.
 ///
 /// Resolution order (all workspace-relative unless overridden via env):
-/// 1. `MCB_RULES_DIR` environment variable (explicit override)
+/// 1. `MCB_RULES_DIR` environment variable (explicit override) — accepted only
+///    when the path resolves inside a trust root (see [`env_rules_dir`])
 /// 2. `CARGO_MANIFEST_DIR/rules` (building mcb-validate directly)
 /// 3. Workspace root `crates/mcb-validate/rules` (used as dependency)
 /// 4. CWD-relative `crates/mcb-validate/rules` (running from workspace root)
 /// 5. CWD-relative `rules/` fallback
 #[must_use]
 pub fn default_rules_dir() -> PathBuf {
-    // 1. Explicit override via environment variable
-    if let Some(dir) = env_rules_dir() {
+    // 1. Explicit override via environment variable (contained only)
+    let roots = containment_roots();
+    if let Some(dir) = env_rules_dir(&roots) {
         return dir;
     }
 
@@ -300,10 +302,70 @@ pub fn default_rules_dir() -> PathBuf {
     PathBuf::from("rules")
 }
 
-/// Rules directory from the `MCB_RULES_DIR` override, if it exists.
-fn env_rules_dir() -> Option<PathBuf> {
-    let path = PathBuf::from(std::env::var("MCB_RULES_DIR").ok()?);
-    path.exists().then_some(path)
+/// Trusted roots the `MCB_RULES_DIR` override may not escape: the crate
+/// manifest directory (baked in at build time — the runtime environment does
+/// not carry `CARGO_MANIFEST_DIR` outside cargo) and, when present, the
+/// workspace root that owns it.
+fn containment_roots() -> Vec<PathBuf> {
+    let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let mut roots = vec![manifest_dir.clone()];
+    if let Some(workspace_root) = manifest_dir
+        .ancestors()
+        .find(|p| p.join(CARGO_TOML_FILENAME).exists() && p.join("crates").exists())
+    {
+        roots.push(workspace_root.to_path_buf());
+    }
+    roots
+}
+
+/// Rules directory from the `MCB_RULES_DIR` override, accepted only when the
+/// value is contained under a trust root.
+///
+/// The environment variable is untrusted boundary input for a filesystem read:
+/// before any rule file below it is loaded, the path must (a) carry no
+/// parent-directory components, (b) exist as a directory after symlink
+/// canonicalization, and (c) remain contained within a trust root (the crate
+/// manifest directory or its owning workspace root). Rejected escapes are
+/// logged and never silently normalized.
+fn env_rules_dir(roots: &[PathBuf]) -> Option<PathBuf> {
+    let raw = std::env::var("MCB_RULES_DIR").ok()?;
+    let candidate = PathBuf::from(&raw);
+
+    if candidate
+        .components()
+        .any(|component| component == std::path::Component::ParentDir)
+    {
+        error!(
+            "pattern_registry",
+            "Rejected MCB_RULES_DIR override: parent-directory components are not allowed",
+            &format!("value={raw:?}")
+        );
+        return None;
+    }
+
+    let Ok(canonical) = candidate.canonicalize() else {
+        mcb_domain::warn!(
+            "pattern_registry",
+            "MCB_RULES_DIR override does not resolve to an existing directory; ignoring",
+            &format!("value={raw:?}")
+        );
+        return None;
+    };
+
+    let contained = roots.iter().any(|root| {
+        root.canonicalize()
+            .is_ok_and(|root| canonical.starts_with(root))
+    });
+    if !contained {
+        error!(
+            "pattern_registry",
+            "Rejected MCB_RULES_DIR override: path escapes the crate manifest and workspace roots",
+            &format!("value={raw:?} resolved={}", canonical.display())
+        );
+        return None;
+    }
+
+    Some(canonical)
 }
 
 /// Rules directory derived from `CARGO_MANIFEST_DIR` (direct build or workspace dependency).

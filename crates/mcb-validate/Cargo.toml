@@ -103,5 +103,6 @@ serde_yaml.workspace = true
 rstest = { workspace = true }
 mockall = { workspace = true }
 insta = { workspace = true }
+serial_test.workspace = true
 mcb-domain = { path = "../mcb-domain", features = ["test-utils"] }
 mcb-utils = { path = "../mcb-utils" }
